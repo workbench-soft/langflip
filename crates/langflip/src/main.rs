@@ -15,17 +15,17 @@ use langflip_core::{Engine, Model};
 static MODEL: &[u8] = include_bytes!("../../../model/langflip.model");
 
 fn main() {
-    let settings = settings::Settings::load();
+    let (settings, first_start) = settings::Settings::load_first();
     let model = Model::from_bytes(MODEL).expect("the embedded model is valid");
     let engine = Engine::new(model, settings.keep_set());
 
     #[cfg(windows)]
-    windows::run(engine, settings);
+    windows::run(engine, settings, first_start);
     #[cfg(target_os = "macos")]
-    macos::run(engine, settings);
+    macos::run(engine, settings, first_start);
     #[cfg(not(any(windows, target_os = "macos")))]
     {
-        let _ = (engine, settings);
+        let _ = (engine, settings, first_start);
         eprintln!("langflip runs on Windows and macOS only");
     }
 }

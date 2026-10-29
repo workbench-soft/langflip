@@ -25,10 +25,24 @@ Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. Langflip converts the word bein
 - **Password fields** skipped on Windows (fields marked protected) and on macOS (secure input).
 - **Admin windows** on Windows, skipped unless Langflip itself runs as admin.
 
+## Pause with a click
+
+A left click on the tray icon turns fixing off, and the icon turns grey. The next click turns it on. The tooltip says which state Langflip is in.
+
+## Start at login
+
+The first start turns on start at login, with no question.
+
+- **Windows** a `Langflip` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. Each start rewrites the path, so a moved `langflip.exe` still starts.
+- **macOS** `~/Library/LaunchAgents/com.workbenchsoft.langflip.plist`. macOS shows a "Background item added" notice once.
+- **Limits** unchecking «Запускать при входе» turns it off for good. Deleting `settings.toml` makes the next start count as the first again.
+
 ## Tray menu
 
-- **Исправлять раскладку** fixing on or off. The icon turns grey when off.
-- **Запускать при входе** start with Windows, Windows only.
+A right click on the icon opens it.
+
+- **Исправлять раскладку** fixing on or off, the same as a left click on the icon.
+- **Запускать при входе** start at login on or off.
 - **Открыть настройки** opens `settings.toml` in the text editor. Langflip reads the change at the next window switch.
 - **Выход** quits.
 

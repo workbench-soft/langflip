@@ -82,13 +82,19 @@ fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> Option<R> {
     STATE.with(|s| s.borrow_mut().as_mut().map(f))
 }
 
-pub fn run(engine: Engine, settings: Settings) {
+pub fn run(engine: Engine, settings: Settings, first_start: bool) {
     let mtm = MainThreadMarker::new().expect("Langflip starts on the main thread");
     let app = NSApplication::sharedApplication(mtm);
     app.setActivationPolicy(NSApplicationActivationPolicy::Accessory);
     ask_for_access();
 
-    let tray = Tray::new(settings.enabled, None);
+    // Autostart turns on by itself after install. Later starts keep the person's choice,
+    // and rewrite the path in case the binary moved.
+    let autostart = first_start || launch_agent().exists();
+    if autostart {
+        set_autostart(true);
+    }
+    let tray = Tray::new(settings.enabled, autostart);
     STATE.with(|s| {
         *s.borrow_mut() = Some(State {
             engine,
@@ -159,7 +165,7 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
                 s.engine.reset();
             });
         }
-        Action::Autostart(_) => {}
+        Action::Autostart(on) => set_autostart(on),
         Action::OpenSettings => {
             let _ = std::process::Command::new("open")
                 .arg("-t")
@@ -167,6 +173,51 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
                 .spawn();
         }
         Action::Quit => std::process::exit(0),
+    }
+}
+
+/// The LaunchAgent that starts Langflip at login. No prompt: macOS only shows a notice.
+fn launch_agent() -> std::path::PathBuf {
+    std::path::PathBuf::from(std::env::var_os("HOME").unwrap_or_default())
+        .join("Library/LaunchAgents/com.workbenchsoft.langflip.plist")
+}
+
+fn set_autostart(on: bool) {
+    let path = launch_agent();
+    if !on {
+        let _ = std::fs::remove_file(&path);
+        return;
+    }
+    let exe = std::env::current_exe().unwrap_or_default();
+    let exe = exe
+        .display()
+        .to_string()
+        .replace('&', "&amp;")
+        .replace('<', "&lt;");
+    let plist = format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.workbenchsoft.langflip</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{exe}</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+</dict>
+</plist>
+"#
+    );
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    if let Err(err) = std::fs::write(&path, plist) {
+        eprintln!("langflip: can't write {}: {err}", path.display());
     }
 }
 

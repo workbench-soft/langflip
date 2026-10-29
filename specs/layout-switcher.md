@@ -14,8 +14,9 @@ Langflip fixes a word typed in the wrong keyboard layout. A person types `ghbdtn
 1. **Auto fix** the person types a word in the wrong layout and presses Space, Enter or Tab. Langflip erases the word, types it in the right layout, switches the layout and types the key the person pressed.
 2. **Undo** right after a fix the person presses Pause (Ctrl+F12 on macOS). Langflip puts the word back as typed and stops fixing that word.
 3. **Manual fix** the person presses Shift+Pause (Ctrl+Shift+F12 on macOS). Langflip converts the last word to the other layout, whatever the model says.
-4. **Pause it** the tray menu turns fixing off and on, opens the settings file and quits. On Windows it also turns Start with Windows on and off.
-5. **First run on macOS** Langflip asks for Accessibility and Input Monitoring access and opens System Settings at that page.
+4. **Pause it** a left click on the tray icon turns fixing off and on, and the icon turns grey while off. The right click opens the menu: fixing on and off, start at login, the settings file, quit.
+5. **Autostart** the first start turns on start at login, with no question. The menu turns it off.
+6. **First run on macOS** Langflip asks for Accessibility and Input Monitoring access and opens System Settings at that page.
 
 ## How it works: modules, files, data
 
@@ -56,7 +57,7 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Input** `SendInput` with `KEYEVENTF_UNICODE`. The tag sits in `dwExtraInfo`.
 - **Layout** `GetKeyboardLayout` of the focus window's thread reads it. `WM_INPUTLANGCHANGEREQUEST` to the focus window switches it.
 - **Skipped windows** password fields (`STATE_SYSTEM_PROTECTED` of the focused object), elevated windows when Langflip runs without admin rights, and apps in the exclusion list.
-- **Start with Windows** the tray toggles a value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+- **Start with Windows** the first start writes a value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, and the tray toggles it.
 
 ### macOS
 
@@ -65,6 +66,7 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Layout** Text Input Sources (`TISCopyCurrentKeyboardInputSource`, `TISSelectInputSource`).
 - **Skipped** secure input (`IsSecureEventInputEnabled`) and apps in the exclusion list.
 - **App changes** the frontmost app's process id changes, and the word clears.
+- **Start at login** a LaunchAgent plist with `RunAtLoad`, written on the first start. macOS shows its own "Background item added" notice, with no question.
 
 ### Settings
 
@@ -80,7 +82,6 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Replayed keys** keys typed during a fix replay before the layout switch lands, so they keep the old layout.
 - **Admin windows** Langflip skips them unless it runs as admin.
 - **macOS testing** the macOS layer compiles on CI. It has had no run on a Mac yet.
-- **macOS autostart** the first version has no Start at login toggle. Add Langflip in System Settings, Login Items.
 
 ## Launch
 
@@ -109,3 +110,14 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - Only Space, Enter and Tab end a word. Retyping a digit or `/` after the layout switch could land in the old layout, so those keys clear the word.
   - The threshold is 1.0. `mise run eval` measured at most 0.08% false fixes and 1.6% (English) to 3.8% (Russian) misses on words outside the dictionary.
   - `mise run smoke` types into a test window on Windows. It needs Punto Switcher closed and nobody typing for 10 seconds.
+
+### 2026-10-30 Click to pause, autostart from the first start
+
+- **Why** the person wants a quick way to turn Langflip off for a while, and Langflip starting with the system right after install, with no question.
+- **Changes**
+  - `tray.rs`: a left click on the icon turns fixing off and on. The right click opens the menu. The tooltip says whether fixing is on.
+  - `settings.rs`: `load` tells the caller when the settings file did not exist yet, which marks the first start.
+  - `windows.rs`: the first start writes the Run key. Each later start with autostart on rewrites the path, so a moved `langflip.exe` still starts.
+  - `macos.rs`: autostart through a LaunchAgent, `~/Library/LaunchAgents/com.workbenchsoft.langflip.plist` with `RunAtLoad`, written on the first start. The tray menu gets the «Запускать при входе» toggle on macOS too.
+- **Steps** spec, tray click, autostart on both systems, docs.
+- **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.

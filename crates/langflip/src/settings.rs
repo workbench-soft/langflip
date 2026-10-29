@@ -44,6 +44,16 @@ pub fn modified() -> Option<SystemTime> {
 impl Settings {
     /// Reads the file, or writes the defaults when there is none yet.
     pub fn load() -> Settings {
+        Settings::load_first().0
+    }
+
+    /// [`Settings::load`], plus true when the file did not exist: the first start after install.
+    pub fn load_first() -> (Settings, bool) {
+        let first = !path().exists();
+        (Settings::load_existing(), first)
+    }
+
+    fn load_existing() -> Settings {
         match std::fs::read_to_string(path()) {
             Ok(text) => toml::from_str(&text).unwrap_or_else(|err| {
                 eprintln!(

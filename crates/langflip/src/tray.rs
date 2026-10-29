@@ -1,11 +1,10 @@
 //! The tray icon and its menu, the same on both systems.
 
 use tray_icon::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem};
-use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
+use tray_icon::{Icon, MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent};
 
 pub enum Action {
     Enable(bool),
-    #[cfg_attr(not(windows), allow(dead_code))]
     Autostart(bool),
     OpenSettings,
     Quit,
@@ -14,7 +13,7 @@ pub enum Action {
 pub struct Tray {
     icon: TrayIcon,
     enabled: CheckMenuItem,
-    autostart: Option<CheckMenuItem>,
+    autostart: CheckMenuItem,
     open: MenuItem,
     quit: MenuItem,
 }
@@ -40,25 +39,31 @@ fn icon(on: bool) -> Icon {
     Icon::from_rgba(rgba, SIZE, SIZE).expect("icon size matches its pixels")
 }
 
+fn tooltip(on: bool) -> &'static str {
+    if on {
+        "Langflip включён. Щелчок выключает"
+    } else {
+        "Langflip выключен. Щелчок включает"
+    }
+}
+
 impl Tray {
-    /// `autostart` is None where the system has no autostart toggle.
-    pub fn new(enabled: bool, autostart: Option<bool>) -> Tray {
+    pub fn new(enabled: bool, autostart: bool) -> Tray {
         let enabled_item = CheckMenuItem::new("Исправлять раскладку", true, enabled, None);
-        let autostart_item =
-            autostart.map(|on| CheckMenuItem::new("Запускать при входе", true, on, None));
+        let autostart_item = CheckMenuItem::new("Запускать при входе", true, autostart, None);
         let open = MenuItem::new("Открыть настройки", true, None);
         let quit = MenuItem::new("Выход", true, None);
         let menu = Menu::new();
         let _ = menu.append(&enabled_item);
-        if let Some(item) = &autostart_item {
-            let _ = menu.append(item);
-        }
+        let _ = menu.append(&autostart_item);
         let _ = menu.append(&open);
         let _ = menu.append(&PredefinedMenuItem::separator());
         let _ = menu.append(&quit);
         let icon = TrayIconBuilder::new()
             .with_menu(Box::new(menu))
-            .with_tooltip("Langflip")
+            // The left click pauses fixing, the right click opens the menu.
+            .with_menu_on_left_click(false)
+            .with_tooltip(tooltip(enabled))
             .with_icon(icon(enabled))
             .build()
             .expect("the tray icon could not be created");
@@ -71,16 +76,28 @@ impl Tray {
         }
     }
 
-    /// The next menu click, if one is waiting.
+    /// The next click on the icon or the menu, if one is waiting.
     pub fn poll(&self) -> Option<Action> {
+        while let Ok(event) = TrayIconEvent::receiver().try_recv() {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                let on = !self.enabled.is_checked();
+                self.set_enabled(on);
+                return Some(Action::Enable(on));
+            }
+        }
         let event = MenuEvent::receiver().try_recv().ok()?;
         let id = event.id();
         if id == self.enabled.id() {
             let on = self.enabled.is_checked();
-            let _ = self.icon.set_icon(Some(icon(on)));
+            self.set_enabled(on);
             Some(Action::Enable(on))
-        } else if self.autostart.as_ref().is_some_and(|a| id == a.id()) {
-            Some(Action::Autostart(self.autostart.as_ref()?.is_checked()))
+        } else if id == self.autostart.id() {
+            Some(Action::Autostart(self.autostart.is_checked()))
         } else if id == self.open.id() {
             Some(Action::OpenSettings)
         } else if id == self.quit.id() {
@@ -94,5 +111,6 @@ impl Tray {
     pub fn set_enabled(&self, on: bool) {
         self.enabled.set_checked(on);
         let _ = self.icon.set_icon(Some(icon(on)));
+        let _ = self.icon.set_tooltip(Some(tooltip(on)));
     }
 }
