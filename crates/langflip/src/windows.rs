@@ -351,7 +351,9 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         s.last_end_vk = vk as u16;
         let lang = current_lang();
         let fix = s.engine.end_word(lang);
-        debug(format_args!("word end in {lang:?}: {fix:?}"));
+        // The log keeps the decision, not the word.
+        let erase = fix.as_ref().map(|f| f.erase);
+        debug(format_args!("word end in {lang:?}: fix of {erase:?} keys"));
         if let Some(fix) = fix {
             queue(s, fix, vk as u16);
             return true;

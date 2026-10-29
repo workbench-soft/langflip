@@ -1,0 +1,30 @@
+name: Checks
+
+# Format, clippy, tests and the macOS compile, the same steps as `mise run check`.
+on:
+  push:
+    branches: [main]
+    paths: ['**', '!**.md', '!docs/**']
+  pull_request:
+    paths: ['**', '!**.md', '!docs/**']
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+# Windows runs steps in PowerShell unless told otherwise.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check:
+    runs-on: [self-hosted, local]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: workbench-soft/ci/actions/setup@main
+        with:
+          pnpm-install: 'false'
+      - run: mise x -- rustup target add aarch64-apple-darwin
+      - run: mise run check

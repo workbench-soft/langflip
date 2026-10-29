@@ -14,7 +14,7 @@ Langflip fixes a word typed in the wrong keyboard layout. A person types `ghbdtn
 1. **Auto fix** the person types a word in the wrong layout and presses Space, Enter or Tab. Langflip erases the word, types it in the right layout, switches the layout and types the key the person pressed.
 2. **Undo** right after a fix the person presses Pause (Ctrl+F12 on macOS). Langflip puts the word back as typed and stops fixing that word.
 3. **Manual fix** the person presses Shift+Pause (Ctrl+Shift+F12 on macOS). Langflip converts the last word to the other layout, whatever the model says.
-4. **Pause it** the tray menu turns fixing off and on, opens the settings file and quits.
+4. **Pause it** the tray menu turns fixing off and on, opens the settings file and quits. On Windows it also turns Start with Windows on and off.
 5. **First run on macOS** Langflip asks for Accessibility and Input Monitoring access and opens System Settings at that page.
 
 ## How it works: modules, files, data
@@ -29,7 +29,7 @@ The repo is a Cargo workspace.
 
 The platform layer turns each key event into a key position named after the US key (`KeyQ`, `Semicolon`) plus Shift. The core maps a position to a letter in each layout from static tables. `Semicolon` gives `;` in English and `ж` in Russian, so `hf,jnf` stays one word, «работа».
 
-A word ends on a key that is a letter in neither layout: Space, Enter, Tab, a digit, `/`, `-`, `=`, `\`. Arrows, Home, End, Esc, a mouse click, a shortcut with Ctrl, Alt or Win, and a switch to another window clear the word.
+Space, Enter and Tab end a word. Other keys that are a letter in neither layout (digits, `/`, `-`, arrows, Esc) clear it, and so do a mouse click, a shortcut with Ctrl, Alt or Win, and a switch to another window or field.
 
 ### The decision
 
@@ -71,7 +71,7 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 `%APPDATA%\Langflip\settings.toml` on Windows, `~/Library/Application Support/Langflip/settings.toml` on macOS.
 
 - **`enabled`** fixing on or off.
-- **`excluded_apps`** executable names Langflip leaves alone, such as `wow.exe`.
+- **`excluded_apps`** apps Langflip leaves alone: the executable name on Windows (`wow.exe`), the app name on macOS (`Terminal`).
 - **`keep_words`** words to leave as typed. Undo adds to it.
 
 ## Limits
@@ -80,6 +80,7 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Replayed keys** keys typed during a fix replay before the layout switch lands, so they keep the old layout.
 - **Admin windows** Langflip skips them unless it runs as admin.
 - **macOS testing** the macOS layer compiles on CI. It has had no run on a Mac yet.
+- **macOS autostart** the first version has no Start at login toggle. Add Langflip in System Settings, Login Items.
 
 ## Launch
 
@@ -105,3 +106,6 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Course changes from the first plan**
   - Static layout tables replace `ToUnicodeEx` and `UCKeyTranslate`. Langflip supports 2 fixed layouts, and the tables give the same letters on both systems.
   - A `tray-icon` menu and a settings file replace a Tauri settings window for the first version.
+  - Only Space, Enter and Tab end a word. Retyping a digit or `/` after the layout switch could land in the old layout, so those keys clear the word.
+  - The threshold is 1.0. `mise run eval` measured at most 0.08% false fixes and 1.6% (English) to 3.8% (Russian) misses on words outside the dictionary.
+  - `mise run smoke` types into a test window on Windows. It needs Punto Switcher closed and nobody typing for 10 seconds.
