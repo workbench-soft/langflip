@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Download** each change on `main` publishes `Langflip-<version>-windows-x64.exe` in the workbench-soft.github.io releases.
 - **Pause** a click on the tray icon turns fixing off and on. The right click opens the menu.
 - **Autostart** Langflip starts at login from the first start, on Windows and macOS, with no question.
 - **Fix the layout** a word of 4 letters or more typed in the wrong layout turns into Russian or English on Space, Enter or Tab, and the layout switches.

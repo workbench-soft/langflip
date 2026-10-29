@@ -1,0 +1,79 @@
+name: Release
+
+# Publishes langflip.exe after Checks passes on a push to main, with a date version like 2026.10.30.1, then 2026.10.30.2.
+# A docs only push skips Checks, so it makes no release.
+on:
+  workflow_run:
+    workflows: [Checks]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  # Pins the commit Checks passed, since workflow_run starts on main's tip, which may be newer.
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+# Windows runs steps in PowerShell unless told otherwise.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
+    # One release at a time, so each sees the previous tag. A newer one cancels the running one, whose build is stale.
+    concurrency:
+      group: release
+      cancel-in-progress: true
+    runs-on: [self-hosted, local]
+    steps:
+      - name: Check the release token
+        env:
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: test -n "$RELEASES_TOKEN" || { echo "Set the RELEASES_TOKEN secret, then run this workflow again." >&2; exit 1; }
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+          # Full history, since the notes and the next version need all past tags and commits.
+          fetch-depth: 0
+      - uses: workbench-soft/ci/actions/setup@main
+        with:
+          pnpm-install: 'false'
+
+      - name: Pick the next version
+        id: version
+        run: echo "tag=v$(.github/scripts/next-version.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Build langflip.exe
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          mise x -- cargo build --release -p langflip
+          cp target/release/langflip.exe "Langflip-${TAG#v}-windows-x64.exe"
+
+      # This repo is private, so the exe is published to the public workbench-soft.github.io repo.
+      # Tags pushed with the workflow token don't trigger other workflows.
+      - name: Tag the commit and publish the release
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          PUBLIC_REPO: workbench-soft/workbench-soft.github.io
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          .github/scripts/release-notes.sh "$TAG" > "$RUNNER_TEMP/notes.md"
+          git tag "$TAG" "$SHA"
+          git push origin "$TAG"
+          export GH_TOKEN="$RELEASES_TOKEN"
+          gh release create "langflip-$TAG" "Langflip-${TAG#v}-windows-x64.exe" --repo "$PUBLIC_REPO" \
+            --notes-file "$RUNNER_TEMP/notes.md" --title "Langflip $TAG"
+          # Keep the last 3, as the other apps do.
+          gh release list --repo "$PUBLIC_REPO" --limit 200 --json tagName --jq '.[].tagName' |
+            grep '^langflip-v' | tail -n +4 | while read -r old; do
+              gh release delete "$old" --repo "$PUBLIC_REPO" --cleanup-tag --yes
+            done
