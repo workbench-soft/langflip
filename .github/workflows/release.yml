@@ -47,6 +47,9 @@ jobs:
         with:
           pnpm-install: 'false'
 
+      # The checkout deletes target, so the build goes to a folder that lasts and only changed crates build again.
+      - run: echo "CARGO_TARGET_DIR=$(cygpath -m "$LOCALAPPDATA")/langflip/target-release" >> "$GITHUB_ENV"
+
       - name: Pick the next version
         id: version
         run: echo "tag=v$(.github/scripts/next-version.sh)" >> "$GITHUB_OUTPUT"
@@ -56,7 +59,7 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           LANGFLIP_VERSION="${TAG#v}" mise x -- cargo build --release -p langflip
-          cp target/release/langflip.exe "Langflip-${TAG#v}-windows-x64.exe"
+          cp "$CARGO_TARGET_DIR/release/langflip.exe" "Langflip-${TAG#v}-windows-x64.exe"
 
       # This repo is private, so the exe is published to the public workbench-soft.github.io repo.
       # Tags pushed with the workflow token don't trigger other workflows.
