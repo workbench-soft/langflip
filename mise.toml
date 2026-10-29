@@ -19,3 +19,7 @@ run = [
 [tasks.eval]
 description = "Score the model on model/testset.tsv"
 run = "cargo run --release -p langflip-core --example evaluate"
+
+[tasks.smoke]
+description = "Run Langflip and type into a test window (Windows, takes the keyboard for 10 seconds)"
+run = ["cargo build -p langflip", "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-windows.ps1"]
