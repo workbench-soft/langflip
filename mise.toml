@@ -1,0 +1,21 @@
+[tools]
+rust = { version = "1.99", components = "rustfmt,clippy", targets = "aarch64-apple-darwin,x86_64-apple-darwin" }
+python = "3.13"
+uv = "latest"
+
+[tasks.model]
+description = "Rebuild model/langflip.model and model/testset.tsv from wordfreq"
+run = "uv run --no-project --with wordfreq==3.1.1 python scripts/build_model.py"
+
+[tasks.check]
+description = "Format, lint and test, the same steps CI runs"
+run = [
+  "cargo fmt --all --check",
+  "cargo clippy --workspace --all-targets -- -D warnings",
+  "cargo test --workspace",
+  "cargo check -p langflip --target aarch64-apple-darwin",
+]
+
+[tasks.eval]
+description = "Score the model on model/testset.tsv"
+run = "cargo run --release -p langflip-core --example evaluate"

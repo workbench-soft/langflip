@@ -1,0 +1,14 @@
+[workspace]
+resolver = "3"
+members = ["crates/langflip-core", "crates/langflip"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/workbench-soft/langflip"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
