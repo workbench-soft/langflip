@@ -4,7 +4,7 @@
 
 1. The person runs `langflip.exe` (Windows) or `Langflip` (macOS).
 2. On macOS the system asks for Accessibility and Input Monitoring access. The person allows both and starts Langflip again.
-3. The tray shows a blue and red square. Langflip writes `settings.toml` with the defaults.
+3. The tray shows a blue and red square. Langflip writes `settings.toml` with the defaults and turns on start at login, with no question.
 
 ```mermaid
 flowchart LR
@@ -55,13 +55,25 @@ flowchart LR
     A[ytn and Space] --> B[Shift+Pause] --> C[«нет»]
 ```
 
-## Turn it off
+## Pause it
 
-1. The person clicks the tray icon.
-2. The person unchecks «Исправлять раскладку». The icon turns grey.
-3. Typing passes through untouched until the person checks it again.
+1. The person clicks the tray icon with the left button.
+2. The icon turns grey. Typing passes through untouched.
+3. The next click turns fixing on, and the icon is blue and red again.
 
 ```mermaid
 flowchart LR
-    A[Tray icon] --> B[Uncheck Исправлять раскладку] --> C[Grey icon, no fixes]
+    A[Left click on the icon] --> B[Grey icon, no fixes]
+    B -->|left click| C[Blue and red icon, fixes on]
+```
+
+## Stop the autostart
+
+1. The person right-clicks the tray icon.
+2. The person unchecks «Запускать при входе».
+3. Langflip no longer starts at login, and later starts keep it off.
+
+```mermaid
+flowchart LR
+    A[Right click on the icon] --> B[Uncheck Запускать при входе] --> C[No start at login]
 ```
