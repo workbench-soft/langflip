@@ -68,7 +68,8 @@ def main() -> None:
     (ROOT / "model").mkdir(exist_ok=True)
     (ROOT / "model" / "langflip.model").write_bytes(out)
     lines = [f"{lang}\t{kind}\t{word}" for lang, kind, word in tests]
-    (ROOT / "model" / "testset.tsv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    text = "\n".join(lines) + "\n"
+    (ROOT / "model" / "testset.tsv").write_text(text, encoding="utf-8", newline="\n")
     print(f"model: {len(out)} bytes, testset: {len(lines)} words")
 
 
