@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **File details** `langflip.exe` shows its name, publisher and version in Explorer and Task Manager. Defender still flags the unsigned exe.
 - **Download** each change on `main` publishes `Langflip-<version>-windows-x64.exe` in the workbench-soft.github.io releases.
 - **Pause** a click on the tray icon turns fixing off and on. The right click opens the menu.
 - **Autostart** Langflip starts at login from the first start, on Windows and macOS, with no question.
