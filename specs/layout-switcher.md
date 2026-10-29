@@ -121,3 +121,12 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `macos.rs`: autostart through a LaunchAgent, `~/Library/LaunchAgents/com.workbenchsoft.langflip.plist` with `RunAtLoad`, written on the first start. The tray menu gets the «Запускать при входе» toggle on macOS too.
 - **Steps** spec, tray click, autostart on both systems, docs.
 - **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
+
+### 2026-10-30 Windows releases
+
+- **Why** the person wants a `langflip.exe` to download, without building it from source.
+- **Changes**
+  - `.github/workflows/release.yml`: after Checks pass on a push to `main`, the self-hosted runner builds the release `langflip.exe`, tags the commit with a date version (`v2026.10.30.1`) and publishes `Langflip-<version>-windows-x64.exe` as release `langflip-v<version>` in the public `workbench-soft/workbench-soft.github.io` repo. The last 3 releases stay.
+  - `.github/scripts/next-version.sh` and `release-notes.sh`: the date version and the notes from `feat`, `fix` and `perf` commits, the same scripts as Tickalot.
+- **Limits** the exe is unsigned, so SmartScreen warns on the first run. No macOS build: it needs a Mac runner. The `RELEASES_TOKEN` secret has to be set first, and the run stops before tagging without it.
+- **Docs** README, `CHANGELOG.md`.
