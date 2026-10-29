@@ -58,7 +58,7 @@ jobs:
         env:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          mise x -- cargo build --release -p langflip
+          LANGFLIP_VERSION="${TAG#v}" mise x -- cargo build --release -p langflip
           cp "$CARGO_TARGET_DIR/release/langflip.exe" "Langflip-${TAG#v}-windows-x64.exe"
 
       # This repo is private, so the exe is published to the public workbench-soft.github.io repo.

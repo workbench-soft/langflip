@@ -34,6 +34,7 @@ flowchart TB
 - **`langflip::macos`** a session `CGEventTap`, `CGEvent` posts for the fix, Text Input Sources for the layout.
 - **`langflip::tray`** the tray icon and menu, shared by both systems.
 - **`langflip::settings`** `settings.toml` in the user's app data folder.
+- **`crates/langflip/build.rs`** writes the name, publisher, version and a manifest into `langflip.exe`. The release build passes its date version in `LANGFLIP_VERSION`.
 
 ## The path of a key press
 
