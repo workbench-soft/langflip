@@ -26,5 +26,7 @@ jobs:
       - uses: workbench-soft/ci/actions/setup@main
         with:
           pnpm-install: 'false'
+      # The checkout deletes target, so the build goes to a folder that lasts and only changed crates build again.
+      - run: echo "CARGO_TARGET_DIR=$(cygpath -m "$LOCALAPPDATA")/langflip/target-checks" >> "$GITHUB_ENV"
       - run: mise x -- rustup target add aarch64-apple-darwin
       - run: mise run check
