@@ -105,7 +105,7 @@ fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> Option<R> {
     STATE.with(|s| s.borrow_mut().as_mut().map(f))
 }
 
-pub fn run(engine: Engine, settings: Settings) {
+pub fn run(engine: Engine, settings: Settings, first_start: bool) {
     unsafe {
         // A second copy would fix each word twice.
         let _mutex = CreateMutexW(None, true, w!("Local\\Langflip"));
@@ -114,7 +114,13 @@ pub fn run(engine: Engine, settings: Settings) {
         }
         let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
 
-        let tray = Tray::new(settings.enabled, Some(autostart_enabled()));
+        // Autostart turns on by itself after install. Later starts keep the person's choice,
+        // and rewrite the path in case langflip.exe moved.
+        let autostart = first_start || autostart_enabled();
+        if autostart {
+            set_autostart(true);
+        }
+        let tray = Tray::new(settings.enabled, autostart);
         STATE.with(|s| {
             *s.borrow_mut() = Some(State {
                 engine,
