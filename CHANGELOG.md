@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **CI speed** the checks and the release build into a folder that lasts between runs, so only changed crates compile again.
 - **Download** each change on `main` publishes `Langflip-<version>-windows-x64.exe` in the workbench-soft.github.io releases.
 - **Pause** a click on the tray icon turns fixing off and on. The right click opens the menu.
 - **Autostart** Langflip starts at login from the first start, on Windows and macOS, with no question.
