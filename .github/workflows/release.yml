@@ -48,7 +48,8 @@ jobs:
           pnpm-install: 'false'
 
       # The checkout deletes target, so the build goes to a folder that lasts and only changed crates build again.
-      - run: echo "CARGO_TARGET_DIR=$(cygpath -m "$LOCALAPPDATA")/langflip/target-release" >> "$GITHUB_ENV"
+      # It sits in the runner's work folder, which Defender skips. Under LOCALAPPDATA, Defender blocked a test exe.
+      - run: echo "CARGO_TARGET_DIR=$(cygpath -m "$RUNNER_WORKSPACE")/target-release" >> "$GITHUB_ENV"
 
       - name: Pick the next version
         id: version
