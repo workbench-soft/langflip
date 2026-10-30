@@ -1,6 +1,6 @@
 //! Letter-triple tables and dictionaries for both languages, read from `model/langflip.model`.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::layout::Lang;
 
@@ -11,9 +11,8 @@ pub struct LangModel {
     index: HashMap<char, usize>,
     size: usize,
     log_probs: Vec<f32>,
-    dictionary: HashSet<String>,
-    /// Every start of a dictionary word, the whole word included.
-    starts: HashSet<String>,
+    /// Sorted, so a binary search finds a word or the words that start with some letters.
+    dictionary: Vec<String>,
 }
 
 impl LangModel {
@@ -54,12 +53,15 @@ impl LangModel {
     }
 
     pub fn contains(&self, word: &str) -> bool {
-        self.dictionary.contains(word)
+        self.dictionary
+            .binary_search_by(|w| w.as_str().cmp(word))
+            .is_ok()
     }
 
     /// True when some dictionary word starts with these lowercase letters.
     pub fn starts_word(&self, start: &str) -> bool {
-        self.starts.contains(start)
+        let i = self.dictionary.partition_point(|w| w.as_str() < start);
+        self.dictionary.get(i).is_some_and(|w| w.starts_with(start))
     }
 }
 
@@ -122,17 +124,8 @@ impl Model {
                 .iter()
                 .map(|&b| f32::from_le_bytes(b))
                 .collect();
-            let dictionary: HashSet<String> = r.text()?.split('\n').map(str::to_owned).collect();
-            let starts = dictionary
-                .iter()
-                .flat_map(|w| {
-                    w.char_indices()
-                        .skip(1)
-                        .map(|(i, _)| &w[..i])
-                        .chain([&w[..]])
-                })
-                .map(str::to_owned)
-                .collect();
+            let mut dictionary: Vec<String> = r.text()?.split('\n').map(str::to_owned).collect();
+            dictionary.sort_unstable();
             let index = alphabet
                 .iter()
                 .enumerate()
@@ -143,7 +136,6 @@ impl Model {
                 size,
                 log_probs,
                 dictionary,
-                starts,
             };
             langs.insert(tag.to_vec(), model);
         }
