@@ -3,7 +3,7 @@
 //! The hooks run on the main thread. A hook decides at once and posts the fix to the same
 //! thread's message loop, so the hook returns before Windows times it out.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::os::windows::ffi::OsStrExt;
 
 use langflip_core::{Engine, Fix, Key, Lang, Stroke};
@@ -114,10 +114,50 @@ struct State {
 
 thread_local! {
     static STATE: RefCell<Option<State>> = const { RefCell::new(None) };
+    /// A hook call found the state in use, so the word being typed missed a key.
+    static MISSED: Cell<bool> = const { Cell::new(false) };
 }
 
+/// Runs `f` on the state, or returns None when the state is in use.
+///
+/// Windows calls the hooks on this thread while a call such as `Shell_NotifyIconW` waits on
+/// another process. A second borrow there would panic, and a panic in a hook ends Langflip.
+/// The word that missed the key starts again at the next call.
 fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> Option<R> {
-    STATE.with(|s| s.borrow_mut().as_mut().map(f))
+    STATE.with(|cell| {
+        let Ok(mut state) = cell.try_borrow_mut() else {
+            MISSED.set(true);
+            return None;
+        };
+        let s = state.as_mut()?;
+        if MISSED.take() {
+            s.engine.reset();
+        }
+        Some(f(s))
+    })
+}
+
+impl State {
+    fn new(engine: Engine, settings: Settings, tray: Option<Tray>) -> State {
+        State {
+            engine,
+            settings,
+            settings_mtime: settings::modified(),
+            main_thread: unsafe { GetCurrentThreadId() },
+            self_elevated: process_elevated(unsafe { GetCurrentProcess() }),
+            skip_window: false,
+            password: false,
+            pending: false,
+            held: Vec::new(),
+            switching_to: None,
+            queued: None,
+            last_end_vk: VK_SPACE as u16,
+            last_focus: (0, 0, 0),
+            target: HWND::default(),
+            switch: None,
+            tray,
+        }
+    }
 }
 
 pub fn run(engine: Engine, settings: Settings, first_start: bool) {
@@ -136,26 +176,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             set_autostart(true);
         }
         let tray = Tray::new(settings.enabled, autostart);
-        STATE.with(|s| {
-            *s.borrow_mut() = Some(State {
-                engine,
-                settings,
-                settings_mtime: settings::modified(),
-                main_thread: GetCurrentThreadId(),
-                self_elevated: process_elevated(GetCurrentProcess()),
-                skip_window: false,
-                password: false,
-                pending: false,
-                held: Vec::new(),
-                switching_to: None,
-                queued: None,
-                last_end_vk: VK_SPACE as u16,
-                last_focus: (0, 0, 0),
-                target: HWND::default(),
-                switch: None,
-                tray: Some(tray),
-            })
-        });
+        STATE.with(|s| *s.borrow_mut() = Some(State::new(engine, settings, Some(tray))));
 
         let _kb = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook), None, 0)
             .expect("the keyboard hook could not be set");
@@ -801,5 +822,36 @@ fn set_autostart(on: bool) {
         } else {
             let _ = RegDeleteKeyValueW(HKEY_CURRENT_USER, RUN_KEY, w!("Langflip"));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use langflip_core::Model;
+    use std::collections::HashSet;
+
+    /// A fresh state on this test's thread, with no tray.
+    fn start() {
+        let model = Model::from_bytes(include_bytes!("../../../model/langflip.model")).unwrap();
+        let engine = Engine::new(model, HashSet::new());
+        STATE.with(|s| *s.borrow_mut() = Some(State::new(engine, Settings::default(), None)));
+    }
+
+    /// True when the engine holds keys of a word being typed.
+    fn word_in_progress() -> bool {
+        with_state(|s| s.engine.convert(Some(Lang::En)).is_some()).unwrap()
+    }
+
+    #[test]
+    fn a_hook_call_inside_another_drops_the_word() {
+        start();
+        let inner = with_state(|s| {
+            s.engine
+                .key(Stroke::new(Key::G, false, false), Some(Lang::En));
+            with_state(|_| ())
+        });
+        assert_eq!(inner, Some(None));
+        assert!(!word_in_progress());
     }
 }
