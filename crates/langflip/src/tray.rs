@@ -4,6 +4,7 @@ use std::cell::Cell;
 use std::time::{Duration, Instant};
 
 use langflip_core::Lang;
+use rust_i18n::t;
 use tray_icon::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tray_icon::{Icon, MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent};
 
@@ -73,21 +74,22 @@ fn icon(on: bool, lang: Option<Lang>) -> Icon {
     Icon::from_rgba(rgba, size, size).expect("icon size matches its pixels")
 }
 
-fn tooltip(on: bool) -> &'static str {
+fn tooltip(on: bool) -> String {
     if on {
-        "Langflip включён. Щелчок выключает, двойной щелчок меняет раскладку"
+        t!("tooltip.on")
     } else {
-        "Langflip выключен. Щелчок включает, двойной щелчок меняет раскладку"
+        t!("tooltip.off")
     }
+    .into_owned()
 }
 
 impl Tray {
     pub fn new(enabled: bool, autostart: bool) -> Tray {
-        let enabled_item = CheckMenuItem::new("Исправлять раскладку", true, enabled, None);
-        let autostart_item = CheckMenuItem::new("Запускать при входе", true, autostart, None);
-        let keep_words = Submenu::new("Исключения", true);
-        let open = MenuItem::new("Открыть настройки", true, None);
-        let quit = MenuItem::new("Выход", true, None);
+        let enabled_item = CheckMenuItem::new(t!("menu.fix"), true, enabled, None);
+        let autostart_item = CheckMenuItem::new(t!("menu.autostart"), true, autostart, None);
+        let keep_words = Submenu::new(t!("menu.keepWords", count = 0), true);
+        let open = MenuItem::new(t!("menu.settings"), true, None);
+        let quit = MenuItem::new(t!("menu.quit"), true, None);
         let menu = Menu::new();
         let _ = menu.append(&enabled_item);
         let _ = menu.append(&autostart_item);
@@ -172,11 +174,11 @@ impl Tray {
     pub fn set_keep_words(&self, words: &[String]) {
         while self.keep_words.remove_at(0).is_some() {}
         self.keep_words
-            .set_text(format!("Исключения ({})", words.len()));
+            .set_text(t!("menu.keepWords", count = words.len()));
         let hint = if words.is_empty() {
-            "Пока нет. Слово попадает сюда после 2 отмен"
+            t!("menu.keepWordsNone")
         } else {
-            "Щелчок по слову убирает его"
+            t!("menu.keepWordsHint")
         };
         let _ = self.keep_words.append(&MenuItem::new(hint, false, None));
         for word in words {
