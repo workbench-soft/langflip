@@ -4,7 +4,7 @@
 
 1. The person runs `langflip.exe` (Windows) or `Langflip` (macOS).
 2. On macOS the system asks for Accessibility and Input Monitoring access. The person allows both and starts Langflip again.
-3. The tray icon shows the current layout: `EN` on blue or `RU` on red. Langflip writes `settings.toml` with the defaults and turns on start at login, with no question.
+3. The tray icon shows the app icon with the current layout in the corner: `EN` or `RU`. Langflip writes `settings.toml` with the defaults and turns on start at login, with no question.
 
 ```mermaid
 flowchart LR
@@ -78,12 +78,12 @@ flowchart LR
 
 1. The person clicks the tray icon with the left button.
 2. The icon turns grey and keeps the layout letters. Typing passes through untouched.
-3. The next click turns fixing on, and the icon is blue or red again.
+3. The next click turns fixing on, and the icon is in colour again.
 
 ```mermaid
 flowchart LR
     A[Left click on the icon] --> B[Grey icon, no fixes]
-    B -->|left click| C[Blue or red icon, fixes on]
+    B -->|left click| C[Colour icon, fixes on]
 ```
 
 ## Switch the layout from the tray

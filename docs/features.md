@@ -31,7 +31,7 @@ Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. Langflip converts the word bein
 
 ## The current layout on the icon
 
-The tray icon shows `EN` on blue or `RU` on red, for the layout of the window in front. A click on the taskbar keeps the last app window. A layout other than these 2 shows a square split blue and red.
+The tray icon is the app icon with a small `EN` in light blue or `RU` in coral in the bottom right corner, for the layout of the window in front. A click on the taskbar keeps the last app window. A layout other than these 2 shows the app icon alone.
 
 - **Limits** a switch reaches the icon within 250 ms on Windows and 0.2 s on macOS.
 
@@ -40,11 +40,12 @@ The tray icon shows `EN` on blue or `RU` on red, for the layout of the window in
 A gold А and Я under a sunburst, in a double gold frame on black. Windows shows it on `langflip.exe`, the desktop and Start menu shortcuts and in Settings, Apps.
 
 - **Source** `crates/langflip/assets/icon.svg`. Both rounds of drafts sit in `design/icons/`.
-- **Limits** the tray keeps the `EN` and `RU` icon. macOS has no app bundle yet, so it shows no app icon.
+- **Tray** the tray shows the same icon with the layout in the corner.
+- **Limits** macOS has no app bundle yet, so it shows no app icon.
 
 ## Pause with a click
 
-A left click on the tray icon turns fixing off, and the icon turns grey with the layout letters kept. The next click turns it on. The tooltip says which state Langflip is in.
+A left click on the tray icon turns fixing off, and the whole icon turns grey with the layout letters kept. The next click turns it on. The tooltip says which state Langflip is in.
 
 - **Limits** the pause waits 0.5 s after the click, in case a second click makes it a double click.
 

@@ -216,3 +216,12 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `build.rs`: `winresource` puts `icon.ico` into `langflip.exe`.
   - `design/icons/2026-10-31` and `design/icons/2026-10-31-2`: both rounds of 10 drafts, kept for later, with the pick in `picked.txt`.
 - **Docs** `docs/features.md`, `CHANGELOG.md`.
+
+### 2026-10-31 The tray icon matches the app icon
+
+- **Why** the person wants the tray icon to look like the new art deco app icon, and still show the layout in small letters with a stroke.
+- **Look** the app icon with `EN` in light blue or `RU` in coral in the bottom right corner, on a dark stroke. Another layout shows the app icon alone. Off turns the whole icon grey.
+- **Changes**
+  - `crates/langflip/assets/tray/en.svg`, `ru.svg`, `other.svg`: the sources. `mise run tray-icons` renders each to a 32 px PNG next to it through `resvg`.
+  - `tray.rs`: decodes the built in PNG for the layout with the `png` crate, and greys it when fixing is off. The 5 by 7 pixel font goes.
+- **Docs** `docs/features.md`, `CHANGELOG.md`.
