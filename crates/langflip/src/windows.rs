@@ -91,7 +91,10 @@ struct State {
     /// A fix is on its way. Until its end marker arrives, typed keys wait in `held`.
     pending: bool,
     held: Vec<Held>,
-    queued: Option<(Fix, u16)>,
+    /// The layout the last fix switched to. Held keys wait for it before they replay.
+    switching_to: Option<Lang>,
+    /// The fix and the end key to type after it, if any.
+    queued: Option<(Fix, Option<u16>)>,
     /// The end key of the last finished word, for Undo and the manual fix.
     last_end_vk: u16,
     last_focus: (isize, i32, i32),
@@ -135,6 +138,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
                 password: false,
                 pending: false,
                 held: Vec::new(),
+                switching_to: None,
                 queued: None,
                 last_end_vk: VK_SPACE as u16,
                 last_focus: (0, 0, 0),
@@ -347,7 +351,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         if let Some(fix) = fix {
             s.settings.store_keep_words(&s.engine.keep_words);
             s.settings_mtime = settings::modified();
-            queue(s, fix, s.last_end_vk);
+            queue(s, fix, Some(s.last_end_vk));
             return true;
         }
         return false;
@@ -370,7 +374,18 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     let extended = info.flags.0 & LLKHF_EXTENDED.0 != 0;
     if let Some(key) = key_for_scan(info.scanCode).filter(|_| !extended) {
         let caps = unsafe { GetKeyState(VK_CAPITAL) } & 1 != 0;
-        s.engine.key(Stroke::new(key, pressed(VK_SHIFT), caps));
+        let lang = current_lang();
+        if let Some(fix) = s
+            .engine
+            .key(Stroke::new(key, pressed(VK_SHIFT), caps), lang)
+        {
+            debug(format_args!(
+                "switch while typed in {lang:?}: fix of {} keys",
+                fix.erase
+            ));
+            queue(s, fix, None);
+            return true;
+        }
         return false;
     }
     if matches!(vk, VK_SPACE | VK_RETURN | VK_TAB) {
@@ -381,7 +396,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         let erase = fix.as_ref().map(|f| f.erase);
         debug(format_args!("word end in {lang:?}: fix of {erase:?} keys"));
         if let Some(fix) = fix {
-            queue(s, fix, vk as u16);
+            queue(s, fix, Some(vk as u16));
             return true;
         }
         return false;
@@ -390,7 +405,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     false
 }
 
-fn queue(s: &mut State, fix: Fix, end_vk: u16) {
+fn queue(s: &mut State, fix: Fix, end_vk: Option<u16>) {
     s.pending = true;
     s.queued = Some((fix, end_vk));
     post(s, WM_APP_FIX);
@@ -439,7 +454,9 @@ fn apply_queued_fix() {
             TAG_OWN,
         ));
     }
-    tap(&mut inputs, end_vk);
+    if let Some(vk) = end_vk {
+        tap(&mut inputs, vk);
+    }
     inputs.push(key_input(VK_MARKER, 0, KEYEVENTF_KEYUP, TAG_END));
     unsafe {
         let sent = SendInput(&inputs, size_of::<INPUT>() as i32);
@@ -447,11 +464,20 @@ fn apply_queued_fix() {
             // Windows blocked the input, often for an elevated window. Stop waiting for the marker.
             with_state(|s| s.pending = false);
         }
+        with_state(|s| s.switching_to = Some(fix.switch_to));
         switch_layout(GetForegroundWindow(), fix.switch_to);
     }
 }
 
 fn replay_held() {
+    // The window switches its layout on its own thread. Keys sent before that land in the old one.
+    let lang = with_state(|s| s.switching_to.take()).flatten();
+    for _ in 0..20 {
+        if lang.is_none() || current_lang() == lang {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
     let held = with_state(|s| std::mem::take(&mut s.held)).unwrap_or_default();
     let inputs: Vec<INPUT> = held
         .iter()

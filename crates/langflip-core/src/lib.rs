@@ -32,6 +32,8 @@ struct LastWord {
 pub struct Engine {
     model: Model,
     buffer: Vec<Stroke>,
+    /// Some once Langflip switched the word being typed: the layout it was typed in before.
+    switched_from: Option<Lang>,
     last: Option<LastWord>,
     pub keep_words: HashSet<String>,
 }
@@ -41,25 +43,44 @@ impl Engine {
         Engine {
             model,
             buffer: Vec::new(),
+            switched_from: None,
             last: None,
             keep_words,
         }
     }
 
-    pub fn key(&mut self, stroke: Stroke) {
+    /// A letter key, before it goes through. Returns a fix when the word so far is in the wrong
+    /// layout: the platform swallows the key, and the fix types it in the other layout.
+    pub fn key(&mut self, stroke: Stroke, current: Option<Lang>) -> Option<Fix> {
         self.last = None;
         self.buffer.push(stroke);
+        if self.switched_from.is_some() {
+            return None;
+        }
+        let current = current?;
+        let text = decide::decide_prefix(&self.model, &self.buffer, current, &self.keep_words)?;
+        self.switched_from = Some(current);
+        Some(Fix {
+            erase: self.buffer.len() - 1,
+            text,
+            switch_to: current.other(),
+            retype_end: false,
+        })
     }
 
     pub fn backspace(&mut self) {
         self.last = None;
         self.buffer.pop();
+        if self.buffer.is_empty() {
+            self.switched_from = None;
+        }
     }
 
     /// The caret moved, the window changed or a shortcut ran: the word is gone.
     pub fn reset(&mut self) {
         self.last = None;
         self.buffer.clear();
+        self.switched_from = None;
     }
 
     /// An end key finished the word. Returns the fix to apply before the end key goes through.
@@ -67,6 +88,16 @@ impl Engine {
         let strokes = std::mem::take(&mut self.buffer);
         self.last = None;
         let current = current?;
+        if let Some(typed_in) = self.switched_from.take() {
+            // Switched while typed: a second decision could flip it back.
+            let fixed = Some(layout::text_for(&strokes, typed_in.other()));
+            self.last = Some(LastWord {
+                strokes,
+                typed_in,
+                fixed,
+            });
+            return None;
+        }
         let choice = decide::decide(&self.model, &strokes, current, &self.keep_words);
         let fix = choice.map(|c| Fix {
             erase: strokes.len(),
@@ -101,6 +132,7 @@ impl Engine {
     pub fn convert(&mut self, current: Option<Lang>) -> Option<Fix> {
         if !self.buffer.is_empty() {
             let current = current?;
+            self.switched_from = None;
             let strokes = std::mem::take(&mut self.buffer);
             let text = layout::text_for(&strokes, current.other());
             return Some(Fix {
@@ -134,15 +166,26 @@ mod tests {
         Engine::new(Model::from_bytes(bytes).unwrap(), HashSet::new())
     }
 
+    /// Types the word key by key and ends it with Space. A switch while typed changes the layout
+    /// of the keys that follow, as on a real keyboard. Returns the last fix.
     fn type_word(engine: &mut Engine, word: &str, lang: Lang) -> Option<Fix> {
+        let mut current = lang;
+        let mut last = None;
         for s in layout::strokes_for(word, lang).unwrap() {
-            engine.key(s);
+            if let Some(fix) = engine.key(s, Some(current)) {
+                current = fix.switch_to;
+                last = Some(fix);
+            }
         }
-        engine.end_word(Some(lang))
+        engine.end_word(Some(current)).or(last)
     }
 
+    /// The word on screen after Space, or None when it stays as typed.
     fn fixed(word: &str, lang: Lang) -> Option<String> {
-        type_word(&mut engine(), word, lang).map(|f| f.text)
+        let mut e = engine();
+        type_word(&mut e, word, lang)?;
+        let last = e.last.as_ref().unwrap();
+        last.fixed.clone()
     }
 
     #[test]
@@ -178,6 +221,41 @@ mod tests {
     fn keeps_short_words() {
         assert_eq!(fixed("rfr", Lang::En), None);
         assert_eq!(fixed("ytn", Lang::En), None);
+    }
+
+    #[test]
+    fn switches_while_typed() {
+        let mut e = engine();
+        let strokes = layout::strokes_for("ghbdtn", Lang::En).unwrap();
+        let fixes: Vec<_> = strokes
+            .iter()
+            .map(|&s| e.key(s, Some(Lang::En)).map(|f| (f.erase, f.text)))
+            .collect();
+        assert_eq!(fixes[..3], [None, None, None]);
+        assert_eq!(fixes[3], Some((3, "прив".to_owned())));
+        assert_eq!(fixes[4..], [None, None]);
+        assert_eq!(e.end_word(Some(Lang::Ru)), None);
+    }
+
+    #[test]
+    fn waits_on_punctuation_and_known_starts() {
+        let mut e = engine();
+        for s in layout::strokes_for("hello,", Lang::En).unwrap() {
+            assert_eq!(e.key(s, Some(Lang::En)), None);
+        }
+    }
+
+    #[test]
+    fn undo_after_a_switch_while_typed() {
+        let mut e = engine();
+        assert!(type_word(&mut e, "ghbdtn", Lang::En).is_some());
+        let undo = e.undo().unwrap();
+        assert_eq!(undo.text, "ghbdtn");
+        assert_eq!(undo.erase, 7);
+        assert_eq!(undo.switch_to, Lang::En);
+        for s in layout::strokes_for("ghbdtn", Lang::En).unwrap() {
+            assert_eq!(e.key(s, Some(Lang::En)), None);
+        }
     }
 
     #[test]
