@@ -14,6 +14,19 @@ flowchart LR
     D --> E
 ```
 
+## Install on Windows
+
+1. The person double-clicks `Langflip.cmd` in the repo folder.
+2. A console window builds Langflip and closes. On an error it stays open.
+3. Langflip starts, and its icon appears on the desktop and in the Start menu.
+4. To remove it, the person opens Settings, Apps and presses Uninstall next to Langflip.
+
+```mermaid
+flowchart LR
+    A[Double-click Langflip.cmd] --> B[Build and install] --> C[Shortcuts and Apps entry] --> D[Langflip starts]
+    C -. later .-> E[Settings, Apps, Uninstall] --> F[Folder and shortcuts removed]
+```
+
 ## A word in the wrong layout
 
 1. The English layout is on. The person types `ghb`.

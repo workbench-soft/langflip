@@ -47,6 +47,15 @@ A double click on the tray icon switches the layout between Russian and English.
 - **Windows** the click puts the taskbar in front, so Langflip brings back the window that was in front and switches its layout. The icon shows that window's layout, not the taskbar's. The new layout stays in the other windows too, as with the Windows hotkey.
 - **macOS** switches the current input source.
 
+## Install on Windows
+
+A double click on `Langflip.cmd` in the repo builds Langflip and installs it for the current user.
+
+- **Shortcuts** `Langflip.lnk` on the desktop and in the Start menu.
+- **Installed apps** Langflip shows in Settings, Apps with its version and an Uninstall button.
+- **Uninstall** stops Langflip and removes the program folder, the shortcuts and the autostart. `settings.toml` stays.
+- **Limits** needs mise and the Rust toolchain. The release download has no installer.
+
 ## Start at login
 
 The first start turns on start at login, with no question.
