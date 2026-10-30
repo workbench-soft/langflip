@@ -95,13 +95,13 @@ While the word is typed, `decide_prefix` judges the keys so far:
 
 `scripts/build_model.py` builds `model/langflip.model` from the `wordfreq` lists: the top 200,000 words per language train the triples, the top 100,000 of 4 letters or more form the dictionary. Words of 2 and 3 letters join it from a Zipf frequency of 4.5, words with digits such as `mp3` from 3.0, and the one letter words come from a list in the script (`a`, `i`; «а», «в», «и», «к», «о», «с», «у», «я»).
 
-| Part | Format |
-| --- | --- |
-| magic | `LFM1` |
-| per language, English then Russian | 2-byte tag `en` or `ru` |
-| | u32 length and the alphabet in UTF-8 |
-| | (alphabet + 1)³ little-endian f32 log probabilities, index 0 marks the word edge |
-| | u32 length and the dictionary, one word per line |
+| Part                               | Format                                                                           |
+| ---------------------------------- | -------------------------------------------------------------------------------- |
+| magic                              | `LFM1`                                                                           |
+| per language, English then Russian | 2-byte tag `en` or `ru`                                                          |
+|                                    | u32 length and the alphabet in UTF-8                                             |
+|                                    | (alphabet + 1)³ little-endian f32 log probabilities, index 0 marks the word edge |
+|                                    | u32 length and the dictionary, one word per line                                 |
 
 `model/testset.tsv` holds 10,000 dictionary words and 10,000 rarer words per language for `mise run eval`.
 

@@ -2,19 +2,35 @@
 rust = { version = "1.99", components = "rustfmt,clippy", targets = "aarch64-apple-darwin,x86_64-apple-darwin" }
 python = "3.13"
 uv = "0.13"
+shellcheck = "0.11.0"
+shfmt = "3.14.1"
+ruff = "0.17.3"
+"npm:oxfmt" = "0.75.0"
 
 [tasks.model]
 description = "Rebuild model/langflip.model and model/testset.tsv from wordfreq"
 run = "uv run --no-project --with wordfreq==3.1.1 python scripts/build_model.py"
 
-[tasks.check]
-description = "Format, lint and test, the same steps CI runs"
+[tasks.lint]
+description = "Lint and format check the Rust, the Python, the scripts and the docs"
 run = [
   "cargo fmt --all --check",
   "cargo clippy --workspace --all-targets -- -D warnings",
-  "cargo test --workspace",
-  "cargo check -p langflip --target aarch64-apple-darwin",
+  "ruff check",
+  "ruff format --check",
+  "shellcheck .github/scripts/next-version.sh .github/scripts/release-notes.sh",
+  "shfmt -i 2 -ci -d .github/scripts",
+  "oxfmt --check",
 ]
+
+[tasks.format]
+description = "Format the Rust, the Python, the scripts and the docs"
+run = ["cargo fmt --all", "ruff format", "shfmt -i 2 -ci -w .github/scripts", "oxfmt"]
+
+[tasks.check]
+description = "Lint, format check and test, the same steps CI runs"
+depends = ["lint"]
+run = ["cargo test --workspace", "cargo check -p langflip --target aarch64-apple-darwin"]
 
 [tasks.tray-icons]
 description = "Render the tray icons in crates/langflip/assets/tray from their SVGs"
@@ -35,4 +51,7 @@ run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-windo
 
 [tasks.smoke]
 description = "Run Langflip and type into a test window (Windows, takes the keyboard for 10 seconds)"
-run = ["cargo build -p langflip", "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-windows.ps1"]
+run = [
+  "cargo build -p langflip",
+  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-windows.ps1",
+]
