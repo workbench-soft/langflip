@@ -20,3 +20,8 @@
 - Left: Undo saves `settings.toml` inside the keyboard hook. A slow disk could make Windows drop the hook. Low risk on a local disk.
 - Left: `actions/checkout@v7` and `workbench-soft/ci/actions/setup@main` aren't pinned to a commit in the release job that reads `RELEASES_TOKEN`. The org setup action is shared, so pin it across all repos at once.
 - Left: no in-app update and an unsigned exe. Signing costs money, and the update flow is a product call (see the `app-update` skill).
+
+## fix/fast-model-load
+
+- [ ] Find why typing `ghbd` in English gave `ghbdпривет`: the switch while typed left the typed keys and the 4th key on screen. Seen in the installed `%LOCALAPPDATA%\Programs\Langflip\langflip.exe` (2026-10-30).
+- [ ] Run `mise run smoke` with nobody typing: the faster model load (PR for `fix/fast-model-load`) merged without it (2026-10-30).

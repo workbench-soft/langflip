@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Faster start** the language model loads in about 20 ms again. A sorted word list replaced the set of every word start, which took 0.4 s to build.
 - **Settings kept** a `settings.toml` with a mistake in it stays as it is. Before, the next Undo or tray click saved the defaults over it. A crash while saving keeps the old file whole.
 - **No crash on typing** Langflip no longer closes on Windows when you type while the tray icon changes.
 - **Keyboard stays free** a fix typed while the tray menu was open could hold every key on Windows. A stuck fix now lets the keys go after 1 s.
