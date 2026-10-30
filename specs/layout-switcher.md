@@ -130,3 +130,14 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `.github/scripts/next-version.sh` and `release-notes.sh`: the date version and the notes from `feat`, `fix` and `perf` commits, the same scripts as Tickalot.
 - **Limits** the exe is unsigned, so SmartScreen warns on the first run. No macOS build: it needs a Mac runner. The `RELEASES_TOKEN` secret has to be set first, and the run stops before tagging without it.
 - **Docs** README, `CHANGELOG.md`.
+
+### 2026-10-30 The current layout on the tray icon
+
+- **Why** the person wants to see the current layout on the tray icon, the way the Windows language bar shows it.
+- **Changes**
+  - `tray.rs`: the icon shows `EN` on blue or `RU` on red in white letters, drawn from a 5 by 7 pixel font. Off turns the background grey and keeps the letters. A layout other than Russian or English shows the old split square. The icon redraws only when the layout or the on state changes.
+  - `windows.rs`: a thread timer every 250 ms reads the layout of the window in front and passes it to the tray.
+  - `macos.rs`: the 0.2 s tray timer reads the current input source and passes it to the tray.
+- **Limits** a switch shows up within 250 ms, since Windows sends no event to another process when the layout of a window changes.
+- **Steps** spec, tray icon, timers on both systems, docs.
+- **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.

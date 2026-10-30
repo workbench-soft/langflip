@@ -12,6 +12,7 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbdtn` with the
 - **Fix** happens on Space, Enter or Tab.
 - **Undo** Pause on Windows, Ctrl+F12 on macOS. The word comes back as typed and stays that way from then on.
 - **Convert by hand** Shift+Pause on Windows, Ctrl+Shift+F12 on macOS.
+- **Layout** the tray icon shows `EN` on blue or `RU` on red.
 - **Pause** click the tray icon to turn fixing off. The icon turns grey. Click again to turn it on.
 - **Tray menu** a right click opens it: fixing on and off, start at login, the settings file, quit.
 - **Autostart** the first start turns on start at login, with no question. Uncheck «Запускать при входе» to stop it.
