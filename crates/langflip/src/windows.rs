@@ -616,22 +616,26 @@ fn replay_held() {
         std::thread::sleep(std::time::Duration::from_millis(5));
     }
     let held = with_state(|s| std::mem::take(&mut s.held)).unwrap_or_default();
-    let inputs: Vec<INPUT> = held
-        .iter()
-        .map(|h| {
-            let mut flags = KEYBD_EVENT_FLAGS(0);
-            if h.up {
-                flags |= KEYEVENTF_KEYUP;
-            }
-            if h.extended {
-                flags |= KEYEVENTF_EXTENDEDKEY;
-            }
-            key_input(h.vk, h.scan, flags, TAG_REPLAY)
-        })
-        .collect();
+    let inputs: Vec<INPUT> = held.iter().map(replay_input).collect();
     unsafe {
         SendInput(&inputs, size_of::<INPUT>() as i32);
     }
+}
+
+/// The event that types a held key again.
+fn replay_input(h: &Held) -> INPUT {
+    let mut flags = KEYBD_EVENT_FLAGS(0);
+    if h.up {
+        flags |= KEYEVENTF_KEYUP;
+    }
+    if h.extended {
+        flags |= KEYEVENTF_EXTENDEDKEY;
+    }
+    // Another app's character goes out as that character, not as a key.
+    if u32::from(h.vk) == VK_PACKET {
+        return key_input(0, h.scan, flags | KEYEVENTF_UNICODE, TAG_REPLAY);
+    }
+    key_input(h.vk, h.scan, flags, TAG_REPLAY)
 }
 
 unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
@@ -900,6 +904,19 @@ mod tests {
         };
         assert!(!with_state(|s| on_key(s, &digit_one, true)).unwrap());
         assert!(!word_in_progress());
+    }
+
+    #[test]
+    fn text_from_other_apps_replays_as_text() {
+        let held = Held {
+            vk: VK_PACKET as u16,
+            scan: u16::from(b'1'),
+            up: false,
+            extended: false,
+        };
+        let ki = unsafe { replay_input(&held).Anonymous.ki };
+        assert_eq!((ki.wVk.0, ki.wScan), (0, u16::from(b'1')));
+        assert_eq!(ki.dwFlags, KEYEVENTF_UNICODE);
     }
 
     #[test]
