@@ -27,13 +27,22 @@ Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. Langflip converts the word bein
 
 ## The current layout on the icon
 
-The tray icon shows `EN` on blue or `RU` on red, for the layout of the window in front. A layout other than these 2 shows a square split blue and red.
+The tray icon shows `EN` on blue or `RU` on red, for the layout of the window in front. A click on the taskbar keeps the last app window. A layout other than these 2 shows a square split blue and red.
 
 - **Limits** a switch reaches the icon within 250 ms on Windows and 0.2 s on macOS.
 
 ## Pause with a click
 
 A left click on the tray icon turns fixing off, and the icon turns grey with the layout letters kept. The next click turns it on. The tooltip says which state Langflip is in.
+
+- **Limits** the pause waits 0.5 s after the click, in case a second click makes it a double click.
+
+## Switch the layout with a double click
+
+A double click on the tray icon switches the layout between Russian and English. Any other layout turns English.
+
+- **Windows** the click puts the taskbar in front, so Langflip brings back the window that was in front and switches its layout. The icon shows that window's layout, not the taskbar's.
+- **macOS** switches the current input source.
 
 ## Start at login
 

@@ -141,3 +141,13 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Limits** a switch shows up within 250 ms, since Windows sends no event to another process when the layout of a window changes.
 - **Steps** spec, tray icon, timers on both systems, docs.
 - **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
+
+### 2026-10-30 Switch the layout with a double click on the tray icon
+
+- **Why** the person wants to switch the layout from the tray icon with a double click.
+- **Changes**
+  - `tray.rs`: 2 left clicks within 0.5 s give `Action::SwitchLayout`. A single click waits those 0.5 s before it pauses fixing, so a double click leaves fixing as it was. Both systems report each click, so one rule covers them.
+  - `windows.rs`: a click on the tray puts the taskbar in front. Langflip keeps the last window in front other than the taskbar, the tray overflow included. The double click brings it back and posts `WM_INPUTLANGCHANGEREQUEST` to it. The icon timer reads that window's layout.
+  - `macos.rs`: the double click selects the input source of the other language.
+- **Limits** Russian turns English and English turns Russian. Any other layout turns English. The pause comes 0.5 s after the click.
+- **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.

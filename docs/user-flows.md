@@ -67,6 +67,17 @@ flowchart LR
     B -->|left click| C[Blue or red icon, fixes on]
 ```
 
+## Switch the layout from the tray
+
+1. The person double-clicks the tray icon.
+2. The window they typed in comes back to the front with the other layout.
+3. The icon shows `EN` or `RU` for the new layout.
+
+```mermaid
+flowchart LR
+    A[Double click on the icon] --> B[Last window back in front] --> C[EN turns RU, RU turns EN]
+```
+
 ## Stop the autostart
 
 1. The person right-clicks the tray icon.
