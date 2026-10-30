@@ -68,6 +68,8 @@ const VK_CAPITAL: i32 = 0x14;
 const VK_SPACE: u32 = 0x20;
 const VK_LWIN: i32 = 0x5B;
 const VK_RWIN: i32 = 0x5C;
+/// A character another app types with `KEYEVENTF_UNICODE`. Its scan code holds the character.
+const VK_PACKET: u32 = 0xE7;
 
 const RUN_KEY: PCWSTR = w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
 
@@ -452,6 +454,11 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         return false;
     }
     if is_modifier(vk) {
+        return false;
+    }
+    // Read as a scan code, the character "1" would be the N key.
+    if vk == VK_PACKET {
+        s.engine.reset();
         return false;
     }
     if !s.settings.enabled || s.skip_window || s.password {
@@ -879,6 +886,18 @@ mod tests {
     /// True when the engine holds keys of a word being typed.
     fn word_in_progress() -> bool {
         with_state(|s| s.engine.convert(Some(Lang::En)).is_some()).unwrap()
+    }
+
+    #[test]
+    fn text_from_other_apps_is_no_key() {
+        start();
+        let digit_one = KBDLLHOOKSTRUCT {
+            vkCode: VK_PACKET,
+            scanCode: u32::from(b'1'),
+            ..Default::default()
+        };
+        assert!(!with_state(|s| on_key(s, &digit_one, true)).unwrap());
+        assert!(!word_in_progress());
     }
 
     #[test]
