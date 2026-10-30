@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- **Settings kept** a `settings.toml` with a mistake in it stays as it is. Before, the next Undo or tray click saved the defaults over it. A crash while saving keeps the old file whole.
+- **No crash on typing** Langflip no longer closes on Windows when you type while the tray icon changes.
+- **Keyboard stays free** a fix typed while the tray menu was open could hold every key on Windows. A stuck fix now lets the keys go after 1 s.
+- **Other apps' text** text a text expander types as characters no longer counts as your keys, and stays as typed when it arrives during a fix.
+- **Manual fix** Shift+Pause (Ctrl+Shift+F12 on macOS) on a word being typed no longer adds a Space or Enter after it.
+- **Credit** the file details of `langflip.exe` credit the wordfreq data of the model, CC BY-SA 4.0.
 - **CI** the build jobs run on the PC's 2 heavy runners, so at most 2 Gradle or Cargo builds share it. 8 at once made a release take 50 minutes.
 - **CI** `.github/secret-rotation.json` lists each Actions secret with its provider page, so the `rotate-secrets` skill renews them one at a time.
 
