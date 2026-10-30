@@ -151,3 +151,12 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `macos.rs`: the double click selects the input source of the other language.
 - **Limits** Russian turns English and English turns Russian. Any other layout turns English. The pause comes 0.5 s after the click.
 - **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
+
+### 2026-10-30 The tray switch keeps the layout in other windows
+
+- **Why** after a double click on the tray icon, going to another window could bring the old layout back, and the icon with it. The person wants the layout they picked to stay.
+- **Cause** Windows keeps one layout for all windows. A window that gets the switch request before it is back in front switches alone, and at the next focus change Windows puts the shared layout back. Right after `SetForegroundWindow` the front window is still empty for a moment, so the request lost that race at times.
+- **Changes**
+  - `windows.rs`: the double click brings the window back, then a 20 ms timer waits until that window is in front and only then posts `WM_INPUTLANGCHANGEREQUEST`. It gives up waiting after 0.5 s and posts anyway. The icon timer skips its reading while the switch waits, so the icon doesn't flicker back.
+- **Tried** `ITfInputProcessorProfileMgr::ActivateProfile` with `TF_IPPMF_FORSESSION` from Langflip's own thread. It returned OK and changed no window.
+- **Docs** `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
