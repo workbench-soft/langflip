@@ -16,20 +16,22 @@ flowchart LR
 
 ## A word in the wrong layout
 
-1. The English layout is on. The person types `ghbdtn`.
-2. The person presses Space.
-3. Langflip erases `ghbdtn`, types «привет», types the Space and switches to Russian.
-4. The person goes on typing in Russian.
+1. The English layout is on. The person types `ghb`.
+2. The person presses `d`.
+3. Langflip erases `ghb`, types «прив» and switches to Russian.
+4. The person types the rest of the word, «ет», in Russian.
+5. A word Langflip can't judge from its first letters gets the same fix on Space, Enter or Tab.
 
 ```mermaid
 sequenceDiagram
     participant P as Person
     participant L as Langflip
     participant A as App
-    P->>A: ghbdtn
-    P->>L: Space
-    L->>A: 6 Backspaces, «привет», Space
+    P->>A: ghb
+    P->>L: d
+    L->>A: 3 Backspaces, «прив»
     L->>A: switch layout to Russian
+    P->>A: ет and Space
 ```
 
 ## Undo

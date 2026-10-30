@@ -152,6 +152,18 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Limits** Russian turns English and English turns Russian. Any other layout turns English. The pause comes 0.5 s after the click.
 - **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
 
+### 2026-10-30 Switch the layout while the word is typed
+
+- **Why** the person wants Langflip to act like Punto Switcher: fix the word while it is typed, once it has 4 letters or more, and leave Space to the person.
+- **Changes**
+  - `decide.rs`: `decide_prefix` judges an unfinished word. It keeps the word while the typed letters start a word in the dictionary of their layout or a word in `keep_words`. It switches when the same keys in the other layout start a dictionary word there and score higher. A key that is punctuation in the current layout, `hello,`, waits for the next key.
+  - `model.rs`: each language keeps the set of dictionary word starts, and scores a word start without the end mark.
+  - `lib.rs`: `Engine::key` takes the current layout and returns a fix. The fix erases the typed letters, types them and the new key in the other layout, and switches the layout. One switch per word. Space then ends the word with no second decision, and Undo puts the whole word back.
+  - `windows.rs`, `macos.rs`: a letter key can carry a fix, with no end key to retype. On Windows the held keys wait up to 100 ms for the layout switch to land before they replay.
+  - `examples/evaluate.rs`: scores the whole path, typing each test word key by key.
+- **Limits** a rare word whose first letters start a word of the other language can switch early. Undo puts it back and keeps it from then on.
+- **Docs** README, `docs/features.md`, `docs/user-flows.md`, `docs/architecture.md`, `CHANGELOG.md`.
+
 ### 2026-10-30 The tray switch keeps the layout in other windows
 
 - **Why** after a double click on the tray icon, going to another window could bring the old layout back, and the icon with it. The person wants the layout they picked to stay.
