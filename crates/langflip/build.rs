@@ -20,7 +20,7 @@ fn main() {
         .set("CompanyName", "Workbench Soft")
         .set(
             "LegalCopyright",
-            "Copyright (c) Workbench Soft, MIT License",
+            "Copyright (c) Workbench Soft, MIT License. Model from wordfreq data, CC BY-SA 4.0",
         )
         .set("OriginalFilename", "langflip.exe")
         .set("InternalName", "langflip")

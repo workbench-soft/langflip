@@ -348,8 +348,9 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
         if let Some(fix) = fix {
             s.settings.store_keep_words(&s.engine.keep_words);
             s.settings_mtime = settings::modified();
-            let end = s.last_end_key;
-            send_fix(s, fix, Some(end));
+            // Only a finished word had an end key, which the fix erased and types again.
+            let end = fix.retype_end.then_some(s.last_end_key);
+            send_fix(s, fix, end);
             return true;
         }
         return false;

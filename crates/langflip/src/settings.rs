@@ -1,7 +1,7 @@
 //! The settings file: `settings.toml` in the per-user app data folder.
 
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,9 @@ pub struct Settings {
     pub excluded_apps: Vec<String>,
     /// Words to leave as typed. Undo adds to it.
     pub keep_words: Vec<String>,
+    /// The file didn't parse. Saving would replace the person's text with the defaults.
+    #[serde(skip)]
+    read_only: bool,
 }
 
 impl Default for Settings {
@@ -23,6 +26,7 @@ impl Default for Settings {
             enabled: true,
             excluded_apps: Vec::new(),
             keep_words: Vec::new(),
+            read_only: false,
         }
     }
 }
@@ -54,30 +58,48 @@ impl Settings {
     }
 
     fn load_existing() -> Settings {
-        match std::fs::read_to_string(path()) {
+        Settings::load_from(&path())
+    }
+
+    fn load_from(path: &Path) -> Settings {
+        match std::fs::read_to_string(path) {
             Ok(text) => toml::from_str(&text).unwrap_or_else(|err| {
                 eprintln!(
-                    "langflip: {} is not valid, using defaults: {err}",
-                    path().display()
+                    "langflip: {} is not valid, using defaults until it is fixed: {err}",
+                    path.display()
                 );
-                Settings::default()
+                Settings {
+                    read_only: true,
+                    ..Settings::default()
+                }
             }),
             Err(_) => {
                 let settings = Settings::default();
-                settings.save();
+                settings.save_to(path);
                 settings
             }
         }
     }
 
     pub fn save(&self) {
-        let path = path();
+        self.save_to(&path());
+    }
+
+    fn save_to(&self, path: &Path) {
+        if self.read_only {
+            return;
+        }
         if let Some(dir) = path.parent() {
             let _ = std::fs::create_dir_all(dir);
         }
         match toml::to_string_pretty(self) {
             Ok(text) => {
-                if let Err(err) = std::fs::write(&path, text) {
+                // A crash halfway through a write leaves the old file whole, not half of the new one.
+                let temp = path.with_extension("toml.tmp");
+                let written =
+                    std::fs::write(&temp, text).and_then(|()| std::fs::rename(&temp, path));
+                if let Err(err) = written {
+                    let _ = std::fs::remove_file(&temp);
                     eprintln!("langflip: can't save {}: {err}", path.display());
                 }
             }
@@ -103,5 +125,48 @@ impl Settings {
             self.keep_words = list;
             self.save();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_file(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("langflip-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir.join(name)
+    }
+
+    #[test]
+    fn keeps_a_file_it_cannot_read() {
+        let path = temp_file("broken.toml");
+        let text = "keep_words = [\"ghbdtn\"]
+excluded_apps = [\"wow.exe\"
+";
+        std::fs::write(&path, text).unwrap();
+        let mut settings = Settings::load_from(&path);
+        assert!(settings.keep_words.is_empty());
+        settings.enabled = false;
+        settings.keep_words.push("руддщ".to_owned());
+        settings.save_to(&path);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+    }
+
+    #[test]
+    fn saves_and_reads_back() {
+        let path = temp_file("saved.toml");
+        let mut settings = Settings {
+            enabled: false,
+            keep_words: vec!["руддщ".to_owned()],
+            ..Settings::default()
+        };
+        settings.save_to(&path);
+        settings.keep_words.push("ghbdtn".to_owned());
+        settings.save_to(&path);
+        let read = Settings::load_from(&path);
+        assert!(!read.enabled);
+        assert_eq!(read.keep_words, ["руддщ", "ghbdtn"]);
+        assert!(!path.with_extension("toml.tmp").exists());
     }
 }
