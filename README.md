@@ -20,6 +20,17 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the E
 
 The settings file is `%APPDATA%\Langflip\settings.toml` on Windows and `~/Library/Application Support/Langflip/settings.toml` on macOS. Its keys are in [docs/features.md](docs/features.md).
 
+## Install it on Windows
+
+Double-click `Langflip.cmd` in the repo folder. It builds Langflip, installs it and starts it.
+
+- **Where** `%LOCALAPPDATA%\Programs\Langflip`, for the current user, with no admin rights.
+- **Shortcuts** Langflip appears on the desktop and in the Start menu.
+- **Remove it** Settings, Apps, Installed apps, Langflip, Uninstall. The settings file stays.
+- **Needs** [mise](https://mise.jdx.dev) on `PATH`, then `mise install` once in the repo.
+
+The release download is a bare `langflip.exe` with no installer yet.
+
 ## Run it from source
 
 Install [mise](https://mise.jdx.dev), then:
@@ -45,7 +56,7 @@ On macOS, allow Langflip (or the terminal running it) in System Settings, Privac
 mise x -- cargo build --release -p langflip
 ```
 
-The binary lands in `target/release/`. `mise run install` builds it and installs it on this PC in `%LOCALAPPDATA%\Programs\Langflip`, in place of the running copy. Set `LANGFLIP_VERSION` to give it a version other than the one in `Cargo.toml`.
+The binary lands in `target/release/`. `mise run install`, the same as a double click on `Langflip.cmd`, builds it and installs it on this PC in `%LOCALAPPDATA%\Programs\Langflip`, in place of the running copy. Set `LANGFLIP_VERSION` to give it a version other than the one in `Cargo.toml`.
 
 Each push to `main` that passes Checks makes a release: `.github/workflows/release.yml` builds `langflip.exe` on the self-hosted runner and publishes `Langflip-<version>-windows-x64.exe` in the public [workbench-soft.github.io releases](https://github.com/workbench-soft/workbench-soft.github.io/releases), with a date version such as `v2026.10.30.1`. It needs the `RELEASES_TOKEN` secret. The exe is unsigned yet, and there is no macOS build.
 

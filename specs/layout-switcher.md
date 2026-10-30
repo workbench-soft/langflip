@@ -184,3 +184,14 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `windows.rs`, `macos.rs`: map the digit keys.
 - **Limits** a rare Russian word such as «ем» can turn English when its keys give a frequent English word (`tv`). Undo puts it back and keeps it. One letter words such as `c`, `d`, `j` typed alone in English turn Russian.
 - **Docs** README, `docs/features.md`, `docs/architecture.md`, `CHANGELOG.md`.
+
+### 2026-10-31 Install from the repo with a double click
+
+- **Why** the person wants to start Langflip from the repo with one double click. Once installed, Langflip should sit on the desktop, in the Start menu and in the list of installed apps, as other programs do.
+- **Choice** the double click installs and starts the build, rather than running it from `target`. A copy run from `target` would move the autostart path into the repo.
+- **Changes**
+  - `Langflip.cmd` at the repo root: runs `mise run install` and keeps the window open only on an error.
+  - `scripts/install-windows.ps1`: adds a desktop and a Start menu shortcut, copies the uninstaller and writes the entry in Settings, Apps under `HKCU\...\Uninstall\Langflip`.
+  - `scripts/uninstall-windows.ps1`: stops Langflip, removes the autostart, the shortcuts, the entry and the program folder. The settings file stays.
+- **Limits** the release download is still a bare exe with no installer. The double click needs mise on `PATH`.
+- **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
