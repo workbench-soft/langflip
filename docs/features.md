@@ -5,10 +5,12 @@
 Langflip types a word again in the right layout while the person types it, and switches the layout for the rest of the word. When the first letters leave doubt, it waits for Space, Enter or Tab.
 
 - **Where** in any app, from the moment Langflip runs.
-- **Which words** 4 letters or more, Russian ЙЦУКЕН or English US QWERTY.
+- **Which words** any length, digits included, Russian ЙЦУКЕН or English US QWERTY.
 - **While typed** from the 4th letter, once the typed letters start no dictionary word of their layout and the same keys in the other layout start one there and score higher.
+- **Short words** under 4 letters change on Space, Enter or Tab, only when the typed letters are no word of their layout and the other layout gives a word from its dictionary: `z` turns into «я», `yt` into «не», `шт` into `in`.
+- **Digits** stay in the word: `ьз3` turns into `mp3`. A digit with Shift clears the word.
 - **When it keeps a word** the word as typed is in the dictionary of its layout, or in `keep_words`.
-- **Limits** a rare word outside the dictionary misses about 1.5% of the time in each language. About 1 rare word in 1000 typed right gets changed. `mise run eval` measures both.
+- **Limits** a rare word outside the dictionary misses about 1.5% of the time in each language. About 1 rare word in 1000 typed right gets changed. About 2 rare short words in 100 typed right get changed, such as «ем» into `tv`, and one letters `c`, `d`, `j` typed alone in English turn Russian. `mise run eval` measures both.
 
 ## Undo a fix
 
