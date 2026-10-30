@@ -4,13 +4,15 @@ use std::cell::Cell;
 use std::time::{Duration, Instant};
 
 use langflip_core::Lang;
-use tray_icon::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem};
+use tray_icon::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu};
 use tray_icon::{Icon, MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent};
 
 pub enum Action {
     Enable(bool),
     SwitchLayout,
     Autostart(bool),
+    /// The person clicked a word in the «Исключения» submenu.
+    RemoveKeepWord(String),
     OpenSettings,
     Quit,
 }
@@ -19,6 +21,7 @@ pub struct Tray {
     icon: TrayIcon,
     enabled: CheckMenuItem,
     autostart: CheckMenuItem,
+    keep_words: Submenu,
     open: MenuItem,
     quit: MenuItem,
     /// What the icon shows now, so a timer tick with no change skips the redraw.
@@ -28,6 +31,8 @@ pub struct Tray {
 }
 
 const SIZE: u32 = 32;
+/// The menu id of a word in the «Исключения» submenu starts with this.
+const KEEP_ID: &str = "keep:";
 /// The Windows default double click time.
 const DOUBLE_CLICK: Duration = Duration::from_millis(500);
 
@@ -99,11 +104,13 @@ impl Tray {
     pub fn new(enabled: bool, autostart: bool) -> Tray {
         let enabled_item = CheckMenuItem::new("Исправлять раскладку", true, enabled, None);
         let autostart_item = CheckMenuItem::new("Запускать при входе", true, autostart, None);
+        let keep_words = Submenu::new("Исключения", true);
         let open = MenuItem::new("Открыть настройки", true, None);
         let quit = MenuItem::new("Выход", true, None);
         let menu = Menu::new();
         let _ = menu.append(&enabled_item);
         let _ = menu.append(&autostart_item);
+        let _ = menu.append(&keep_words);
         let _ = menu.append(&open);
         let _ = menu.append(&PredefinedMenuItem::separator());
         let _ = menu.append(&quit);
@@ -120,6 +127,7 @@ impl Tray {
             icon,
             enabled: enabled_item,
             autostart: autostart_item,
+            keep_words,
             open,
             quit,
             shown: Cell::new((enabled, None)),
@@ -161,6 +169,8 @@ impl Tray {
             Some(Action::Enable(on))
         } else if id == self.autostart.id() {
             Some(Action::Autostart(self.autostart.is_checked()))
+        } else if let Some(word) = id.as_ref().strip_prefix(KEEP_ID) {
+            Some(Action::RemoveKeepWord(word.to_owned()))
         } else if id == self.open.id() {
             Some(Action::OpenSettings)
         } else if id == self.quit.id() {
@@ -175,6 +185,23 @@ impl Tray {
         self.enabled.set_checked(on);
         self.show(on, self.shown.get().1);
         let _ = self.icon.set_tooltip(Some(tooltip(on)));
+    }
+
+    /// Lists the words Langflip keeps as typed. A click on one removes it.
+    pub fn set_keep_words(&self, words: &[String]) {
+        while self.keep_words.remove_at(0).is_some() {}
+        self.keep_words
+            .set_text(format!("Исключения ({})", words.len()));
+        let hint = if words.is_empty() {
+            "Пока нет. Слово попадает сюда после 2 отмен"
+        } else {
+            "Щелчок по слову убирает его"
+        };
+        let _ = self.keep_words.append(&MenuItem::new(hint, false, None));
+        for word in words {
+            let item = MenuItem::with_id(format!("{KEEP_ID}{word}"), word, true, None);
+            let _ = self.keep_words.append(&item);
+        }
     }
 
     /// Shows the layout of the window in front. `None` stands for a layout other than these 2.

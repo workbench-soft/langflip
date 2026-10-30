@@ -13,7 +13,7 @@ pub struct Settings {
     pub enabled: bool,
     /// Executable names Langflip leaves alone, compared without case: `wow.exe`, `Terminal`.
     pub excluded_apps: Vec<String>,
-    /// Words to leave as typed. Undo adds to it.
+    /// Words to leave as typed. The second Undo of a word adds it.
     pub keep_words: Vec<String>,
     /// The file didn't parse. Saving would replace the person's text with the defaults.
     #[serde(skip)]
@@ -117,14 +117,23 @@ impl Settings {
             .any(|a| a.eq_ignore_ascii_case(app))
     }
 
-    /// Copies the words Undo added back into the file.
-    pub fn store_keep_words(&mut self, words: &HashSet<String>) {
+    /// Copies the words Undo added back into the file. Returns true when the list changed.
+    pub fn store_keep_words(&mut self, words: &HashSet<String>) -> bool {
         let mut list: Vec<String> = words.iter().cloned().collect();
         list.sort();
-        if list != self.keep_words {
-            self.keep_words = list;
-            self.save();
+        if list == self.keep_words {
+            return false;
         }
+        self.keep_words = list;
+        self.save();
+        true
+    }
+
+    /// Lets Langflip fix the word again: the person removed it in the tray menu.
+    pub fn remove_keep_word(&mut self, word: &str) {
+        let word = word.to_lowercase();
+        self.keep_words.retain(|w| w.to_lowercase() != word);
+        self.save();
     }
 }
 

@@ -182,6 +182,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             set_autostart(true);
         }
         let tray = Tray::new(settings.enabled, autostart);
+        tray.set_keep_words(&settings.keep_words);
         STATE.with(|s| *s.borrow_mut() = Some(State::new(engine, settings, Some(tray))));
 
         let _kb = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook), None, 0)
@@ -275,6 +276,14 @@ fn handle_tray() {
             });
         }
         Action::Autostart(on) => set_autostart(on),
+        Action::RemoveKeepWord(word) => {
+            with_state(|s| {
+                s.settings.remove_keep_word(&word);
+                s.settings_mtime = settings::modified();
+                s.engine.keep_words = s.settings.keep_set();
+                show_keep_words(s);
+            });
+        }
         Action::OpenSettings => open_settings(),
         Action::Quit => unsafe { PostQuitMessage(0) },
     }
@@ -320,6 +329,14 @@ fn reload_settings(s: &mut State) {
     s.engine.keep_words = s.settings.keep_set();
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
+    }
+    show_keep_words(s);
+}
+
+/// Shows the words Langflip keeps in the tray menu.
+fn show_keep_words(s: &State) {
+    if let Some(tray) = &s.tray {
+        tray.set_keep_words(&s.settings.keep_words);
     }
 }
 
@@ -446,7 +463,9 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
             s.engine.undo()
         };
         if let Some(fix) = fix {
-            s.settings.store_keep_words(&s.engine.keep_words);
+            if s.settings.store_keep_words(&s.engine.keep_words) {
+                show_keep_words(s);
+            }
             s.settings_mtime = settings::modified();
             // Only a finished word had an end key, which the fix erased and types again.
             let end = fix.retype_end.then_some(s.last_end_vk);

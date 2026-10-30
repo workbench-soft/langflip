@@ -6,7 +6,7 @@ pub mod decide;
 pub mod layout;
 pub mod model;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub use layout::{Key, Lang, Stroke};
 pub use model::{Model, ModelError};
@@ -36,7 +36,12 @@ pub struct Engine {
     switched_from: Option<Lang>,
     last: Option<LastWord>,
     pub keep_words: HashSet<String>,
+    /// Words undone once since start. The second Undo moves a word into `keep_words`.
+    undone: HashMap<String, u8>,
 }
+
+/// How many times the person undoes a word's fix before Langflip keeps it.
+pub const UNDOS_TO_KEEP: u8 = 2;
 
 impl Engine {
     pub fn new(model: Model, keep_words: HashSet<String>) -> Engine {
@@ -46,6 +51,7 @@ impl Engine {
             switched_from: None,
             last: None,
             keep_words,
+            undone: HashMap::new(),
         }
     }
 
@@ -114,12 +120,18 @@ impl Engine {
         fix
     }
 
-    /// Puts back the word Langflip just fixed, and keeps that word as typed from now on.
+    /// Puts back the word Langflip just fixed. The second Undo of a word keeps it as typed from now on.
     pub fn undo(&mut self) -> Option<Fix> {
         let last = self.last.take()?;
         let fixed = last.fixed?;
         let typed = layout::text_for(&last.strokes, last.typed_in);
-        self.keep_words.insert(typed.to_lowercase());
+        let word = typed.to_lowercase();
+        let count = self.undone.entry(word.clone()).or_default();
+        *count += 1;
+        if *count >= UNDOS_TO_KEEP {
+            self.undone.remove(&word);
+            self.keep_words.insert(word);
+        }
         Some(Fix {
             erase: fixed.chars().count() + 1,
             text: typed,
@@ -286,25 +298,49 @@ mod tests {
     #[test]
     fn undo_after_a_switch_while_typed() {
         let mut e = engine();
-        assert!(type_word(&mut e, "ghbdtn", Lang::En).is_some());
-        let undo = e.undo().unwrap();
-        assert_eq!(undo.text, "ghbdtn");
-        assert_eq!(undo.erase, 7);
-        assert_eq!(undo.switch_to, Lang::En);
+        for _ in 0..UNDOS_TO_KEEP {
+            assert!(type_word(&mut e, "ghbdtn", Lang::En).is_some());
+            let undo = e.undo().unwrap();
+            assert_eq!(undo.text, "ghbdtn");
+            assert_eq!(undo.erase, 7);
+            assert_eq!(undo.switch_to, Lang::En);
+        }
         for s in layout::strokes_for("ghbdtn", Lang::En).unwrap() {
             assert_eq!(e.key(s, Some(Lang::En)), None);
         }
     }
 
     #[test]
-    fn undo_puts_the_word_back_and_keeps_it() {
+    fn undo_puts_the_word_back() {
         let mut e = engine();
         type_word(&mut e, "ghbdtn", Lang::En).unwrap();
         let undo = e.undo().unwrap();
         assert_eq!(undo.text, "ghbdtn");
         assert_eq!(undo.erase, 7);
         assert_eq!(undo.switch_to, Lang::En);
+        assert!(e.keep_words.is_empty());
+    }
+
+    #[test]
+    fn the_second_undo_keeps_the_word() {
+        let mut e = engine();
+        type_word(&mut e, "ghbdtn", Lang::En).unwrap();
+        e.undo().unwrap();
+        type_word(&mut e, "ghbdtn", Lang::En).unwrap();
+        e.undo().unwrap();
+        assert!(e.keep_words.contains("ghbdtn"));
         assert_eq!(type_word(&mut e, "ghbdtn", Lang::En), None);
+    }
+
+    #[test]
+    fn undos_of_different_words_add_up_apart() {
+        let mut e = engine();
+        type_word(&mut e, "ghbdtn", Lang::En).unwrap();
+        e.undo().unwrap();
+        type_word(&mut e, "hf,jnf", Lang::En).unwrap();
+        e.undo().unwrap();
+        assert!(e.keep_words.is_empty());
+        assert!(type_word(&mut e, "ghbdtn", Lang::En).is_some());
     }
 
     #[test]

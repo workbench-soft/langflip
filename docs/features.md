@@ -14,9 +14,10 @@ Langflip types a word again in the right layout while the person types it, and s
 
 ## Undo a fix
 
-Pause on Windows, Ctrl+F12 on macOS, right after a fix. The word comes back as typed, the layout switches back, and the word goes into `keep_words`.
+Pause on Windows, Ctrl+F12 on macOS, right after a fix. The word comes back as typed and the layout switches back. The second Undo of the same word puts it into `keep_words`, and Langflip leaves it as typed from then on.
 
 - **Limits** works only before the next key press, click or window switch.
+- **Count** Langflip counts the first Undo in memory only. A restart sets it back to 0.
 
 ## Convert by hand
 
@@ -70,6 +71,7 @@ A right click on the icon opens it.
 
 - **Исправлять раскладку** fixing on or off, the same as a left click on the icon.
 - **Запускать при входе** start at login on or off.
+- **Исключения (N)** the words in `keep_words`. A click on a word removes it, and Langflip fixes it again.
 - **Открыть настройки** opens `settings.toml` in the text editor. Langflip reads the change at the next window switch.
 - **Выход** quits.
 
