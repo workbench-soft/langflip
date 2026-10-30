@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Langflip icons</title>
+<style>
+  body { margin: 0; padding: 24px; font: 14px/1.4 system-ui, sans-serif; background: #f4f4f5; color: #18181b; }
+  h1 { font-size: 20px; margin: 0 0 16px; }
+  #bar { position: sticky; top: 0; z-index: 1; margin: -24px -24px 16px; padding: 12px 24px; background: #18181b; color: #fff; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #bar textarea { flex: 1 1 240px; font: inherit; padding: 6px 8px; border-radius: 6px; border: 0; resize: vertical; }
+  #bar button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid #52525b; background: #27272a; color: #fff; cursor: pointer; }
+  #bar button:hover { background: #3f3f46; }
+  #status { flex-basis: 100%; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px #0002; cursor: pointer; outline: 3px solid transparent; }
+  .card:hover { outline-color: #a1a1aa; }
+  .card.picked { outline-color: #16a34a; }
+  .card h2 { font-size: 16px; margin: 0 0 4px; }
+  .card p { margin: 0 0 12px; color: #52525b; }
+  .big { display: block; width: 256px; height: 256px; margin: 0 auto 12px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; }
+  .light { background: #ffffff; border: 1px solid #e4e4e7; }
+  .dark { background: #1f1f23; margin-top: 8px; }
+  canvas { image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <textarea id="note" rows="1" placeholder="What to change, for Redo or new styles"></textarea>
+  <button type="button" data-action="use">Use this icon</button>
+  <button type="button" data-action="redo">Redo this one</button>
+  <button type="button" data-action="new">Draw 10 new styles</button>
+  <div id="status">Click the icon you want, then press a button.</div>
+</div>
+<h1>Langflip</h1>
+<div class="grid">
+<div class="card" data-file="01-led-matrix.svg"><h2>01. led matrix</h2><p>LED matrix: A and Я lit in amber dots on a dark dot board</p><img class="big" src="01-led-matrix.svg" alt=""><div class="row light"><img src="01-led-matrix-small.svg" width="16" height="16" alt=""><img src="01-led-matrix-small.svg" width="32" height="32" alt=""><img src="01-led-matrix.svg" width="64" height="64" alt=""><canvas data-src="01-led-matrix-small.svg" data-size="16"></canvas><canvas data-src="01-led-matrix-small.svg" data-size="32"></canvas></div><div class="row dark"><img src="01-led-matrix-small.svg" width="16" height="16" alt=""><img src="01-led-matrix-small.svg" width="32" height="32" alt=""><img src="01-led-matrix.svg" width="64" height="64" alt=""><canvas data-src="01-led-matrix-small.svg" data-size="16"></canvas><canvas data-src="01-led-matrix-small.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="02-oscilloscope.svg"><h2>02. oscilloscope</h2><p>Oscilloscope: a phosphor trace writes A and Я over a sine wave</p><img class="big" src="02-oscilloscope.svg" alt=""><div class="row light"><img src="02-oscilloscope.svg" width="16" height="16" alt=""><img src="02-oscilloscope.svg" width="32" height="32" alt=""><img src="02-oscilloscope.svg" width="64" height="64" alt=""><canvas data-src="02-oscilloscope.svg" data-size="16"></canvas><canvas data-src="02-oscilloscope.svg" data-size="32"></canvas></div><div class="row dark"><img src="02-oscilloscope.svg" width="16" height="16" alt=""><img src="02-oscilloscope.svg" width="32" height="32" alt=""><img src="02-oscilloscope.svg" width="64" height="64" alt=""><canvas data-src="02-oscilloscope.svg" data-size="16"></canvas><canvas data-src="02-oscilloscope.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="03-flat.svg"><h2>03. flat</h2><p>Flat: a white keycap on orange with A and Я in navy</p><img class="big" src="03-flat.svg" alt=""><div class="row light"><img src="03-flat.svg" width="16" height="16" alt=""><img src="03-flat.svg" width="32" height="32" alt=""><img src="03-flat.svg" width="64" height="64" alt=""><canvas data-src="03-flat.svg" data-size="16"></canvas><canvas data-src="03-flat.svg" data-size="32"></canvas></div><div class="row dark"><img src="03-flat.svg" width="16" height="16" alt=""><img src="03-flat.svg" width="32" height="32" alt=""><img src="03-flat.svg" width="64" height="64" alt=""><canvas data-src="03-flat.svg" data-size="16"></canvas><canvas data-src="03-flat.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="04-gradient.svg"><h2>04. gradient</h2><p>Gradient: a violet to pink tile with a white A and Я inside a flip ring</p><img class="big" src="04-gradient.svg" alt=""><div class="row light"><img src="04-gradient.svg" width="16" height="16" alt=""><img src="04-gradient.svg" width="32" height="32" alt=""><img src="04-gradient.svg" width="64" height="64" alt=""><canvas data-src="04-gradient.svg" data-size="16"></canvas><canvas data-src="04-gradient.svg" data-size="32"></canvas></div><div class="row dark"><img src="04-gradient.svg" width="16" height="16" alt=""><img src="04-gradient.svg" width="32" height="32" alt=""><img src="04-gradient.svg" width="64" height="64" alt=""><canvas data-src="04-gradient.svg" data-size="16"></canvas><canvas data-src="04-gradient.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="05-glass.svg"><h2>05. glass</h2><p>Glass: a frosted pane over cyan and magenta light, A and Я in white</p><img class="big" src="05-glass.svg" alt=""><div class="row light"><img src="05-glass.svg" width="16" height="16" alt=""><img src="05-glass.svg" width="32" height="32" alt=""><img src="05-glass.svg" width="64" height="64" alt=""><canvas data-src="05-glass.svg" data-size="16"></canvas><canvas data-src="05-glass.svg" data-size="32"></canvas></div><div class="row dark"><img src="05-glass.svg" width="16" height="16" alt=""><img src="05-glass.svg" width="32" height="32" alt=""><img src="05-glass.svg" width="64" height="64" alt=""><canvas data-src="05-glass.svg" data-size="16"></canvas><canvas data-src="05-glass.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="06-line.svg"><h2>06. line</h2><p>Line: one ink weight draws A, Я and the two flip arrows on white</p><img class="big" src="06-line.svg" alt=""><div class="row light"><img src="06-line.svg" width="16" height="16" alt=""><img src="06-line.svg" width="32" height="32" alt=""><img src="06-line.svg" width="64" height="64" alt=""><canvas data-src="06-line.svg" data-size="16"></canvas><canvas data-src="06-line.svg" data-size="32"></canvas></div><div class="row dark"><img src="06-line.svg" width="16" height="16" alt=""><img src="06-line.svg" width="32" height="32" alt=""><img src="06-line.svg" width="64" height="64" alt=""><canvas data-src="06-line.svg" data-size="16"></canvas><canvas data-src="06-line.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="07-sticker.svg"><h2>07. sticker</h2><p>Sticker: a tilted yellow A and Я sticker with a white die cut edge</p><img class="big" src="07-sticker.svg" alt=""><div class="row light"><img src="07-sticker.svg" width="16" height="16" alt=""><img src="07-sticker.svg" width="32" height="32" alt=""><img src="07-sticker.svg" width="64" height="64" alt=""><canvas data-src="07-sticker.svg" data-size="16"></canvas><canvas data-src="07-sticker.svg" data-size="32"></canvas></div><div class="row dark"><img src="07-sticker.svg" width="16" height="16" alt=""><img src="07-sticker.svg" width="32" height="32" alt=""><img src="07-sticker.svg" width="64" height="64" alt=""><canvas data-src="07-sticker.svg" data-size="16"></canvas><canvas data-src="07-sticker.svg" data-size="32"></canvas></div></div>
+<div class="card picked" data-file="08-art-deco.svg"><h2>08. art deco</h2><p>Art deco: gold A and Я under a sunburst, framed by a double gold rule</p><img class="big" src="08-art-deco.svg" alt=""><div class="row light"><img src="08-art-deco.svg" width="16" height="16" alt=""><img src="08-art-deco.svg" width="32" height="32" alt=""><img src="08-art-deco.svg" width="64" height="64" alt=""><canvas data-src="08-art-deco.svg" data-size="16"></canvas><canvas data-src="08-art-deco.svg" data-size="32"></canvas></div><div class="row dark"><img src="08-art-deco.svg" width="16" height="16" alt=""><img src="08-art-deco.svg" width="32" height="32" alt=""><img src="08-art-deco.svg" width="64" height="64" alt=""><canvas data-src="08-art-deco.svg" data-size="16"></canvas><canvas data-src="08-art-deco.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="09-low-poly.svg"><h2>09. low poly</h2><p>Low poly: a faceted teal tile with A and Я cut in white</p><img class="big" src="09-low-poly.svg" alt=""><div class="row light"><img src="09-low-poly.svg" width="16" height="16" alt=""><img src="09-low-poly.svg" width="32" height="32" alt=""><img src="09-low-poly.svg" width="64" height="64" alt=""><canvas data-src="09-low-poly.svg" data-size="16"></canvas><canvas data-src="09-low-poly.svg" data-size="32"></canvas></div><div class="row dark"><img src="09-low-poly.svg" width="16" height="16" alt=""><img src="09-low-poly.svg" width="32" height="32" alt=""><img src="09-low-poly.svg" width="64" height="64" alt=""><canvas data-src="09-low-poly.svg" data-size="16"></canvas><canvas data-src="09-low-poly.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="10-stained-glass.svg"><h2>10. stained glass</h2><p>Stained glass: A and Я as lead lines across red, blue, amber and green panes</p><img class="big" src="10-stained-glass.svg" alt=""><div class="row light"><img src="10-stained-glass.svg" width="16" height="16" alt=""><img src="10-stained-glass.svg" width="32" height="32" alt=""><img src="10-stained-glass.svg" width="64" height="64" alt=""><canvas data-src="10-stained-glass.svg" data-size="16"></canvas><canvas data-src="10-stained-glass.svg" data-size="32"></canvas></div><div class="row dark"><img src="10-stained-glass.svg" width="16" height="16" alt=""><img src="10-stained-glass.svg" width="32" height="32" alt=""><img src="10-stained-glass.svg" width="64" height="64" alt=""><canvas data-src="10-stained-glass.svg" data-size="16"></canvas><canvas data-src="10-stained-glass.svg" data-size="32"></canvas></div></div>
+</div>
+<script>
+  // Draw each small size at its real pixel count, then show it magnified.
+  for (const canvas of document.querySelectorAll("canvas[data-src]")) {
+    const size = Number(canvas.dataset.size);
+    canvas.width = canvas.height = size;
+    canvas.style.width = canvas.style.height = size * 4 + "px";
+    const img = new Image();
+    img.onload = () => canvas.getContext("2d").drawImage(img, 0, 0, size, size);
+    img.src = canvas.dataset.src;
+  }
+
+  const status = document.getElementById("status");
+  const note = document.getElementById("note");
+  const cards = [...document.querySelectorAll(".card")];
+  let picked = document.querySelector(".card.picked");
+  for (const card of cards) {
+    card.addEventListener("click", () => {
+      picked = card;
+      cards.forEach((c) => c.classList.toggle("picked", c === card));
+      status.textContent = `Selected ${card.querySelector("h2").textContent}`;
+    });
+  }
+  for (const button of document.querySelectorAll("#bar button")) {
+    button.addEventListener("click", async () => {
+      const action = button.dataset.action;
+      const comment = note.value.trim();
+      const label = picked ? picked.querySelector("h2").textContent : "";
+      if (action !== "new" && !picked) { status.textContent = "Pick an icon first."; return; }
+      if (action === "redo" && !comment) { status.textContent = "Write what to change first."; return; }
+      const words = { use: `Use ${label}`, redo: `Redo ${label}: ${comment}`, new: `Draw 10 new styles: ${comment}` }[action];
+      // Opened as a file, the page has no server to tell.
+      if (!location.protocol.startsWith("http")) { status.textContent = `Tell the agent: ${words}`; return; }
+      try {
+        const body = JSON.stringify({ action, comment, file: picked ? picked.dataset.file : "" });
+        const answer = await fetch("/answer", { method: "POST", body });
+        if (!answer.ok) throw new Error(await answer.text());
+        status.textContent = `Sent: ${words}. The agent takes it from here, and this tab can close.`;
+      } catch (error) {
+        status.textContent = `The agent stopped listening. Tell it in chat: ${words}`;
+      }
+    });
+  }
+</script>
+</body>
+</html>

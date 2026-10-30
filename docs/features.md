@@ -35,6 +35,13 @@ The tray icon shows `EN` on blue or `RU` on red, for the layout of the window in
 
 - **Limits** a switch reaches the icon within 250 ms on Windows and 0.2 s on macOS.
 
+## The app icon
+
+A gold А and Я under a sunburst, in a double gold frame on black. Windows shows it on `langflip.exe`, the desktop and Start menu shortcuts and in Settings, Apps.
+
+- **Source** `crates/langflip/assets/icon.svg`. Both rounds of drafts sit in `design/icons/`.
+- **Limits** the tray keeps the `EN` and `RU` icon. macOS has no app bundle yet, so it shows no app icon.
+
 ## Pause with a click
 
 A left click on the tray icon turns fixing off, and the icon turns grey with the layout letters kept. The next click turns it on. The tooltip says which state Langflip is in.
