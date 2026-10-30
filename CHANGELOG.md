@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Exceptions** a word becomes an exception after you undo its fix twice, not once. The tray menu lists the exceptions under «Исключения», and a click on a word removes it.
 - **Install with a double click** `Langflip.cmd` in the repo builds Langflip, installs it and starts it. Langflip then sits on the desktop, in the Start menu and in Settings, Apps, with an Uninstall button.
 - **Releases** a release built on the PC carries the Sydney date again. Before 11:00 in Sydney it got the day before.
 - **Faster start** the language model loads in about 20 ms again. A sorted word list replaced the set of every word start, which took 0.4 s to build.

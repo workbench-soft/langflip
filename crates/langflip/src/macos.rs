@@ -95,6 +95,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
         set_autostart(true);
     }
     let tray = Tray::new(settings.enabled, autostart);
+    tray.set_keep_words(&settings.keep_words);
     STATE.with(|s| {
         *s.borrow_mut() = Some(State {
             engine,
@@ -172,6 +173,14 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
             with_state(|s| s.tray.as_ref().map(|t| t.set_lang(Some(to))));
         }
         Action::Autostart(on) => set_autostart(on),
+        Action::RemoveKeepWord(word) => {
+            with_state(|s| {
+                s.settings.remove_keep_word(&word);
+                s.settings_mtime = settings::modified();
+                s.engine.keep_words = s.settings.keep_set();
+                show_keep_words(s);
+            });
+        }
         Action::OpenSettings => {
             let _ = std::process::Command::new("open")
                 .arg("-t")
@@ -237,6 +246,14 @@ fn reload_settings(s: &mut State) {
     s.engine.keep_words = s.settings.keep_set();
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
+    }
+    show_keep_words(s);
+}
+
+/// Shows the words Langflip keeps in the tray menu.
+fn show_keep_words(s: &State) {
+    if let Some(tray) = &s.tray {
+        tray.set_keep_words(&s.settings.keep_words);
     }
 }
 
@@ -346,7 +363,9 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
             s.engine.undo()
         };
         if let Some(fix) = fix {
-            s.settings.store_keep_words(&s.engine.keep_words);
+            if s.settings.store_keep_words(&s.engine.keep_words) {
+                show_keep_words(s);
+            }
             s.settings_mtime = settings::modified();
             // Only a finished word had an end key, which the fix erased and types again.
             let end = fix.retype_end.then_some(s.last_end_key);

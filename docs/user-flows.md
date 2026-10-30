@@ -52,11 +52,15 @@ sequenceDiagram
 1. Langflip just fixed a word the person meant as typed, such as `vtnf` meant as a code name.
 2. The person presses Pause (Ctrl+F12 on macOS).
 3. Langflip puts the word back and switches the layout back.
-4. Langflip keeps that word as typed from now on.
+4. The next time Langflip fixes the word again. A second Pause puts it back and adds it to the exceptions.
+5. The word shows in the tray menu under «Исключения». A click on it there removes it.
 
 ```mermaid
 flowchart LR
-    A[Fixed word] --> B[Pause] --> C[Word as typed] --> D[Added to keep_words]
+    A[Fixed word] --> B[Pause] --> C{Second Undo of this word?}
+    C -- no --> D[Word as typed, fixed next time]
+    C -- yes --> E[Added to keep_words] --> F[Listed in the tray menu]
+    F -- click --> G[Removed, fixed again]
 ```
 
 ## Convert by hand

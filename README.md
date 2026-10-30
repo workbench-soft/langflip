@@ -10,12 +10,12 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the E
 ## Use it
 
 - **Fix** happens while the word is typed, from the 4th letter, as soon as Langflip is sure. Otherwise on Space, Enter or Tab.
-- **Undo** Pause on Windows, Ctrl+F12 on macOS. The word comes back as typed and stays that way from then on.
+- **Undo** Pause on Windows, Ctrl+F12 on macOS. The word comes back as typed. After the second Undo of the same word it becomes an exception and stays as typed from then on.
 - **Convert by hand** Shift+Pause on Windows, Ctrl+Shift+F12 on macOS.
 - **Layout** the tray icon shows `EN` on blue or `RU` on red.
 - **Pause** click the tray icon to turn fixing off. The icon turns grey. Click again to turn it on.
 - **Switch the layout** double-click the tray icon to swap Russian and English.
-- **Tray menu** a right click opens it: fixing on and off, start at login, the settings file, quit.
+- **Tray menu** a right click opens it: fixing on and off, start at login, the list of exceptions, the settings file, quit.
 - **Autostart** the first start turns on start at login, with no question. Uncheck «Запускать при входе» to stop it.
 
 The settings file is `%APPDATA%\Langflip\settings.toml` on Windows and `~/Library/Application Support/Langflip/settings.toml` on macOS. Its keys are in [docs/features.md](docs/features.md).
