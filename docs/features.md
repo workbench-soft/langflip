@@ -42,7 +42,7 @@ A left click on the tray icon turns fixing off, and the icon turns grey with the
 
 A double click on the tray icon switches the layout between Russian and English. Any other layout turns English.
 
-- **Windows** the click puts the taskbar in front, so Langflip brings back the window that was in front and switches its layout. The icon shows that window's layout, not the taskbar's.
+- **Windows** the click puts the taskbar in front, so Langflip brings back the window that was in front and switches its layout. The icon shows that window's layout, not the taskbar's. The new layout stays in the other windows too, as with the Windows hotkey.
 - **macOS** switches the current input source.
 
 ## Start at login

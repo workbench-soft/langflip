@@ -32,12 +32,12 @@ use windows::Win32::UI::Shell::ShellExecuteW;
 
 use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, DispatchMessageW, EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, GetClassNameW,
-    GetForegroundWindow, GetMessageW, GetWindowThreadProcessId, KBDLLHOOKSTRUCT, LLKHF_EXTENDED,
-    MSG, PostMessageW, PostQuitMessage, PostThreadMessageW, STATE_SYSTEM_PROTECTED, SW_SHOWNORMAL,
-    SetForegroundWindow, SetTimer, SetWindowsHookExW, TranslateMessage, WH_KEYBOARD_LL,
-    WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_APP, WM_INPUTLANGCHANGEREQUEST,
-    WM_KEYDOWN, WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN, WM_TIMER,
-    WM_XBUTTONDOWN,
+    GetForegroundWindow, GetMessageW, GetWindowThreadProcessId, KBDLLHOOKSTRUCT, KillTimer,
+    LLKHF_EXTENDED, MSG, PostMessageW, PostQuitMessage, PostThreadMessageW, STATE_SYSTEM_PROTECTED,
+    SW_SHOWNORMAL, SetForegroundWindow, SetTimer, SetWindowsHookExW, TranslateMessage,
+    WH_KEYBOARD_LL, WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_APP,
+    WM_INPUTLANGCHANGEREQUEST, WM_KEYDOWN, WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN,
+    WM_SYSKEYDOWN, WM_TIMER, WM_XBUTTONDOWN,
 };
 use windows::core::{PCWSTR, PWSTR, w};
 
@@ -79,6 +79,14 @@ struct Held {
     extended: bool,
 }
 
+/// A layout switch from the tray, waiting for its window to take the front.
+struct Switch {
+    window: HWND,
+    to: Lang,
+    timer: usize,
+    ticks: u32,
+}
+
 struct State {
     engine: Engine,
     settings: Settings,
@@ -100,6 +108,7 @@ struct State {
     last_focus: (isize, i32, i32),
     /// The last window in front other than the taskbar, which a tray click brings to the front.
     target: HWND,
+    switch: Option<Switch>,
     tray: Option<Tray>,
 }
 
@@ -143,6 +152,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
                 last_end_vk: VK_SPACE as u16,
                 last_focus: (0, 0, 0),
                 target: HWND::default(),
+                switch: None,
                 tray: Some(tray),
             })
         });
@@ -179,9 +189,18 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             match msg.message {
                 WM_APP_FIX => apply_queued_fix(),
                 WM_APP_REPLAY => replay_held(),
+                WM_TIMER
+                    if with_state(|s| s.switch.as_ref().map(|w| w.timer)).flatten()
+                        == Some(msg.wParam.0) =>
+                {
+                    finish_switch()
+                }
                 WM_TIMER => {
-                    let lang = target().and_then(window_lang);
-                    with_state(|s| s.tray.as_ref().map(|t| t.set_lang(lang)));
+                    // Until the switch lands, the window still reports the old layout.
+                    if with_state(|s| s.switch.is_none()) == Some(true) {
+                        let lang = target().and_then(window_lang);
+                        with_state(|s| s.tray.as_ref().map(|t| t.set_lang(lang)));
+                    }
                 }
                 _ => {
                     let _ = TranslateMessage(&msg);
@@ -212,13 +231,53 @@ fn handle_tray() {
             unsafe {
                 // The click brought the taskbar to the front, so the window gets it back.
                 let _ = SetForegroundWindow(target);
-                switch_layout(target, to);
             }
-            with_state(|s| s.tray.as_ref().map(|t| t.set_lang(Some(to))));
+            with_state(|s| {
+                if let Some(old) = s.switch.take() {
+                    let _ = unsafe { KillTimer(None, old.timer) };
+                }
+                let timer = unsafe { SetTimer(None, 0, SWITCH_TICK_MS, None) };
+                s.switch = Some(Switch {
+                    window: target,
+                    to,
+                    timer,
+                    ticks: 0,
+                });
+                s.tray.as_ref().map(|t| t.set_lang(Some(to)))
+            });
         }
         Action::Autostart(on) => set_autostart(on),
         Action::OpenSettings => open_settings(),
         Action::Quit => unsafe { PostQuitMessage(0) },
+    }
+}
+
+/// How often a tray switch checks whether its window is in front, and for how many ticks.
+const SWITCH_TICK_MS: u32 = 20;
+const SWITCH_TICKS: u32 = 25;
+
+/// Sends the tray switch once its window is in front.
+///
+/// Windows hands the front over a moment after `SetForegroundWindow`. A window asked to switch
+/// before then switches alone, and takes the shared layout back at the next focus change.
+fn finish_switch() {
+    let ready = with_state(|s| {
+        let w = s.switch.as_mut()?;
+        w.ticks += 1;
+        let front = unsafe { GetForegroundWindow() } == w.window;
+        if !front && w.ticks < SWITCH_TICKS {
+            return None;
+        }
+        debug(format_args!(
+            "tray switch after {} ticks, in front {front}",
+            w.ticks
+        ));
+        let w = s.switch.take()?;
+        let _ = unsafe { KillTimer(None, w.timer) };
+        Some((w.window, w.to))
+    });
+    if let Some((window, to)) = ready.flatten() {
+        unsafe { switch_layout(window, to) };
     }
 }
 
