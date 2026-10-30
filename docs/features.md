@@ -73,3 +73,5 @@ A right click on the icon opens it.
 | `enabled` | fixing on or off |
 | `excluded_apps` | executable names on Windows (`wow.exe`), app names on macOS (`Terminal`) |
 | `keep_words` | lowercase words to leave as typed |
+
+- **Limits** a file with a mistake in it stays as it is. Langflip runs on the defaults and saves no change until the file reads again.
