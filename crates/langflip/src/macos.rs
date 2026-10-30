@@ -166,6 +166,11 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
                 s.engine.reset();
             });
         }
+        Action::SwitchLayout => {
+            let to = current_lang().map_or(Lang::En, Lang::other);
+            switch_layout(to);
+            with_state(|s| s.tray.as_ref().map(|t| t.set_lang(Some(to))));
+        }
         Action::Autostart(on) => set_autostart(on),
         Action::OpenSettings => {
             let _ = std::process::Command::new("open")

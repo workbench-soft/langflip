@@ -31,12 +31,13 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
 use windows::Win32::UI::Shell::ShellExecuteW;
 
 use windows::Win32::UI::WindowsAndMessaging::{
-    CallNextHookEx, DispatchMessageW, EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND,
+    CallNextHookEx, DispatchMessageW, EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND, GetClassNameW,
     GetForegroundWindow, GetMessageW, GetWindowThreadProcessId, KBDLLHOOKSTRUCT, LLKHF_EXTENDED,
     MSG, PostMessageW, PostQuitMessage, PostThreadMessageW, STATE_SYSTEM_PROTECTED, SW_SHOWNORMAL,
-    SetTimer, SetWindowsHookExW, TranslateMessage, WH_KEYBOARD_LL, WH_MOUSE_LL,
-    WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_APP, WM_INPUTLANGCHANGEREQUEST, WM_KEYDOWN,
-    WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN, WM_TIMER, WM_XBUTTONDOWN,
+    SetForegroundWindow, SetTimer, SetWindowsHookExW, TranslateMessage, WH_KEYBOARD_LL,
+    WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_APP, WM_INPUTLANGCHANGEREQUEST,
+    WM_KEYDOWN, WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN, WM_TIMER,
+    WM_XBUTTONDOWN,
 };
 use windows::core::{PCWSTR, PWSTR, w};
 
@@ -94,6 +95,8 @@ struct State {
     /// The end key of the last finished word, for Undo and the manual fix.
     last_end_vk: u16,
     last_focus: (isize, i32, i32),
+    /// The last window in front other than the taskbar, which a tray click brings to the front.
+    target: HWND,
     tray: Option<Tray>,
 }
 
@@ -135,6 +138,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
                 queued: None,
                 last_end_vk: VK_SPACE as u16,
                 last_focus: (0, 0, 0),
+                target: HWND::default(),
                 tray: Some(tray),
             })
         });
@@ -172,7 +176,8 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
                 WM_APP_FIX => apply_queued_fix(),
                 WM_APP_REPLAY => replay_held(),
                 WM_TIMER => {
-                    with_state(|s| s.tray.as_ref().map(|t| t.set_lang(current_lang())));
+                    let lang = target().and_then(window_lang);
+                    with_state(|s| s.tray.as_ref().map(|t| t.set_lang(lang)));
                 }
                 _ => {
                     let _ = TranslateMessage(&msg);
@@ -196,6 +201,16 @@ fn handle_tray() {
                 s.settings_mtime = settings::modified();
                 s.engine.reset();
             });
+        }
+        Action::SwitchLayout => {
+            let Some(target) = target() else { return };
+            let to = window_lang(target).map_or(Lang::En, Lang::other);
+            unsafe {
+                // The click brought the taskbar to the front, so the window gets it back.
+                let _ = SetForegroundWindow(target);
+                switch_layout(target, to);
+            }
+            with_state(|s| s.tray.as_ref().map(|t| t.set_lang(Some(to))));
         }
         Action::Autostart(on) => set_autostart(on),
         Action::OpenSettings => open_settings(),
@@ -432,7 +447,7 @@ fn apply_queued_fix() {
             // Windows blocked the input, often for an elevated window. Stop waiting for the marker.
             with_state(|s| s.pending = false);
         }
-        switch_layout(fix.switch_to);
+        switch_layout(GetForegroundWindow(), fix.switch_to);
     }
 }
 
@@ -517,13 +532,31 @@ unsafe fn is_protected(hwnd: HWND, object: i32, child: i32) -> bool {
 
 fn foreground_changed() {
     let (app, elevated) = unsafe { foreground_process() };
+    let hwnd = unsafe { GetForegroundWindow() };
+    let taskbar = unsafe { is_taskbar(hwnd) };
     with_state(|s| {
+        if !taskbar && !hwnd.is_invalid() {
+            s.target = hwnd;
+        }
         reload_settings(s);
         s.engine.reset();
         s.password = false;
         let excluded = app.as_deref().is_some_and(|a| s.settings.is_excluded(a));
         s.skip_window = excluded || (elevated && !s.self_elevated);
     });
+}
+
+/// The taskbar and the tray overflow, which take the front on a click on the tray icon.
+unsafe fn is_taskbar(hwnd: HWND) -> bool {
+    let mut buf = [0u16; 64];
+    let len = unsafe { GetClassNameW(hwnd, &mut buf) } as usize;
+    matches!(
+        String::from_utf16_lossy(&buf[..len]).as_str(),
+        "Shell_TrayWnd"
+            | "Shell_SecondaryTrayWnd"
+            | "NotifyIconOverflowWindow"
+            | "TopLevelWindowForOverflowXamlIsland"
+    )
 }
 
 /// The executable name of the window in front, and whether it runs elevated.
@@ -584,10 +617,19 @@ fn lang_of(hkl: HKL) -> Option<Lang> {
 
 /// The layout of the window in front. Another language turns fixing off for the word.
 fn current_lang() -> Option<Lang> {
+    window_lang(unsafe { GetForegroundWindow() })
+}
+
+fn window_lang(hwnd: HWND) -> Option<Lang> {
     unsafe {
-        let thread = GetWindowThreadProcessId(GetForegroundWindow(), None);
+        let thread = GetWindowThreadProcessId(hwnd, None);
         lang_of(GetKeyboardLayout(thread))
     }
+}
+
+/// The window the tray icon shows and switches. The taskbar in front doesn't count.
+fn target() -> Option<HWND> {
+    with_state(|s| s.target).filter(|h| !h.is_invalid())
 }
 
 /// Appends a line to `%TEMP%\langflip-debug.log` in debug builds.
@@ -605,8 +647,8 @@ fn debug(line: std::fmt::Arguments) {
     }
 }
 
-/// Asks the window in front to switch to the first installed layout of this language.
-unsafe fn switch_layout(lang: Lang) {
+/// Asks the window to switch to the first installed layout of this language.
+unsafe fn switch_layout(hwnd: HWND, lang: Lang) {
     unsafe {
         let mut list = [HKL::default(); 32];
         let count = GetKeyboardLayoutList(Some(&mut list)) as usize;
@@ -617,7 +659,7 @@ unsafe fn switch_layout(lang: Lang) {
         ));
         if let Some(hkl) = found {
             let _ = PostMessageW(
-                Some(GetForegroundWindow()),
+                Some(hwnd),
                 WM_INPUTLANGCHANGEREQUEST,
                 WPARAM(0),
                 LPARAM(hkl.0 as isize),

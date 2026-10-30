@@ -1,6 +1,7 @@
 //! The tray icon and its menu, the same on both systems.
 
 use std::cell::Cell;
+use std::time::{Duration, Instant};
 
 use langflip_core::Lang;
 use tray_icon::menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem};
@@ -8,6 +9,7 @@ use tray_icon::{Icon, MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, 
 
 pub enum Action {
     Enable(bool),
+    SwitchLayout,
     Autostart(bool),
     OpenSettings,
     Quit,
@@ -21,9 +23,13 @@ pub struct Tray {
     quit: MenuItem,
     /// What the icon shows now, so a timer tick with no change skips the redraw.
     shown: Cell<(bool, Option<Lang>)>,
+    /// A left click that waits to see whether a second one makes it a double click.
+    click: Cell<Option<Instant>>,
 }
 
 const SIZE: u32 = 32;
+/// The Windows default double click time.
+const DOUBLE_CLICK: Duration = Duration::from_millis(500);
 
 /// Letters 5 pixels wide and 7 high, a row per byte, the top bit of the 5 on the left.
 fn glyph(c: u8) -> [u8; 7] {
@@ -83,9 +89,9 @@ fn icon(on: bool, lang: Option<Lang>) -> Icon {
 
 fn tooltip(on: bool) -> &'static str {
     if on {
-        "Langflip включён. Щелчок выключает"
+        "Langflip включён. Щелчок выключает, двойной щелчок меняет раскладку"
     } else {
-        "Langflip выключен. Щелчок включает"
+        "Langflip выключен. Щелчок включает, двойной щелчок меняет раскладку"
     }
 }
 
@@ -103,7 +109,8 @@ impl Tray {
         let _ = menu.append(&quit);
         let icon = TrayIconBuilder::new()
             .with_menu(Box::new(menu))
-            // The left click pauses fixing, the right click opens the menu.
+            // The left click pauses fixing, the double click switches the layout,
+            // the right click opens the menu.
             .with_menu_on_left_click(false)
             .with_tooltip(tooltip(enabled))
             .with_icon(icon(enabled, None))
@@ -116,11 +123,22 @@ impl Tray {
             open,
             quit,
             shown: Cell::new((enabled, None)),
+            click: Cell::new(None),
         }
     }
 
     /// The next click on the icon or the menu, if one is waiting.
     pub fn poll(&self) -> Option<Action> {
+        if self
+            .click
+            .get()
+            .is_some_and(|t| t.elapsed() >= DOUBLE_CLICK)
+        {
+            self.click.set(None);
+            let on = !self.enabled.is_checked();
+            self.set_enabled(on);
+            return Some(Action::Enable(on));
+        }
         while let Ok(event) = TrayIconEvent::receiver().try_recv() {
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
@@ -128,9 +146,11 @@ impl Tray {
                 ..
             } = event
             {
-                let on = !self.enabled.is_checked();
-                self.set_enabled(on);
-                return Some(Action::Enable(on));
+                // Both systems report each click, so 2 in a row make the double click.
+                if self.click.take().is_some() {
+                    return Some(Action::SwitchLayout);
+                }
+                self.click.set(Some(Instant::now()));
             }
         }
         let event = MenuEvent::receiver().try_recv().ok()?;
