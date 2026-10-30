@@ -5,6 +5,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::os::windows::ffi::OsStrExt;
+use std::time::{Duration, Instant};
 
 use langflip_core::{Engine, Fix, Key, Lang, Stroke};
 use windows::Win32::Foundation::{
@@ -98,6 +99,8 @@ struct State {
     password: bool,
     /// A fix is on its way. Until its end marker arrives, typed keys wait in `held`.
     pending: bool,
+    /// When the fix was queued, so a fix that got stuck lets the keys go.
+    pending_at: Instant,
     held: Vec<Held>,
     /// The layout the last fix switched to. Held keys wait for it before they replay.
     switching_to: Option<Lang>,
@@ -148,6 +151,7 @@ impl State {
             skip_window: false,
             password: false,
             pending: false,
+            pending_at: Instant::now(),
             held: Vec::new(),
             switching_to: None,
             queued: None,
@@ -217,6 +221,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
                     finish_switch()
                 }
                 WM_TIMER => {
+                    release_stuck_fix();
                     // Until the switch lands, the window still reports the old layout.
                     if with_state(|s| s.switch.is_none()) == Some(true) {
                         let lang = target().and_then(window_lang);
@@ -497,6 +502,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
 
 fn queue(s: &mut State, fix: Fix, end_vk: Option<u16>) {
     s.pending = true;
+    s.pending_at = Instant::now();
     s.queued = Some((fix, end_vk));
     post(s, WM_APP_FIX);
 }
@@ -552,10 +558,42 @@ fn apply_queued_fix() {
         let sent = SendInput(&inputs, size_of::<INPUT>() as i32);
         if sent as usize != inputs.len() {
             // Windows blocked the input, often for an elevated window. Stop waiting for the marker.
-            with_state(|s| s.pending = false);
+            with_state(|s| {
+                s.pending = false;
+                if !s.held.is_empty() {
+                    post(s, WM_APP_REPLAY);
+                }
+            });
         }
         with_state(|s| s.switching_to = Some(fix.switch_to));
         switch_layout(GetForegroundWindow(), fix.switch_to);
+    }
+}
+
+/// How long a fix may wait for its end marker before the keys held behind it go out.
+const STUCK_FIX: Duration = Duration::from_secs(1);
+
+/// Lets the keyboard go when a fix got stuck, since the hook holds each key until the fix ends.
+///
+/// A menu's message loop drops the posted fix, and a switch to the secure desktop drops the
+/// end marker.
+fn release_stuck_fix() {
+    let stuck = with_state(|s| {
+        if !s.pending || s.pending_at.elapsed() < STUCK_FIX {
+            return None;
+        }
+        debug(format_args!("stuck fix, queued {}", s.queued.is_some()));
+        if s.queued.is_none() {
+            s.pending = false;
+        }
+        Some(s.queued.is_some())
+    })
+    .flatten();
+    match stuck {
+        // The held keys kept the screen as the fix expects it, so the fix still fits.
+        Some(true) => apply_queued_fix(),
+        Some(false) => replay_held(),
+        None => {}
     }
 }
 
@@ -841,6 +879,17 @@ mod tests {
     /// True when the engine holds keys of a word being typed.
     fn word_in_progress() -> bool {
         with_state(|s| s.engine.convert(Some(Lang::En)).is_some()).unwrap()
+    }
+
+    #[test]
+    fn a_stuck_fix_lets_the_keys_go() {
+        start();
+        with_state(|s| s.pending = true);
+        release_stuck_fix();
+        assert_eq!(with_state(|s| s.pending), Some(true));
+        with_state(|s| s.pending_at -= STUCK_FIX);
+        release_stuck_fix();
+        assert_eq!(with_state(|s| s.pending), Some(false));
     }
 
     #[test]
