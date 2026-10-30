@@ -448,7 +448,9 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         if let Some(fix) = fix {
             s.settings.store_keep_words(&s.engine.keep_words);
             s.settings_mtime = settings::modified();
-            queue(s, fix, Some(s.last_end_vk));
+            // Only a finished word had an end key, which the fix erased and types again.
+            let end = fix.retype_end.then_some(s.last_end_vk);
+            queue(s, fix, end);
             return true;
         }
         return false;

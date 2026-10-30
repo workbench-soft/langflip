@@ -308,6 +308,18 @@ mod tests {
     }
 
     #[test]
+    fn convert_turns_the_word_being_typed() {
+        let mut e = engine();
+        for s in layout::strokes_for("ghb", Lang::En).unwrap() {
+            assert_eq!(e.key(s, Some(Lang::En)), None);
+        }
+        let fix = e.convert(Some(Lang::En)).unwrap();
+        assert_eq!(fix.text, "при");
+        assert_eq!(fix.erase, 3);
+        assert!(!fix.retype_end);
+    }
+
+    #[test]
     fn convert_turns_the_last_word() {
         let mut e = engine();
         assert_eq!(type_word(&mut e, "hello", Lang::En), None);
