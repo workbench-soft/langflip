@@ -16,6 +16,15 @@ run = [
   "cargo check -p langflip --target aarch64-apple-darwin",
 ]
 
+[tasks.tray-icons]
+description = "Render the tray icons in crates/langflip/assets/tray from their SVGs"
+dir = "crates/langflip/assets/tray"
+run = [
+  "mise x github:linebender/resvg@0.49.0 -- resvg -w 32 -h 32 en.svg en.png",
+  "mise x github:linebender/resvg@0.49.0 -- resvg -w 32 -h 32 ru.svg ru.png",
+  "mise x github:linebender/resvg@0.49.0 -- resvg -w 32 -h 32 other.svg other.png",
+]
+
 [tasks.eval]
 description = "Score the model on model/testset.tsv"
 run = "cargo run --release -p langflip-core --example evaluate"

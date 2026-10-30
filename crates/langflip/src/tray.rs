@@ -30,66 +30,47 @@ pub struct Tray {
     click: Cell<Option<Instant>>,
 }
 
-const SIZE: u32 = 32;
+/// The app icon with the layout in the corner. `mise run tray-icons` renders them from the SVGs beside them.
+const EN_PNG: &[u8] = include_bytes!("../assets/tray/en.png");
+const RU_PNG: &[u8] = include_bytes!("../assets/tray/ru.png");
+const OTHER_PNG: &[u8] = include_bytes!("../assets/tray/other.png");
 /// The menu id of a word in the «Исключения» submenu starts with this.
 const KEEP_ID: &str = "keep:";
 /// The Windows default double click time.
 const DOUBLE_CLICK: Duration = Duration::from_millis(500);
 
-/// Letters 5 pixels wide and 7 high, a row per byte, the top bit of the 5 on the left.
-fn glyph(c: u8) -> [u8; 7] {
-    match c {
-        b'E' => [0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F],
-        b'N' => [0x11, 0x19, 0x15, 0x13, 0x11, 0x11, 0x11],
-        b'R' => [0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11],
-        _ => [0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E],
-    }
+/// The RGBA pixels and the side of a square PNG built into the exe.
+fn pixels(png: &[u8]) -> (Vec<u8>, u32) {
+    let mut reader = png::Decoder::new(std::io::Cursor::new(png))
+        .read_info()
+        .expect("the tray PNGs are built in");
+    let mut rgba = vec![0; reader.output_buffer_size().expect("a 32 px PNG fits")];
+    let frame = reader
+        .next_frame(&mut rgba)
+        .expect("the tray PNGs are built in");
+    rgba.truncate(frame.buffer_size());
+    (rgba, frame.width)
 }
 
-/// Whether the pixel falls on a letter of the 2 letter code, drawn twice the font size.
-fn on_letter(code: &[u8; 2], x: u32, y: u32) -> bool {
-    const SCALE: u32 = 2;
-    const LEFT: u32 = 5;
-    const TOP: u32 = 9;
-    let (Some(x), Some(y)) = (x.checked_sub(LEFT), y.checked_sub(TOP)) else {
-        return false;
-    };
-    let (gx, gy) = (x / SCALE, y / SCALE);
-    // A letter is 5 columns wide, then 1 blank column.
-    let (letter, col) = (gx / 6, gx % 6);
-    if letter > 1 || col > 4 || gy > 6 {
-        return false;
-    }
-    glyph(code[letter as usize])[gy as usize] & (0x10 >> col) != 0
-}
-
-/// `EN` on blue, `RU` on red, grey when off. Another layout gets a square split on the diagonal.
-fn icon(on: bool, lang: Option<Lang>) -> Icon {
-    let code = lang.map(|l| match l {
-        Lang::En => b"EN",
-        Lang::Ru => b"RU",
+/// The app icon with `EN` or `RU` in the corner, grey when off. Another layout shows the app icon alone.
+fn rgba(on: bool, lang: Option<Lang>) -> (Vec<u8>, u32) {
+    let (mut rgba, size) = pixels(match lang {
+        Some(Lang::En) => EN_PNG,
+        Some(Lang::Ru) => RU_PNG,
+        None => OTHER_PNG,
     });
-    let back = match (on, lang) {
-        (false, _) => [120, 120, 120, 255],
-        (true, Some(Lang::Ru)) => [220, 38, 38, 255],
-        (true, _) => [37, 99, 235, 255],
-    };
-    let mut rgba = Vec::with_capacity((SIZE * SIZE * 4) as usize);
-    for y in 0..SIZE {
-        for x in 0..SIZE {
-            let edge = x < 2 || y < 2 || x >= SIZE - 2 || y >= SIZE - 2;
-            let color = match code {
-                _ if edge => [255, 255, 255, 255],
-                Some(code) if on_letter(code, x, y) => [255, 255, 255, 255],
-                Some(_) => back,
-                None if x + y < SIZE => back,
-                None if on => [220, 38, 38, 255],
-                None => [170, 170, 170, 255],
-            };
-            rgba.extend_from_slice(&color);
+    if !on {
+        for [r, g, b, _] in rgba.as_chunks_mut::<4>().0 {
+            let grey = (u32::from(*r) * 30 + u32::from(*g) * 59 + u32::from(*b) * 11) / 100;
+            [*r, *g, *b] = [grey as u8; 3];
         }
     }
-    Icon::from_rgba(rgba, SIZE, SIZE).expect("icon size matches its pixels")
+    (rgba, size)
+}
+
+fn icon(on: bool, lang: Option<Lang>) -> Icon {
+    let (rgba, size) = rgba(on, lang);
+    Icon::from_rgba(rgba, size, size).expect("icon size matches its pixels")
 }
 
 fn tooltip(on: bool) -> &'static str {
@@ -220,42 +201,32 @@ impl Tray {
 mod tests {
     use super::*;
 
-    /// The letters as text, `#` for a lit pixel, one font pixel per character.
-    fn picture(code: &[u8; 2]) -> Vec<String> {
-        (0..7)
-            .map(|gy| {
-                (0..11)
-                    .map(|gx| {
-                        if on_letter(code, 5 + gx * 2, 9 + gy * 2) {
-                            '#'
-                        } else {
-                            '.'
-                        }
-                    })
-                    .collect()
-            })
-            .collect()
+    const LANGS: [Option<Lang>; 3] = [Some(Lang::En), Some(Lang::Ru), None];
+
+    #[test]
+    fn each_layout_has_a_32_px_rgba_icon() {
+        for lang in LANGS {
+            let (rgba, size) = rgba(true, lang);
+            assert_eq!((size, rgba.len()), (32, 32 * 32 * 4));
+        }
     }
 
     #[test]
-    fn draws_en() {
-        assert_eq!(picture(b"EN")[0], "#####.#...#");
-        assert_eq!(picture(b"EN")[3], "####..#..##");
+    fn layouts_look_different() {
+        let [en, ru, other] = LANGS.map(|lang| rgba(true, lang).0);
+        assert!(en != ru && en != other && ru != other);
     }
 
     #[test]
-    fn draws_ru() {
-        assert_eq!(picture(b"RU")[0], "####..#...#");
-        assert_eq!(picture(b"RU")[6], "#...#..###.");
-    }
-
-    #[test]
-    fn letters_stay_inside_the_border() {
-        for y in 0..SIZE {
-            for x in 0..SIZE {
-                let edge = x < 2 || y < 2 || x >= SIZE - 2 || y >= SIZE - 2;
-                assert!(!(edge && on_letter(b"EN", x, y)));
-            }
+    fn off_is_grey() {
+        for lang in LANGS {
+            let (rgba, _) = rgba(false, lang);
+            assert!(
+                rgba.as_chunks::<4>()
+                    .0
+                    .iter()
+                    .all(|[r, g, b, _]| r == g && g == b)
+            );
         }
     }
 }
