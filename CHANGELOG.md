@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **CI** `.github/secret-rotation.json` lists each Actions secret with its provider page, so the `rotate-secrets` skill renews them one at a time.
 
 - **Install from source** `mise run install` builds Langflip and installs it on this PC in `%LOCALAPPDATA%\Programs\Langflip`, in place of the running copy.
 - **Short words and digits** words of 1 to 3 letters change on Space when only the other layout gives a word: `z` turns into «я», `yt` into «не». Digits stay in the word, so `ьз3` turns into `mp3`.
