@@ -94,7 +94,12 @@ impl Settings {
         }
         match toml::to_string_pretty(self) {
             Ok(text) => {
-                if let Err(err) = std::fs::write(path, text) {
+                // A crash halfway through a write leaves the old file whole, not half of the new one.
+                let temp = path.with_extension("toml.tmp");
+                let written =
+                    std::fs::write(&temp, text).and_then(|()| std::fs::rename(&temp, path));
+                if let Err(err) = written {
+                    let _ = std::fs::remove_file(&temp);
                     eprintln!("langflip: can't save {}: {err}", path.display());
                 }
             }
@@ -146,5 +151,22 @@ excluded_apps = [\"wow.exe\"
         settings.keep_words.push("руддщ".to_owned());
         settings.save_to(&path);
         assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+    }
+
+    #[test]
+    fn saves_and_reads_back() {
+        let path = temp_file("saved.toml");
+        let mut settings = Settings {
+            enabled: false,
+            keep_words: vec!["руддщ".to_owned()],
+            ..Settings::default()
+        };
+        settings.save_to(&path);
+        settings.keep_words.push("ghbdtn".to_owned());
+        settings.save_to(&path);
+        let read = Settings::load_from(&path);
+        assert!(!read.enabled);
+        assert_eq!(read.keep_words, ["руддщ", "ghbdtn"]);
+        assert!(!path.with_extension("toml.tmp").exists());
     }
 }
