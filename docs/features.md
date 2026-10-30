@@ -2,12 +2,13 @@
 
 ## Fix the layout of a word
 
-Langflip types a word again in the right layout once the person ends it with Space, Enter or Tab. It then switches the layout for the next words.
+Langflip types a word again in the right layout while the person types it, and switches the layout for the rest of the word. When the first letters leave doubt, it waits for Space, Enter or Tab.
 
 - **Where** in any app, from the moment Langflip runs.
 - **Which words** 4 letters or more, Russian ЙЦУКЕН or English US QWERTY.
+- **While typed** from the 4th letter, once the typed letters start no dictionary word of their layout and the same keys in the other layout start one there and score higher.
 - **When it keeps a word** the word as typed is in the dictionary of its layout, or in `keep_words`.
-- **Limits** a rare word outside the dictionary misses about 2% of the time in English and 4% in Russian. About 1 word in 1000 that was typed right gets changed. `mise run eval` measures both.
+- **Limits** a rare word outside the dictionary misses about 1.5% of the time in each language. About 1 rare word in 1000 typed right gets changed. `mise run eval` measures both.
 
 ## Undo a fix
 

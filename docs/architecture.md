@@ -47,8 +47,16 @@ sequenceDiagram
     participant A as App in front
     K->>H: key down (scan code or Mac key code)
     alt letter key
-        H->>E: key(Stroke)
-        H-->>A: pass the key
+        H->>E: key(Stroke, layout of the app)
+        E-->>H: Fix or nothing
+        alt Fix
+            H-->>A: swallow the key
+            H->>Q: post the fix
+            Q->>A: Backspaces, text as Unicode, end marker
+            Q->>A: switch the layout
+        else nothing
+            H-->>A: pass the key
+        end
     else Space, Enter, Tab
         H->>E: end_word(layout of the app)
         E-->>H: Fix or nothing
@@ -64,10 +72,10 @@ sequenceDiagram
 ```
 
 1. The hook gets the key and maps its scan code (Windows) or key code (macOS) to a key position. Both follow the physical key, so the layout in use doesn't change the mapping.
-2. A letter key goes into the buffer with its Shift and Caps Lock state.
-3. Space, Enter or Tab ends the word. The engine asks `decide`, and the hook swallows the end key when a fix comes back.
-4. The fix goes out as tagged events: Backspaces, the text as Unicode, the end key, an end marker. The hook lets tagged events through.
-5. Keys the person presses before the end marker comes back wait in the hook and replay after it.
+2. A letter key goes into the buffer with its Shift and Caps Lock state. From the 4th key the engine asks `decide_prefix`, and the hook swallows the key when a fix comes back. The fix types it in the other layout. One such fix per word.
+3. Space, Enter or Tab ends the word. The engine asks `decide`, unless the word already switched, and the hook swallows the end key when a fix comes back.
+4. The fix goes out as tagged events: Backspaces, the text as Unicode, the end key if there is one, an end marker. The hook lets tagged events through.
+5. Keys the person presses before the end marker comes back wait in the hook and replay after it. On Windows they wait up to 100 ms more for the window to take the new layout.
 
 ## The decision
 
@@ -75,6 +83,12 @@ sequenceDiagram
 2. Score the typed word and the swapped word: mean log probability per letter from the letter triples, with start and end marks.
 3. Fix when the swapped word is in its dictionary and scores higher, or scores higher by `THRESHOLD` (1.0).
 4. A trailing key that is punctuation in the current layout (`hello,`) is also tried apart from the word.
+
+While the word is typed, `decide_prefix` judges the keys so far:
+
+1. Fewer than 4 keys, a last key that is punctuation in the current layout, or typed letters that start a word of the dictionary or of `keep_words`: wait.
+2. The swapped letters start no dictionary word of the other layout: wait.
+3. Score both without the end mark. Switch when the swapped letters score higher by `PREFIX_GAIN` (1.0).
 
 ## The model file
 

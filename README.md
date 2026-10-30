@@ -1,6 +1,6 @@
 # Langflip
 
-Langflip fixes a word typed in the wrong keyboard layout. Type `ghbdtn` with the English layout on, press Space, and it becomes «привет». The layout then switches to Russian.
+Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the English layout on, and it becomes «прив» as you type. The layout switches to Russian, and the rest of the word comes out right.
 
 - **Languages** Russian (ЙЦУКЕН) and English (US QWERTY).
 - **Words** 4 letters or more. Shorter words stay as typed.
@@ -9,7 +9,7 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbdtn` with the
 
 ## Use it
 
-- **Fix** happens on Space, Enter or Tab.
+- **Fix** happens while the word is typed, from the 4th letter, as soon as Langflip is sure. Otherwise on Space, Enter or Tab.
 - **Undo** Pause on Windows, Ctrl+F12 on macOS. The word comes back as typed and stays that way from then on.
 - **Convert by hand** Shift+Pause on Windows, Ctrl+Shift+F12 on macOS.
 - **Layout** the tray icon shows `EN` on blue or `RU` on red.

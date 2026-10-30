@@ -339,7 +339,7 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
             s.settings.store_keep_words(&s.engine.keep_words);
             s.settings_mtime = settings::modified();
             let end = s.last_end_key;
-            send_fix(s, fix, end);
+            send_fix(s, fix, Some(end));
             return true;
         }
         return false;
@@ -358,13 +358,16 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
     }
     if let Some(key) = key_for_code(code) {
         let caps = flags.contains(CGEventFlags::CGEventFlagAlphaShift);
-        s.engine.key(Stroke::new(key, shift, caps));
+        if let Some(fix) = s.engine.key(Stroke::new(key, shift, caps), current_lang()) {
+            send_fix(s, fix, None);
+            return true;
+        }
         return false;
     }
     if matches!(code, KEY_SPACE | KEY_RETURN | KEY_TAB) {
         s.last_end_key = code;
         if let Some(fix) = s.engine.end_word(current_lang()) {
-            send_fix(s, fix, code);
+            send_fix(s, fix, Some(code));
             return true;
         }
         return false;
@@ -418,7 +421,7 @@ fn post_text(units: &[u16]) {
     }
 }
 
-fn send_fix(s: &mut State, fix: Fix, end_key: u16) {
+fn send_fix(s: &mut State, fix: Fix, end_key: Option<u16>) {
     s.pending = true;
     let none = CGEventFlags::CGEventFlagNull;
     for _ in 0..fix.erase {
@@ -430,8 +433,10 @@ fn send_fix(s: &mut State, fix: Fix, end_key: u16) {
     for chunk in units.chunks(20) {
         post_text(chunk);
     }
-    post_key(end_key, true, none, TAG_OWN);
-    post_key(end_key, false, none, TAG_OWN);
+    if let Some(key) = end_key {
+        post_key(key, true, none, TAG_OWN);
+        post_key(key, false, none, TAG_OWN);
+    }
     post_key(KEY_MARKER, false, none, TAG_END);
     switch_layout(fix.switch_to);
 }

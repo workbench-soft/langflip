@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Fix while typing** Langflip switches a word in the wrong layout from its 4th letter, as Punto Switcher does, and the rest of the word comes out in the right layout. Rare words it can't judge early still get fixed on Space.
 - **Double click** a double click on the tray icon switches the layout between Russian and English. A single click now pauses after 0.5 s.
 - **Layout on the icon** the tray icon shows `EN` on blue or `RU` on red for the window in front, and turns grey when fixing is off.
 - **CI** the Rust build folder moved into the runner work folder, since Defender blocked a test exe under LOCALAPPDATA.

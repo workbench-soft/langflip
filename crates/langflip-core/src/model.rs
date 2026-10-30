@@ -12,15 +12,27 @@ pub struct LangModel {
     size: usize,
     log_probs: Vec<f32>,
     dictionary: HashSet<String>,
+    /// Every start of a dictionary word, the whole word included.
+    starts: HashSet<String>,
 }
 
 impl LangModel {
     /// Mean log probability per letter of a lowercase word, with start and end marks.
     pub fn score(&self, word: &str) -> f32 {
+        self.score_with_end(word, true)
+    }
+
+    /// [`LangModel::score`] for the start of a word: no end mark.
+    pub fn score_start(&self, start: &str) -> f32 {
+        self.score_with_end(start, false)
+    }
+
+    fn score_with_end(&self, word: &str, end: bool) -> f32 {
         let mut prev = [0usize, 0usize];
         let mut total = 0.0;
         let mut steps = 0;
-        for c in word.chars().map(Some).chain([None]) {
+        let end = end.then_some(None);
+        for c in word.chars().map(Some).chain(end) {
             let code = match c {
                 None => 0,
                 Some(c) => match self.index.get(&c) {
@@ -43,6 +55,11 @@ impl LangModel {
 
     pub fn contains(&self, word: &str) -> bool {
         self.dictionary.contains(word)
+    }
+
+    /// True when some dictionary word starts with these lowercase letters.
+    pub fn starts_word(&self, start: &str) -> bool {
+        self.starts.contains(start)
     }
 }
 
@@ -105,7 +122,17 @@ impl Model {
                 .iter()
                 .map(|&b| f32::from_le_bytes(b))
                 .collect();
-            let dictionary = r.text()?.split('\n').map(str::to_owned).collect();
+            let dictionary: HashSet<String> = r.text()?.split('\n').map(str::to_owned).collect();
+            let starts = dictionary
+                .iter()
+                .flat_map(|w| {
+                    w.char_indices()
+                        .skip(1)
+                        .map(|(i, _)| &w[..i])
+                        .chain([&w[..]])
+                })
+                .map(str::to_owned)
+                .collect();
             let index = alphabet
                 .iter()
                 .enumerate()
@@ -116,6 +143,7 @@ impl Model {
                 size,
                 log_probs,
                 dictionary,
+                starts,
             };
             langs.insert(tag.to_vec(), model);
         }
