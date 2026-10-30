@@ -316,6 +316,16 @@ fn open_settings() {
 /// The key at this US position, from its scan code. Scan codes follow the key, not the layout.
 fn key_for_scan(scan: u32) -> Option<Key> {
     Some(match scan {
+        0x02 => Key::Digit1,
+        0x03 => Key::Digit2,
+        0x04 => Key::Digit3,
+        0x05 => Key::Digit4,
+        0x06 => Key::Digit5,
+        0x07 => Key::Digit6,
+        0x08 => Key::Digit7,
+        0x09 => Key::Digit8,
+        0x0A => Key::Digit9,
+        0x0B => Key::Digit0,
         0x10 => Key::Q,
         0x11 => Key::W,
         0x12 => Key::E,
@@ -431,13 +441,13 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         return false;
     }
     let extended = info.flags.0 & LLKHF_EXTENDED.0 != 0;
-    if let Some(key) = key_for_scan(info.scanCode).filter(|_| !extended) {
+    let shift = pressed(VK_SHIFT);
+    // A digit with Shift types other signs in each layout, so it clears the word below.
+    let key = key_for_scan(info.scanCode).filter(|k| !extended && !(k.is_digit() && shift));
+    if let Some(key) = key {
         let caps = unsafe { GetKeyState(VK_CAPITAL) } & 1 != 0;
         let lang = current_lang();
-        if let Some(fix) = s
-            .engine
-            .key(Stroke::new(key, pressed(VK_SHIFT), caps), lang)
-        {
+        if let Some(fix) = s.engine.key(Stroke::new(key, shift, caps), lang) {
             debug(format_args!(
                 "switch while typed in {lang:?}: fix of {} keys",
                 fix.erase

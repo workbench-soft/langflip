@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Short words and digits** words of 1 to 3 letters change on Space when only the other layout gives a word: `z` turns into «я», `yt` into «не». Digits stay in the word, so `ьз3` turns into `mp3`.
 - **Layout stays** the layout picked with a double click on the tray icon stays when you go to another window. Before, Windows could put the old one back.
 - **Fix while typing** Langflip switches a word in the wrong layout from its 4th letter, as Punto Switcher does, and the rest of the word comes out in the right layout. Rare words it can't judge early still get fixed on Space.
 - **Double click** a double click on the tray icon switches the layout between Russian and English. A single click now pauses after 0.5 s.

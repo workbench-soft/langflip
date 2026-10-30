@@ -3,7 +3,7 @@
 Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the English layout on, and it becomes «прив» as you type. The layout switches to Russian, and the rest of the word comes out right.
 
 - **Languages** Russian (ЙЦУКЕН) and English (US QWERTY).
-- **Words** 4 letters or more. Shorter words stay as typed.
+- **Words** any length. Words under 4 letters change on Space, only into a dictionary word: `z` turns into «я». Digits stay in the word, so `ьз3` turns into `mp3`.
 - **Systems** Windows 10 and later, macOS 13 and later.
 - **Privacy** no network and no typing log. The current word lives in memory until the next one starts.
 

@@ -172,3 +172,15 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `windows.rs`: the double click brings the window back, then a 20 ms timer waits until that window is in front and only then posts `WM_INPUTLANGCHANGEREQUEST`. It gives up waiting after 0.5 s and posts anyway. The icon timer skips its reading while the switch waits, so the icon doesn't flicker back.
 - **Tried** `ITfInputProcessorProfileMgr::ActivateProfile` with `TF_IPPMF_FORSESSION` from Langflip's own thread. It returned OK and changed no window.
 - **Docs** `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
+
+### 2026-10-30 Short words and words with digits
+
+- **Why** the person wants short words fixed too, down to one letter: `z` should turn into «я», `yt` into «не». Words with digits such as `mp3` should come out right as well.
+- **Rule for words under 4 letters** Langflip waits for Space, Enter or Tab. It fixes the word only when the typed letters are no word of their layout and the same keys in the other layout give a word from its dictionary. No score fallback: a short string scores too noisily.
+- **Changes**
+  - `scripts/build_model.py`: the dictionary gains short words of 2 and 3 letters with a Zipf frequency of 4.5 or more, the one letter words (`a`, `i`; «а», «в», «и», «к», «о», «с», «у», «я»), and tokens with digits such as `mp3`, `ps4`, `3d`. The test set gains the short words, to measure misses and false fixes.
+  - `layout.rs`: the digit keys 1 to 9 and 0 join the word. They type the same digit in both layouts. A digit with Shift still clears the word, since Shift gives other signs in each layout.
+  - `decide.rs`: the 4 letter minimum counts letters, not digits. Shorter words go by the dictionary only.
+  - `windows.rs`, `macos.rs`: map the digit keys.
+- **Limits** a rare Russian word such as «ем» can turn English when its keys give a frequent English word (`tv`). Undo puts it back and keeps it. One letter words such as `c`, `d`, `j` typed alone in English turn Russian.
+- **Docs** README, `docs/features.md`, `docs/architecture.md`, `CHANGELOG.md`.

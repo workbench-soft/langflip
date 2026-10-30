@@ -218,9 +218,47 @@ mod tests {
     }
 
     #[test]
+    fn fixes_short_words() {
+        for (typed, lang, word) in [
+            ("z", Lang::En, "я"),
+            ("Z", Lang::En, "Я"),
+            ("yt", Lang::En, "не"),
+            ("nj", Lang::En, "то"),
+            ("rfr", Lang::En, "как"),
+            ("ytn", Lang::En, "нет"),
+            ("z,", Lang::En, "я,"),
+            ("ш", Lang::Ru, "i"),
+            ("шт", Lang::Ru, "in"),
+            ("еру", Lang::Ru, "the"),
+        ] {
+            assert_eq!(fixed(typed, lang).as_deref(), Some(word), "{typed}");
+        }
+    }
+
+    #[test]
     fn keeps_short_words() {
-        assert_eq!(fixed("rfr", Lang::En), None);
-        assert_eq!(fixed("ytn", Lang::En), None);
+        for (word, lang) in [
+            ("a", Lang::En),
+            ("i", Lang::En),
+            ("is", Lang::En),
+            ("the", Lang::En),
+            ("я", Lang::Ru),
+            ("в", Lang::Ru),
+            ("не", Lang::Ru),
+            ("как", Lang::Ru),
+            ("x", Lang::En),
+        ] {
+            assert_eq!(fixed(word, lang), None, "{word}");
+        }
+    }
+
+    #[test]
+    fn words_with_digits() {
+        assert_eq!(fixed("ьз3", Lang::Ru).as_deref(), Some("mp3"));
+        assert_eq!(fixed("зы4", Lang::Ru).as_deref(), Some("ps4"));
+        for (word, lang) in [("mp3", Lang::En), ("2026", Lang::En), ("2026", Lang::Ru)] {
+            assert_eq!(fixed(word, lang), None, "{word}");
+        }
     }
 
     #[test]
