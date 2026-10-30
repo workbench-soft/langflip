@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **CI** the build jobs run on the PC's 2 heavy runners, so at most 2 Gradle or Cargo builds share it. 8 at once made a release take 50 minutes.
 - **CI** `.github/secret-rotation.json` lists each Actions secret with its provider page, so the `rotate-secrets` skill renews them one at a time.
 
 - **Install from source** `mise run install` builds Langflip and installs it on this PC in `%LOCALAPPDATA%\Programs\Langflip`, in place of the running copy.
