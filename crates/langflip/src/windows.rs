@@ -34,9 +34,9 @@ use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, DispatchMessageW, EVENT_OBJECT_FOCUS, EVENT_SYSTEM_FOREGROUND,
     GetForegroundWindow, GetMessageW, GetWindowThreadProcessId, KBDLLHOOKSTRUCT, LLKHF_EXTENDED,
     MSG, PostMessageW, PostQuitMessage, PostThreadMessageW, STATE_SYSTEM_PROTECTED, SW_SHOWNORMAL,
-    SetWindowsHookExW, TranslateMessage, WH_KEYBOARD_LL, WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT,
-    WINEVENT_SKIPOWNPROCESS, WM_APP, WM_INPUTLANGCHANGEREQUEST, WM_KEYDOWN, WM_LBUTTONDOWN,
-    WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN, WM_XBUTTONDOWN,
+    SetTimer, SetWindowsHookExW, TranslateMessage, WH_KEYBOARD_LL, WH_MOUSE_LL,
+    WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_APP, WM_INPUTLANGCHANGEREQUEST, WM_KEYDOWN,
+    WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_SYSKEYDOWN, WM_TIMER, WM_XBUTTONDOWN,
 };
 use windows::core::{PCWSTR, PWSTR, w};
 
@@ -163,12 +163,17 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             flags,
         );
         foreground_changed();
+        // Windows tells no other process when a window switches its layout, so the tray asks.
+        SetTimer(None, 0, 250, None);
 
         let mut msg = MSG::default();
         while GetMessageW(&mut msg, None, 0, 0).as_bool() {
             match msg.message {
                 WM_APP_FIX => apply_queued_fix(),
                 WM_APP_REPLAY => replay_held(),
+                WM_TIMER => {
+                    with_state(|s| s.tray.as_ref().map(|t| t.set_lang(current_lang())));
+                }
                 _ => {
                     let _ = TranslateMessage(&msg);
                     DispatchMessageW(&msg);

@@ -136,7 +136,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
         Err(()) => eprintln!("langflip: no event tap yet, allow Accessibility and restart"),
     }
 
-    // The tray menu has no run loop hook of its own here, so a timer reads its clicks.
+    // The tray menu has no run loop hook of its own here, so a timer reads its clicks and the layout.
     let timer = CFRunLoopTimer::new(0.0, 0.2, 0, 0, poll_tray, std::ptr::null_mut());
     CFRunLoop::get_current().add_timer(&timer, unsafe { kCFRunLoopCommonModes });
     app.run();
@@ -153,6 +153,7 @@ fn ask_for_access() {
 }
 
 extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
+    with_state(|s| s.tray.as_ref().map(|t| t.set_lang(current_lang())));
     let Some(action) = with_state(|s| s.tray.as_ref().and_then(Tray::poll)).flatten() else {
         return;
     };

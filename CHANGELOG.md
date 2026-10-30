@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Layout on the icon** the tray icon shows `EN` on blue or `RU` on red for the window in front, and turns grey when fixing is off.
 - **CI** the Rust build folder moved into the runner work folder, since Defender blocked a test exe under LOCALAPPDATA.
 - **File details** `langflip.exe` shows its name, publisher and version in Explorer and Task Manager. Defender still flags the unsigned exe.
 - **CI** runs on pushes to main only. PR runs are off, and the workflow says how to turn them back on.

@@ -25,9 +25,15 @@ Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. Langflip converts the word bein
 - **Password fields** skipped on Windows (fields marked protected) and on macOS (secure input).
 - **Admin windows** on Windows, skipped unless Langflip itself runs as admin.
 
+## The current layout on the icon
+
+The tray icon shows `EN` on blue or `RU` on red, for the layout of the window in front. A layout other than these 2 shows a square split blue and red.
+
+- **Limits** a switch reaches the icon within 250 ms on Windows and 0.2 s on macOS.
+
 ## Pause with a click
 
-A left click on the tray icon turns fixing off, and the icon turns grey. The next click turns it on. The tooltip says which state Langflip is in.
+A left click on the tray icon turns fixing off, and the icon turns grey with the layout letters kept. The next click turns it on. The tooltip says which state Langflip is in.
 
 ## Start at login
 
