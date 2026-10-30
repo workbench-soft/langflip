@@ -46,7 +46,7 @@ jobs:
           fetch-depth: 0
       - uses: workbench-soft/ci/actions/setup@main
         with:
-          pnpm-install: 'false'
+          pnpm-install: "false"
 
       # The checkout deletes target, so the build goes to a folder that lasts and only changed crates build again.
       # It sits in the runner's work folder, which Defender skips. Under LOCALAPPDATA, Defender blocked a test exe.

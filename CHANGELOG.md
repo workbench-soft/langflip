@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+
+- **Lint and format** `mise run lint` checks the Rust with rustfmt and clippy, the Python with ruff, the scripts with shellcheck and shfmt, and the docs with oxfmt. `mise run check` runs it first.
+
 - **Languages** the tray menu and tooltip speak the system language: English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian. Other languages get English.
 - **Tray icon** the tray shows a black `EN` or `RU` in marker on a yellow tile, in place of the blue and red square. Off still turns it grey.
 - **App icon** Langflip has an icon of its own: a Z and a Я in black marker over a yellow highlighter stripe. Z and Я share a key. The desktop and Start menu shortcuts and Settings, Apps show it.

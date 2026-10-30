@@ -4,7 +4,7 @@ name: Checks
 on:
   push:
     branches: [main]
-    paths: ['**', '!**.md', '!docs/**']
+    paths: ["**", "!**.md", "!docs/**"]
   # PR runs are off: agents run the tests and linter locally before they merge.
   # To run this on PRs again, uncomment the pull_request lines below.
   # pull_request:
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: workbench-soft/ci/actions/setup@main
         with:
-          pnpm-install: 'false'
+          pnpm-install: "false"
       # The checkout deletes target, so the build goes to a folder that lasts and only changed crates build again.
       # It sits in the runner's work folder, which Defender skips. Under LOCALAPPDATA, Defender blocked a test exe.
       - run: echo "CARGO_TARGET_DIR=$(cygpath -m "$RUNNER_WORKSPACE")/target-checks" >> "$GITHUB_ENV"
