@@ -25,3 +25,12 @@
 
 - [ ] Find why typing `ghbd` in English gave `ghbdпривет`: the switch while typed left the typed keys and the 4th key on screen. Seen in the installed `%LOCALAPPDATA%\Programs\Langflip\langflip.exe` (2026-10-30).
 - [ ] Run `mise run smoke` with nobody typing: the faster model load (PR for `fix/fast-model-load`) merged without it (2026-10-30).
+
+## feat/short-words (PR #13)
+
+- [ ] Run `mise run smoke` with Punto Switcher closed: `windows.rs` now maps the digit keys, and the smoke test wasn't run (2026-10-30).
+- [ ] Install the next release and check by hand: `z` + Space gives «я», `ьз3` + Space gives `mp3`.
+
+## chore/install-task (PR #14)
+
+- [ ] Add the `RELEASES_TOKEN` secret to workbench-soft/langflip: each Release run fails without it, and no Langflip release exists yet (2026-10-30).
