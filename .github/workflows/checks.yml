@@ -22,7 +22,8 @@ defaults:
 
 jobs:
   check:
-    runs-on: [self-hosted, local]
+    # A Gradle, Cargo or Tauri build takes every core. The heavy runners take at most 2 such jobs at once.
+    runs-on: [self-hosted, heavy]
     steps:
       - uses: actions/checkout@v7
       - uses: workbench-soft/ci/actions/setup@main

@@ -31,7 +31,8 @@ jobs:
     concurrency:
       group: release
       cancel-in-progress: true
-    runs-on: [self-hosted, local]
+    # A Gradle, Cargo or Tauri build takes every core. The heavy runners take at most 2 such jobs at once.
+    runs-on: [self-hosted, heavy]
     steps:
       - name: Check the release token
         env:
