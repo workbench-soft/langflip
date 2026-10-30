@@ -243,6 +243,16 @@ fn reload_settings(s: &mut State) {
 /// The key at this US position. Mac key codes follow the key, not the layout.
 fn key_for_code(code: u16) -> Option<Key> {
     Some(match code {
+        0x12 => Key::Digit1,
+        0x13 => Key::Digit2,
+        0x14 => Key::Digit3,
+        0x15 => Key::Digit4,
+        0x17 => Key::Digit5,
+        0x16 => Key::Digit6,
+        0x1A => Key::Digit7,
+        0x1C => Key::Digit8,
+        0x19 => Key::Digit9,
+        0x1D => Key::Digit0,
         0x00 => Key::A,
         0x01 => Key::S,
         0x02 => Key::D,
@@ -356,7 +366,8 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
         s.engine.backspace();
         return false;
     }
-    if let Some(key) = key_for_code(code) {
+    // A digit with Shift types other signs in each layout, so it clears the word below.
+    if let Some(key) = key_for_code(code).filter(|k| !(k.is_digit() && shift)) {
         let caps = flags.contains(CGEventFlags::CGEventFlagAlphaShift);
         if let Some(fix) = s.engine.key(Stroke::new(key, shift, caps), current_lang()) {
             send_fix(s, fix, None);

@@ -7,7 +7,7 @@
 use std::collections::HashSet;
 
 use langflip_core::Model;
-use langflip_core::decide::{MIN_LETTERS, PREFIX_GAIN, THRESHOLD, decide_prefix_with, decide_with};
+use langflip_core::decide::{PREFIX_GAIN, THRESHOLD, decide_prefix_with, decide_with};
 use langflip_core::layout::{Lang, Stroke, strokes_for, text_for};
 
 /// The word on screen once Space ends it, or None when it stays as typed.
@@ -19,7 +19,7 @@ fn result(
     gain: f32,
 ) -> Option<String> {
     let keep = HashSet::new();
-    for len in MIN_LETTERS..=strokes.len() {
+    for len in 1..=strokes.len() {
         if decide_prefix_with(model, &strokes[..len], lang, &keep, gain).is_some() {
             return Some(text_for(strokes, lang.other()));
         }
@@ -42,7 +42,8 @@ fn main() {
             ""
         };
         for lang in [Lang::En, Lang::Ru] {
-            for kind in ["dict", "rare"] {
+            // "short" words have 1 to 3 letters, "srare" are rarer short words the dictionary lacks.
+            for kind in ["dict", "rare", "short", "srare"] {
                 let (mut words, mut false_fixes, mut misses) = (0, 0, 0);
                 let tag = if lang == Lang::En { "en" } else { "ru" };
                 for line in tests.lines() {

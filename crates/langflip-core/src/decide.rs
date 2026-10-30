@@ -5,8 +5,13 @@ use std::collections::HashSet;
 use crate::layout::{Lang, Stroke, in_word, text_for};
 use crate::model::Model;
 
-/// Words shorter than this stay as typed.
+/// Words with fewer letters wait for the end key and change only to a dictionary word.
 pub const MIN_LETTERS: usize = 4;
+
+/// Digits type the same in both layouts, so only the other keys count.
+fn letters(strokes: &[Stroke]) -> usize {
+    strokes.iter().filter(|s| !s.key.is_digit()).count()
+}
 
 /// How much higher the other layout must score when its word is outside the dictionary.
 /// `mise run eval` measures the effect of a change.
@@ -49,7 +54,7 @@ pub fn decide_with(
     let mut scored = Vec::new();
     for &len in &variants {
         let part = &strokes[..len];
-        if len < MIN_LETTERS {
+        if letters(part) == 0 {
             continue;
         }
         let typed = text_for(part, current).to_lowercase();
@@ -63,6 +68,13 @@ pub fn decide_with(
         let typed_score = model.lang(current).score(&typed);
         let swapped_score = model.lang(other).score(&swapped);
         let known = model.lang(other).contains(&swapped);
+        // A short word scores too noisily: only the dictionary decides it.
+        if letters(part) < MIN_LETTERS {
+            if known {
+                scored.push((len, true, f32::INFINITY));
+            }
+            continue;
+        }
         scored.push((len, known, swapped_score - typed_score));
     }
 
@@ -101,7 +113,7 @@ pub fn decide_prefix_with(
     let other = current.other();
     // "hello," may end here, and Space decides it.
     let last = strokes.last()?;
-    if strokes.len() < MIN_LETTERS
+    if letters(strokes) < MIN_LETTERS
         || !in_word(last.key, current)
         || !strokes.iter().all(|s| in_word(s.key, other))
     {
