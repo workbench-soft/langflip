@@ -225,3 +225,13 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `crates/langflip/assets/tray/en.svg`, `ru.svg`, `other.svg`: the sources. `mise run tray-icons` renders each to a 32 px PNG next to it through `resvg`.
   - `tray.rs`: decodes the built in PNG for the layout with the `png` crate, and greys it when fixing is off. The 5 by 7 pixel font goes.
 - **Docs** `docs/features.md`, `CHANGELOG.md`.
+
+### 2026-10-31 A marker icon with Z and Я
+
+- **Why** the person found the art deco icon and its tray overlay ugly. In 2 more rounds they picked a hand drawn marker style with one Latin and one Cyrillic letter: Z and Я, which share a key.
+- **Look** the app icon has a black Z and Я in marker over a yellow highlighter stripe on cream. The tray shows a black `EN` or `RU` drawn big on a yellow tile, and the app icon for another layout. Off turns it grey, as before.
+- **Changes**
+  - `crates/langflip/assets/icon.svg` and `icon.ico`: the new app icon.
+  - `crates/langflip/assets/tray/*.svg` and `*.png`: the new tray icons. `tray.rs` stays as it is.
+  - `design/icons/2026-10-31-3` and `2026-10-31-4`: rounds 3 and 4 of the drafts, with the pick in `picked.txt`.
+- **Docs** README, `docs/features.md`, `CHANGELOG.md`.

@@ -2,8 +2,8 @@
 
 ## Unreleased
 - **Languages** the tray menu and tooltip speak the system language: English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian. Other languages get English.
-- **Tray icon** the tray shows the new art deco icon with a small `EN` or `RU` in the corner, in place of the blue and red square. Off still turns it grey.
-- **App icon** Langflip has an icon of its own: a gold А and Я in the art deco style. The desktop and Start menu shortcuts and Settings, Apps show it. The tray still shows `EN` or `RU`.
+- **Tray icon** the tray shows a black `EN` or `RU` in marker on a yellow tile, in place of the blue and red square. Off still turns it grey.
+- **App icon** Langflip has an icon of its own: a Z and a Я in black marker over a yellow highlighter stripe. Z and Я share a key. The desktop and Start menu shortcuts and Settings, Apps show it.
 - **Exceptions** a word becomes an exception after you undo its fix twice, not once. The tray menu lists the exceptions under «Исключения», and a click on a word removes it.
 - **Install with a double click** `Langflip.cmd` in the repo builds Langflip, installs it and starts it. Langflip then sits on the desktop, in the Start menu and in Settings, Apps, with an Uninstall button.
 - **Releases** a release built on the PC carries the Sydney date again. Before 11:00 in Sydney it got the day before.
