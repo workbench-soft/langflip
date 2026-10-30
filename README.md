@@ -15,8 +15,8 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the E
 - **Layout** the tray icon is the app icon with a small `EN` or `RU` in the corner.
 - **Pause** click the tray icon to turn fixing off. The icon turns grey. Click again to turn it on.
 - **Switch the layout** double-click the tray icon to swap Russian and English.
-- **Tray menu** a right click opens it: fixing on and off, start at login, the list of exceptions, the settings file, quit.
-- **Autostart** the first start turns on start at login, with no question. Uncheck «Запускать при входе» to stop it.
+- **Tray menu** a right click opens it: fixing on and off, start at login, the list of exceptions, the settings file, quit. It speaks the system language: English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian.
+- **Autostart** the first start turns on start at login, with no question. Uncheck Start at sign in in the tray menu to stop it.
 
 The settings file is `%APPDATA%\Langflip\settings.toml` on Windows and `~/Library/Application Support/Langflip/settings.toml` on macOS. Its keys are in [docs/features.md](docs/features.md).
 

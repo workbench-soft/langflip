@@ -71,17 +71,18 @@ The first start turns on start at login, with no question.
 
 - **Windows** a `Langflip` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. Each start rewrites the path, so a moved `langflip.exe` still starts.
 - **macOS** `~/Library/LaunchAgents/com.workbenchsoft.langflip.plist`. macOS shows a "Background item added" notice once.
-- **Limits** unchecking «Запускать при входе» turns it off for good. Deleting `settings.toml` makes the next start count as the first again.
+- **Limits** unchecking Start at sign in turns it off for good. Deleting `settings.toml` makes the next start count as the first again.
 
 ## Tray menu
 
 A right click on the icon opens it.
 
-- **Исправлять раскладку** fixing on or off, the same as a left click on the icon.
-- **Запускать при входе** start at login on or off.
-- **Исключения (N)** the words in `keep_words`. A click on a word removes it, and Langflip fixes it again.
-- **Открыть настройки** opens `settings.toml` in the text editor. Langflip reads the change at the next window switch.
-- **Выход** quits.
+- **Fix the layout** fixing on or off, the same as a left click on the icon.
+- **Start at sign in** start at login on or off.
+- **Exceptions (N)** the words in `keep_words`. A click on a word removes it, and Langflip fixes it again.
+- **Open the settings** opens `settings.toml` in the text editor. Langflip reads the change at the next window switch.
+- **Quit** quits.
+- **Language** the menu and the tooltip speak the system language when it is English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian, and English otherwise.
 
 ## Settings file
 

@@ -1,0 +1,91 @@
+_version: 2
+tooltip.on:
+  en: Langflip is on. A click turns it off, a double click switches the layout
+  ru: Langflip включён. Щелчок выключает, двойной щелчок меняет раскладку
+  de: Langflip ist an. Ein Klick schaltet es aus, ein Doppelklick wechselt das Layout
+  fr: Langflip est activé. Un clic le désactive, un double clic change la disposition
+  es: Langflip está activado. Un clic lo desactiva, un doble clic cambia la distribución
+  zh: Langflip 已开启。单击关闭，双击切换键盘布局
+  ja: Langflip はオンです。クリックでオフ、ダブルクリックでキー配列を切り替え
+  ko: Langflip이 켜져 있어요. 클릭하면 꺼지고, 더블클릭하면 자판이 바뀌어요
+  nb: Langflip er på. Et klikk slår det av, et dobbeltklikk bytter oppsett
+tooltip.off:
+  en: Langflip is off. A click turns it on, a double click switches the layout
+  ru: Langflip выключен. Щелчок включает, двойной щелчок меняет раскладку
+  de: Langflip ist aus. Ein Klick schaltet es ein, ein Doppelklick wechselt das Layout
+  fr: Langflip est désactivé. Un clic l’active, un double clic change la disposition
+  es: Langflip está desactivado. Un clic lo activa, un doble clic cambia la distribución
+  zh: Langflip 已关闭。单击开启，双击切换键盘布局
+  ja: Langflip はオフです。クリックでオン、ダブルクリックでキー配列を切り替え
+  ko: Langflip이 꺼져 있어요. 클릭하면 켜지고, 더블클릭하면 자판이 바뀌어요
+  nb: Langflip er av. Et klikk slår det på, et dobbeltklikk bytter oppsett
+menu.fix:
+  en: Fix the layout
+  ru: Исправлять раскладку
+  de: Layout korrigieren
+  fr: Corriger la disposition
+  es: Corregir la distribución
+  zh: 纠正键盘布局
+  ja: キー配列を直す
+  ko: 자판 고치기
+  nb: Rett opp oppsettet
+menu.autostart:
+  en: Start at sign in
+  ru: Запускать при входе
+  de: Bei der Anmeldung starten
+  fr: Lancer à l’ouverture de session
+  es: Iniciar al iniciar sesión
+  zh: 登录时启动
+  ja: サインイン時に起動
+  ko: 로그인할 때 시작
+  nb: Start ved pålogging
+menu.keepWords:
+  en: Exceptions (%{count})
+  ru: Исключения (%{count})
+  de: Ausnahmen (%{count})
+  fr: Exceptions (%{count})
+  es: Excepciones (%{count})
+  zh: 例外（%{count}）
+  ja: 例外（%{count}）
+  ko: 예외 (%{count})
+  nb: Unntak (%{count})
+menu.keepWordsNone:
+  en: None yet. A word lands here after 2 undos
+  ru: Пока нет. Слово попадает сюда после 2 отмен
+  de: Noch keine. Ein Wort kommt nach 2 Rückgängig hierher
+  fr: Aucune pour l’instant. Un mot arrive ici après 2 annulations
+  es: Ninguna aún. Una palabra llega aquí tras 2 deshacer
+  zh: 还没有。一个词被撤销 2 次后会出现在这里
+  ja: まだありません。2 回元に戻した単語がここに入ります
+  ko: 아직 없어요. 두 번 되돌린 단어가 여기 들어와요
+  nb: Ingen ennå. Et ord havner her etter 2 angringer
+menu.keepWordsHint:
+  en: A click on a word removes it
+  ru: Щелчок по слову убирает его
+  de: Ein Klick auf ein Wort entfernt es
+  fr: Un clic sur un mot le retire
+  es: Un clic en una palabra la quita
+  zh: 单击单词即可移除
+  ja: 単語をクリックすると外れます
+  ko: 단어를 클릭하면 빠져요
+  nb: Et klikk på et ord fjerner det
+menu.settings:
+  en: Open the settings
+  ru: Открыть настройки
+  de: Einstellungen öffnen
+  fr: Ouvrir les réglages
+  es: Abrir los ajustes
+  zh: 打开设置
+  ja: 設定を開く
+  ko: 설정 열기
+  nb: Åpne innstillingene
+menu.quit:
+  en: Quit
+  ru: Выход
+  de: Beenden
+  fr: Quitter
+  es: Salir
+  zh: 退出
+  ja: 終了
+  ko: 종료
+  nb: Avslutt

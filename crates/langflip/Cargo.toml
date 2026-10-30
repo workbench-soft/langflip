@@ -9,7 +9,9 @@ repository.workspace = true
 [dependencies]
 langflip-core = { path = "../langflip-core" }
 png = "0.18.1"
+rust-i18n = "4.2.4"
 serde = { version = "1.0.229", features = ["derive"] }
+sys-locale = "0.3.2"
 toml = "1.1.8"
 tray-icon = "0.26.1"
 

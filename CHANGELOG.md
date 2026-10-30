@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Languages** the tray menu and tooltip speak the system language: English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian. Other languages get English.
 - **Tray icon** the tray shows the new art deco icon with a small `EN` or `RU` in the corner, in place of the blue and red square. Off still turns it grey.
 - **App icon** Langflip has an icon of its own: a gold А and Я in the art deco style. The desktop and Start menu shortcuts and Settings, Apps show it. The tray still shows `EN` or `RU`.
 - **Exceptions** a word becomes an exception after you undo its fix twice, not once. The tray menu lists the exceptions under «Исключения», and a click on a word removes it.
