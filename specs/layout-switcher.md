@@ -195,3 +195,14 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `scripts/uninstall-windows.ps1`: stops Langflip, removes the autostart, the shortcuts, the entry and the program folder. The settings file stays.
 - **Limits** the release download is still a bare exe with no installer. The double click needs mise on `PATH`.
 - **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
+
+### 2026-10-31 An exception after 2 undos, and the list in the tray menu
+
+- **Why** a single Undo kept the word forever, so one slip of the Pause key made a lasting exception. The person wants a word kept only after they undo its fix twice, and wants to see the exceptions in the tray menu.
+- **Rule** the first Undo of a word puts it back once, and the next time Langflip fixes it again. The second Undo of the same word adds it to `keep_words`, and Langflip leaves it as typed from then on. The count lives in memory only, so a restart sets it back to 0.
+- **Changes**
+  - `lib.rs`: `Engine` counts undos per word and adds the word to `keep_words` on the second one.
+  - `tray.rs`: the right click menu gets the «Исключения» submenu with each word of `keep_words`. A click on a word removes it from the list. An empty list shows «Пока нет», greyed out.
+  - `windows.rs`, `macos.rs`: refresh the submenu after an Undo and after the settings file changes, and save the file when a word is removed.
+- **Privacy** the count of a word undone once stays in memory, never on disk. `settings.toml` holds only the words that became exceptions, as before.
+- **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
