@@ -7,6 +7,7 @@
 
 ## app-audit
 
+- [ ] Run `mise run install` from the latest `main` (AGENTS.md asks for it after an app change). The audit agent's permission check blocked it, since it stops the running Langflip and replaces its exe (PR #17, 2026-10-30).
 - [ ] Run `mise run smoke` with Punto Switcher closed: the audit changed `windows.rs` (state borrow, stuck fix, Unicode input, Shift+Pause) and didn't run it (2026-10-30).
 - [ ] Check by hand on Windows: type a word with the tray menu open, close the menu, and the keyboard works within 1 s.
 - [ ] Check by hand on Windows: Shift+Pause in the middle of `ghb` gives «при» with no Space after it.
