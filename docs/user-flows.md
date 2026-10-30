@@ -72,6 +72,7 @@ flowchart LR
 1. The person double-clicks the tray icon.
 2. The window they typed in comes back to the front with the other layout.
 3. The icon shows `EN` or `RU` for the new layout.
+4. Other windows they go to keep the new layout.
 
 ```mermaid
 flowchart LR
