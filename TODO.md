@@ -34,3 +34,8 @@
 ## chore/install-task (PR #14)
 
 - [ ] Add the `RELEASES_TOKEN` secret to workbench-soft/langflip: each Release run fails without it, and no Langflip release exists yet (2026-10-30).
+
+## feat/keep-after-two-undos (PR #23)
+
+- [ ] Check by hand on Windows: undo the fix of one word twice, and it shows under «Исключения» in the tray menu. A click on it removes it (2026-10-31).
+- [ ] Run `mise run smoke` with Punto Switcher closed: `windows.rs` now refreshes the tray menu after Undo, and the smoke test wasn't run (2026-10-31).
