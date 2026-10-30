@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Langflip icons</title>
+<style>
+  body { margin: 0; padding: 24px; font: 14px/1.4 system-ui, sans-serif; background: #f4f4f5; color: #18181b; }
+  h1 { font-size: 20px; margin: 0 0 16px; }
+  #bar { position: sticky; top: 0; z-index: 1; margin: -24px -24px 16px; padding: 12px 24px; background: #18181b; color: #fff; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  #bar textarea { flex: 1 1 240px; font: inherit; padding: 6px 8px; border-radius: 6px; border: 0; resize: vertical; }
+  #bar button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid #52525b; background: #27272a; color: #fff; cursor: pointer; }
+  #bar button:hover { background: #3f3f46; }
+  #status { flex-basis: 100%; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px #0002; cursor: pointer; outline: 3px solid transparent; }
+  .card:hover { outline-color: #a1a1aa; }
+  .card.picked { outline-color: #16a34a; }
+  .card h2 { font-size: 16px; margin: 0 0 4px; }
+  .card p { margin: 0 0 12px; color: #52525b; }
+  .big { display: block; width: 256px; height: 256px; margin: 0 auto 12px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; }
+  .light { background: #ffffff; border: 1px solid #e4e4e7; }
+  .dark { background: #1f1f23; margin-top: 8px; }
+  canvas { image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <textarea id="note" rows="1" placeholder="What to change, for Redo or new styles"></textarea>
+  <button type="button" data-action="use">Use this icon</button>
+  <button type="button" data-action="redo">Redo this one</button>
+  <button type="button" data-action="new">Draw 10 new styles</button>
+  <div id="status">Click the icon you want, then press a button.</div>
+</div>
+<h1>Langflip</h1>
+<div class="grid">
+<div class="card" data-file="01-neon.svg"><h2>01. neon</h2><p>Neon: A and Я swap places along glowing cyan and magenta arrows</p><img class="big" src="01-neon.svg" alt=""><div class="row light"><img src="01-neon.svg" width="16" height="16" alt=""><img src="01-neon.svg" width="32" height="32" alt=""><img src="01-neon.svg" width="64" height="64" alt=""><canvas data-src="01-neon.svg" data-size="16"></canvas><canvas data-src="01-neon.svg" data-size="32"></canvas></div><div class="row dark"><img src="01-neon.svg" width="16" height="16" alt=""><img src="01-neon.svg" width="32" height="32" alt=""><img src="01-neon.svg" width="64" height="64" alt=""><canvas data-src="01-neon.svg" data-size="16"></canvas><canvas data-src="01-neon.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="02-circuit.svg"><h2>02. circuit</h2><p>Circuit: the letters as copper traces on a green board, joined by a flip loop</p><img class="big" src="02-circuit.svg" alt=""><div class="row light"><img src="02-circuit.svg" width="16" height="16" alt=""><img src="02-circuit.svg" width="32" height="32" alt=""><img src="02-circuit.svg" width="64" height="64" alt=""><canvas data-src="02-circuit.svg" data-size="16"></canvas><canvas data-src="02-circuit.svg" data-size="32"></canvas></div><div class="row dark"><img src="02-circuit.svg" width="16" height="16" alt=""><img src="02-circuit.svg" width="32" height="32" alt=""><img src="02-circuit.svg" width="64" height="64" alt=""><canvas data-src="02-circuit.svg" data-size="16"></canvas><canvas data-src="02-circuit.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="03-synthwave.svg"><h2>03. synthwave</h2><p>Synthwave: a chrome A and Я over a sunset and a neon grid</p><img class="big" src="03-synthwave.svg" alt=""><div class="row light"><img src="03-synthwave.svg" width="16" height="16" alt=""><img src="03-synthwave.svg" width="32" height="32" alt=""><img src="03-synthwave.svg" width="64" height="64" alt=""><canvas data-src="03-synthwave.svg" data-size="16"></canvas><canvas data-src="03-synthwave.svg" data-size="32"></canvas></div><div class="row dark"><img src="03-synthwave.svg" width="16" height="16" alt=""><img src="03-synthwave.svg" width="32" height="32" alt=""><img src="03-synthwave.svg" width="64" height="64" alt=""><canvas data-src="03-synthwave.svg" data-size="16"></canvas><canvas data-src="03-synthwave.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="04-hologram.svg"><h2>04. hologram</h2><p>Hologram: a HUD ring scans A and Я, the ring arrows turn them over</p><img class="big" src="04-hologram.svg" alt=""><div class="row light"><img src="04-hologram.svg" width="16" height="16" alt=""><img src="04-hologram.svg" width="32" height="32" alt=""><img src="04-hologram.svg" width="64" height="64" alt=""><canvas data-src="04-hologram.svg" data-size="16"></canvas><canvas data-src="04-hologram.svg" data-size="32"></canvas></div><div class="row dark"><img src="04-hologram.svg" width="16" height="16" alt=""><img src="04-hologram.svg" width="32" height="32" alt=""><img src="04-hologram.svg" width="64" height="64" alt=""><canvas data-src="04-hologram.svg" data-size="16"></canvas><canvas data-src="04-hologram.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="05-glitch.svg"><h2>05. glitch</h2><p>Cyberpunk glitch: A and Я torn into red and cyan channels, as if the layout broke</p><img class="big" src="05-glitch.svg" alt=""><div class="row light"><img src="05-glitch.svg" width="16" height="16" alt=""><img src="05-glitch.svg" width="32" height="32" alt=""><img src="05-glitch.svg" width="64" height="64" alt=""><canvas data-src="05-glitch.svg" data-size="16"></canvas><canvas data-src="05-glitch.svg" data-size="32"></canvas></div><div class="row dark"><img src="05-glitch.svg" width="16" height="16" alt=""><img src="05-glitch.svg" width="32" height="32" alt=""><img src="05-glitch.svg" width="64" height="64" alt=""><canvas data-src="05-glitch.svg" data-size="16"></canvas><canvas data-src="05-glitch.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="06-terminal.svg"><h2>06. terminal</h2><p>Terminal: green pixel A and Я after a prompt, with a block cursor</p><img class="big" src="06-terminal.svg" alt=""><div class="row light"><img src="06-terminal.svg" width="16" height="16" alt=""><img src="06-terminal.svg" width="32" height="32" alt=""><img src="06-terminal.svg" width="64" height="64" alt=""><canvas data-src="06-terminal.svg" data-size="16"></canvas><canvas data-src="06-terminal.svg" data-size="32"></canvas></div><div class="row dark"><img src="06-terminal.svg" width="16" height="16" alt=""><img src="06-terminal.svg" width="32" height="32" alt=""><img src="06-terminal.svg" width="64" height="64" alt=""><canvas data-src="06-terminal.svg" data-size="16"></canvas><canvas data-src="06-terminal.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="07-chrome-key.svg"><h2>07. chrome key</h2><p>Chrome keycap: a steel key with A and Я engraved, a blue flip arrow lit underneath</p><img class="big" src="07-chrome-key.svg" alt=""><div class="row light"><img src="07-chrome-key.svg" width="16" height="16" alt=""><img src="07-chrome-key.svg" width="32" height="32" alt=""><img src="07-chrome-key.svg" width="64" height="64" alt=""><canvas data-src="07-chrome-key.svg" data-size="16"></canvas><canvas data-src="07-chrome-key.svg" data-size="32"></canvas></div><div class="row dark"><img src="07-chrome-key.svg" width="16" height="16" alt=""><img src="07-chrome-key.svg" width="32" height="32" alt=""><img src="07-chrome-key.svg" width="64" height="64" alt=""><canvas data-src="07-chrome-key.svg" data-size="16"></canvas><canvas data-src="07-chrome-key.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="08-isometric-chip.svg"><h2>08. isometric chip</h2><p>Isometric chip: a CPU block in 3 shades with A and Я printed on top</p><img class="big" src="08-isometric-chip.svg" alt=""><div class="row light"><img src="08-isometric-chip.svg" width="16" height="16" alt=""><img src="08-isometric-chip.svg" width="32" height="32" alt=""><img src="08-isometric-chip.svg" width="64" height="64" alt=""><canvas data-src="08-isometric-chip.svg" data-size="16"></canvas><canvas data-src="08-isometric-chip.svg" data-size="32"></canvas></div><div class="row dark"><img src="08-isometric-chip.svg" width="16" height="16" alt=""><img src="08-isometric-chip.svg" width="32" height="32" alt=""><img src="08-isometric-chip.svg" width="64" height="64" alt=""><canvas data-src="08-isometric-chip.svg" data-size="16"></canvas><canvas data-src="08-isometric-chip.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="09-blueprint.svg"><h2>09. blueprint</h2><p>Blueprint: A and Я drawn as a spec, with dimension lines and the flip path dashed</p><img class="big" src="09-blueprint.svg" alt=""><div class="row light"><img src="09-blueprint.svg" width="16" height="16" alt=""><img src="09-blueprint.svg" width="32" height="32" alt=""><img src="09-blueprint.svg" width="64" height="64" alt=""><canvas data-src="09-blueprint.svg" data-size="16"></canvas><canvas data-src="09-blueprint.svg" data-size="32"></canvas></div><div class="row dark"><img src="09-blueprint.svg" width="16" height="16" alt=""><img src="09-blueprint.svg" width="32" height="32" alt=""><img src="09-blueprint.svg" width="64" height="64" alt=""><canvas data-src="09-blueprint.svg" data-size="16"></canvas><canvas data-src="09-blueprint.svg" data-size="32"></canvas></div></div>
+<div class="card" data-file="10-acid-brutalist.svg"><h2>10. acid brutalist</h2><p>Acid brutalist: the tile split on a diagonal, A on black, Я on acid yellow</p><img class="big" src="10-acid-brutalist.svg" alt=""><div class="row light"><img src="10-acid-brutalist.svg" width="16" height="16" alt=""><img src="10-acid-brutalist.svg" width="32" height="32" alt=""><img src="10-acid-brutalist.svg" width="64" height="64" alt=""><canvas data-src="10-acid-brutalist.svg" data-size="16"></canvas><canvas data-src="10-acid-brutalist.svg" data-size="32"></canvas></div><div class="row dark"><img src="10-acid-brutalist.svg" width="16" height="16" alt=""><img src="10-acid-brutalist.svg" width="32" height="32" alt=""><img src="10-acid-brutalist.svg" width="64" height="64" alt=""><canvas data-src="10-acid-brutalist.svg" data-size="16"></canvas><canvas data-src="10-acid-brutalist.svg" data-size="32"></canvas></div></div>
+</div>
+<script>
+  // Draw each small size at its real pixel count, then show it magnified.
+  for (const canvas of document.querySelectorAll("canvas[data-src]")) {
+    const size = Number(canvas.dataset.size);
+    canvas.width = canvas.height = size;
+    canvas.style.width = canvas.style.height = size * 4 + "px";
+    const img = new Image();
+    img.onload = () => canvas.getContext("2d").drawImage(img, 0, 0, size, size);
+    img.src = canvas.dataset.src;
+  }
+
+  const status = document.getElementById("status");
+  const note = document.getElementById("note");
+  const cards = [...document.querySelectorAll(".card")];
+  let picked = document.querySelector(".card.picked");
+  for (const card of cards) {
+    card.addEventListener("click", () => {
+      picked = card;
+      cards.forEach((c) => c.classList.toggle("picked", c === card));
+      status.textContent = `Selected ${card.querySelector("h2").textContent}`;
+    });
+  }
+  for (const button of document.querySelectorAll("#bar button")) {
+    button.addEventListener("click", async () => {
+      const action = button.dataset.action;
+      const comment = note.value.trim();
+      const label = picked ? picked.querySelector("h2").textContent : "";
+      if (action !== "new" && !picked) { status.textContent = "Pick an icon first."; return; }
+      if (action === "redo" && !comment) { status.textContent = "Write what to change first."; return; }
+      const words = { use: `Use ${label}`, redo: `Redo ${label}: ${comment}`, new: `Draw 10 new styles: ${comment}` }[action];
+      // Opened as a file, the page has no server to tell.
+      if (!location.protocol.startsWith("http")) { status.textContent = `Tell the agent: ${words}`; return; }
+      try {
+        const body = JSON.stringify({ action, comment, file: picked ? picked.dataset.file : "" });
+        const answer = await fetch("/answer", { method: "POST", body });
+        if (!answer.ok) throw new Error(await answer.text());
+        status.textContent = `Sent: ${words}. The agent takes it from here, and this tab can close.`;
+      } catch (error) {
+        status.textContent = `The agent stopped listening. Tell it in chat: ${words}`;
+      }
+    });
+  }
+</script>
+</body>
+</html>

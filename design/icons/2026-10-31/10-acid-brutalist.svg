@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <title>Acid brutalist: the tile split on a diagonal, A on black, Я on acid yellow</title>
+  <clipPath id="t"><rect x="8" y="8" width="240" height="240" rx="52"/></clipPath><g clip-path="url(#t)"><rect x="8" y="8" width="240" height="240" fill="#d7ff1f"/><polygon points="8,8 172,8 84,248 8,248" fill="#0a0a0a"/></g><rect x="8" y="8" width="240" height="240" rx="52" fill="none" stroke="#0a0a0a" stroke-width="10"/><path d="M52 176 L86 88 L120 176 M64 146 H108" fill="none" stroke="#d7ff1f" stroke-width="24" stroke-linejoin="round" transform="translate(-6 0)"/><path d="M204 176 V88 H170 A29 29 0 0 0 170 146 H204 M176 146 L140 176" fill="none" stroke="#0a0a0a" stroke-width="24" stroke-linejoin="round" transform="translate(6 0)"/>
+</svg>

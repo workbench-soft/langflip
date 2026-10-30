@@ -1,8 +1,9 @@
-//! Windows: puts the name, the publisher, the version and a manifest into langflip.exe.
+//! Windows: puts the name, the publisher, the version, the icon and a manifest into langflip.exe.
 //! Defender treats an exe with no file details as more suspicious.
 
 fn main() {
     println!("cargo:rerun-if-env-changed=LANGFLIP_VERSION");
+    println!("cargo:rerun-if-changed=assets/icon.ico");
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
@@ -28,6 +29,7 @@ fn main() {
         .set("ProductVersion", &version)
         .set_version_info(winresource::VersionInfo::FILEVERSION, packed(&version))
         .set_version_info(winresource::VersionInfo::PRODUCTVERSION, packed(&version))
+        .set_icon("assets/icon.ico")
         .set_manifest(MANIFEST);
     res.compile().expect("compile the Windows resources");
 }
