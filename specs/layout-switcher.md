@@ -206,3 +206,13 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `windows.rs`, `macos.rs`: refresh the submenu after an Undo and after the settings file changes, and save the file when a word is removed.
 - **Privacy** the count of a word undone once stays in memory, never on disk. `settings.toml` holds only the words that became exceptions, as before.
 - **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
+
+### 2026-10-31 An app icon in the art deco style
+
+- **Why** the person wants a striking icon for Langflip. They picked icon 08 of the 2nd round of drafts: a gold А and Я under a sunburst, in a double gold frame on black.
+- **Choice** the icon goes on the exe, so the desktop and Start menu shortcuts and Settings, Apps show it. The tray keeps its live `EN` or `RU` icon, since it shows the layout.
+- **Changes**
+  - `crates/langflip/assets/icon.svg` and `icon.ico`: the source and a `.ico` with 16 to 256 px inside, made by the `icon-styles` export script.
+  - `build.rs`: `winresource` puts `icon.ico` into `langflip.exe`.
+  - `design/icons/2026-10-31` and `design/icons/2026-10-31-2`: both rounds of 10 drafts, kept for later, with the pick in `picked.txt`.
+- **Docs** `docs/features.md`, `CHANGELOG.md`.
