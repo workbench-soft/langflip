@@ -82,9 +82,10 @@ A right click on the icon opens it.
 - **Fix the layout** fixing on or off, the same as a left click on the icon.
 - **Start at sign in** start at login on or off.
 - **Exceptions (N)** the words in `keep_words`. A click on a word removes it, and Langflip fixes it again.
+- **Language** picks the language of the menu and the tooltip: System language, or English, Русский, Deutsch, Français, Español, 中文, 日本語, 한국어, Norsk bokmål. Each language shows under its own name, and a check marks the current one. The menu changes at once, and `settings.toml` keeps the choice.
 - **Open the settings** opens `settings.toml` in the text editor. Langflip reads the change at the next window switch.
 - **Quit** quits.
-- **Language** the menu and the tooltip speak the system language when it is English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian, and English otherwise.
+- **System language** the default. The menu and the tooltip speak the system language when it is English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian, and English otherwise. A new system language shows after the next start.
 
 ## Settings file
 
@@ -95,5 +96,6 @@ A right click on the icon opens it.
 | `enabled`       | fixing on or off                                                         |
 | `excluded_apps` | executable names on Windows (`wow.exe`), app names on macOS (`Terminal`) |
 | `keep_words`    | lowercase words to leave as typed                                        |
+| `language`      | the menu language, such as `de`. No key follows the system language      |
 
 - **Limits** a file with a mistake in it stays as it is. Langflip runs on the defaults and saves no change until the file reads again.

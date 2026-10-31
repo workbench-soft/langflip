@@ -23,6 +23,7 @@ use langflip_core::{Engine, Fix, Key, Lang, Stroke};
 use objc2::MainThreadMarker;
 use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy, NSWorkspace};
 
+use crate::language;
 use crate::settings::{self, Settings};
 use crate::tray::{Action, Tray};
 
@@ -95,7 +96,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
         set_autostart(true);
     }
     let tray = Tray::new(settings.enabled, autostart);
-    tray.set_keep_words(&settings.keep_words);
+    tray.set_language(settings.language.as_deref(), &settings.keep_words);
     STATE.with(|s| {
         *s.borrow_mut() = Some(State {
             engine,
@@ -181,6 +182,14 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
                 show_keep_words(s);
             });
         }
+        Action::SetLanguage(choice) => {
+            with_state(|s| {
+                s.settings.language = choice;
+                s.settings.save();
+                s.settings_mtime = settings::modified();
+                show_language(s);
+            });
+        }
         Action::OpenSettings => {
             let _ = std::process::Command::new("open")
                 .arg("-t")
@@ -247,7 +256,15 @@ fn reload_settings(s: &mut State) {
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
     }
-    show_keep_words(s);
+    show_language(s);
+}
+
+/// Sets the menu language from the settings and relabels the tray menu in it.
+fn show_language(s: &State) {
+    language::apply(s.settings.language.as_deref());
+    if let Some(tray) = &s.tray {
+        tray.set_language(s.settings.language.as_deref(), &s.settings.keep_words);
+    }
 }
 
 /// Shows the words Langflip keeps in the tray menu.

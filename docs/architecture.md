@@ -203,9 +203,9 @@ The choices that shape Langflip, the most costly to undo first.
 
 ### Menu languages: rust-i18n
 
-- **Picked** `rust-i18n` builds the strings of `locales/app.yml` into the binary, and `sys-locale` picks the language at start.
+- **Picked** `rust-i18n` builds the strings of `locales/app.yml` into the binary, and `sys-locale` gives the system language. The `language` key of `settings.toml` overrides it, and the Language submenu writes that key.
 - **Why** the org rules name `rust-i18n` for Rust, and each app ships 9 languages.
-- **Trade-off** the menu follows the system language, with no picker of its own.
+- **Trade-off** a new system language shows after the next start, since Langflip reads it once.
 - **Rejected**
   - **Fluent** a second translation tool for a job the org rules already give to `rust-i18n`.
-- **Cost to undo** low. The strings file and `language.rs`.
+- **Cost to undo** low. The strings file, `language.rs` and the Language submenu in `tray.rs`.
