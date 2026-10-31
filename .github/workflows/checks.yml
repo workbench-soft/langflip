@@ -5,10 +5,9 @@ on:
   push:
     branches: [main]
     paths: ["**", "!**.md", "!docs/**"]
-  # PR runs are off: agents run the tests and linter locally before they merge.
-  # To run this on PRs again, uncomment the pull_request lines below.
-  # pull_request:
-  #   paths: ['**', '!**.md', '!docs/**']
+  # The repo is public, so PRs from outside get checked too.
+  pull_request:
+    paths: ["**", "!**.md", "!docs/**"]
   workflow_dispatch:
 
 concurrency:
@@ -22,15 +21,14 @@ defaults:
 
 jobs:
   check:
-    # A Gradle, Cargo or Tauri build takes every core. The heavy runners take at most 2 such jobs at once.
-    runs-on: [self-hosted, heavy]
+    # The repo is public, so GitHub runners cost nothing and fork PRs stay off the PC.
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: workbench-soft/ci/actions/setup@main
+      # The repo is public, and a public repo can't use the private workbench-soft/ci actions.
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
-          pnpm-install: "false"
-      # The checkout deletes target, so the build goes to a folder that lasts and only changed crates build again.
-      # It sits in the runner's work folder, which Defender skips. Under LOCALAPPDATA, Defender blocked a test exe.
-      - run: echo "CARGO_TARGET_DIR=$(cygpath -m "$RUNNER_WORKSPACE")/target-checks" >> "$GITHUB_ENV"
+          # A restored cache left oxfmt without its tinypool dependency.
+          cache: false
       - run: mise x -- rustup target add aarch64-apple-darwin
       - run: mise run check
