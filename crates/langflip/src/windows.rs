@@ -24,7 +24,7 @@ use windows::Win32::UI::Accessibility::{
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, GetKeyState, GetKeyboardLayout, GetKeyboardLayoutList, HKL, INPUT, INPUT_0,
     INPUT_KEYBOARD, KEYBD_EVENT_FLAGS, KEYBDINPUT, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP,
-    KEYEVENTF_UNICODE, SendInput, VIRTUAL_KEY,
+    KEYEVENTF_UNICODE, MAPVK_VK_TO_VSC, MapVirtualKeyW, SendInput, VIRTUAL_KEY,
 };
 use windows::Win32::UI::Shell::ShellExecuteW;
 
@@ -553,8 +553,10 @@ fn key_input(vk: u16, scan: u16, flags: KEYBD_EVENT_FLAGS, tag: usize) -> INPUT 
 }
 
 fn tap(inputs: &mut Vec<INPUT>, vk: u16) {
-    inputs.push(key_input(vk, 0, KEYBD_EVENT_FLAGS(0), TAG_OWN));
-    inputs.push(key_input(vk, 0, KEYEVENTF_KEYUP, TAG_OWN));
+    // Some apps drop a Backspace without the scan code a physical keyboard sends.
+    let scan = unsafe { MapVirtualKeyW(u32::from(vk), MAPVK_VK_TO_VSC) } as u16;
+    inputs.push(key_input(vk, scan, KEYBD_EVENT_FLAGS(0), TAG_OWN));
+    inputs.push(key_input(vk, scan, KEYEVENTF_KEYUP, TAG_OWN));
 }
 
 fn apply_queued_fix() {
