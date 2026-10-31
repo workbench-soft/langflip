@@ -13,9 +13,6 @@ use windows::Win32::Foundation::{
 };
 use windows::Win32::Security::{GetTokenInformation, TOKEN_ELEVATION, TOKEN_QUERY, TokenElevation};
 use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx};
-use windows::Win32::System::Registry::{
-    HKEY_CURRENT_USER, REG_SZ, RRF_RT_REG_SZ, RegDeleteKeyValueW, RegGetValueW, RegSetKeyValueW,
-};
 use windows::Win32::System::Threading::{
     CreateMutexW, GetCurrentProcess, GetCurrentThreadId, OpenProcess, OpenProcessToken,
     PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION, QueryFullProcessImageNameW,
@@ -42,6 +39,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 use windows::core::{PCWSTR, PWSTR, w};
 
+use crate::autostart;
 use crate::settings::{self, Settings};
 use crate::tray::{Action, Tray};
 
@@ -70,8 +68,6 @@ const VK_LWIN: i32 = 0x5B;
 const VK_RWIN: i32 = 0x5C;
 /// A character another app types with `KEYEVENTF_UNICODE`. Its scan code holds the character.
 const VK_PACKET: u32 = 0xE7;
-
-const RUN_KEY: PCWSTR = w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
 
 /// A key press or release swallowed while a fix was being typed.
 #[derive(Clone, Copy)]
@@ -177,9 +173,9 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
 
         // Autostart turns on by itself after install. Later starts keep the person's choice,
         // and rewrite the path in case langflip.exe moved.
-        let autostart = first_start || autostart_enabled();
+        let autostart = first_start || autostart::enabled();
         if autostart {
-            set_autostart(true);
+            autostart::set(true);
         }
         let tray = Tray::new(settings.enabled, autostart);
         tray.set_keep_words(&settings.keep_words);
@@ -275,7 +271,7 @@ fn handle_tray() {
                 s.tray.as_ref().map(|t| t.set_lang(Some(to)))
             });
         }
-        Action::Autostart(on) => set_autostart(on),
+        Action::Autostart(on) => autostart::set(on),
         Action::RemoveKeepWord(word) => {
             with_state(|s| {
                 s.settings.remove_keep_word(&word);
@@ -850,47 +846,6 @@ unsafe fn switch_layout(hwnd: HWND, lang: Lang) {
                 WPARAM(0),
                 LPARAM(hkl.0 as isize),
             );
-        }
-    }
-}
-
-fn exe_value() -> Vec<u16> {
-    let exe = std::env::current_exe().unwrap_or_default();
-    format!("\"{}\"", exe.display())
-        .encode_utf16()
-        .chain([0])
-        .collect()
-}
-
-fn autostart_enabled() -> bool {
-    unsafe {
-        RegGetValueW(
-            HKEY_CURRENT_USER,
-            RUN_KEY,
-            w!("Langflip"),
-            RRF_RT_REG_SZ,
-            None,
-            None,
-            None,
-        )
-        .is_ok()
-    }
-}
-
-fn set_autostart(on: bool) {
-    unsafe {
-        if on {
-            let value = exe_value();
-            let _ = RegSetKeyValueW(
-                HKEY_CURRENT_USER,
-                RUN_KEY,
-                w!("Langflip"),
-                REG_SZ.0,
-                Some(value.as_ptr() as *const _),
-                (value.len() * 2) as u32,
-            );
-        } else {
-            let _ = RegDeleteKeyValueW(HKEY_CURRENT_USER, RUN_KEY, w!("Langflip"));
         }
     }
 }

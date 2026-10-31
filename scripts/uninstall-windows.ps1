@@ -4,6 +4,8 @@ $ErrorActionPreference = "SilentlyContinue"
 
 $dir = Join-Path $env:LOCALAPPDATA "Programs\Langflip"
 
+# The sign in task goes first, so it can't start Langflip again.
+schtasks.exe /Delete /TN Langflip /F 2>&1 | Out-Null
 Get-Process langflip | Stop-Process -Force
 Start-Sleep -Milliseconds 500
 
