@@ -5,7 +5,7 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the E
 - **Languages** Russian (ЙЦУКЕН) and English (US QWERTY).
 - **Words** any length. Words under 4 letters change on Space, only into a dictionary word: `z` turns into «я». Digits stay in the word, so `ьз3` turns into `mp3`.
 - **Systems** Windows 10 and later, macOS 13 and later.
-- **Privacy** no network and no typing log. The current word lives in memory until the next one starts.
+- **Privacy** no network and no typing log. The current word lives in memory until the next one starts. The decision log in `%LOCALAPPDATA%\Langflip\langflip.log` holds key counts and app names, not letters.
 
 ## Use it
 

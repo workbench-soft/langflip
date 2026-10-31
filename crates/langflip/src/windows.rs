@@ -91,16 +91,13 @@ struct State {
     engine: Engine,
     settings: Settings,
     settings_mtime: Option<std::time::SystemTime>,
-    main_thread: u32,
     self_elevated: bool,
     /// The window in front is excluded or elevated, or its focus is a password field.
     skip_window: bool,
     password: bool,
-    /// A fix is on its way. Until its end marker arrives, typed keys wait in `held`.
-    pending: bool,
-    /// When the fix was queued, so a fix that got stuck lets the keys go.
-    pending_at: Instant,
-    held: Vec<Held>,
+    /// A key went by while the state was in use, so the screen holds more of the word than the
+    /// engine. The word gets no fix until its end key.
+    skip_word: bool,
     /// The layout the last fix switched to. Held keys wait for it before they replay.
     switching_to: Option<Lang>,
     /// The fix and the end key to type after it, if any.
@@ -118,6 +115,12 @@ thread_local! {
     static STATE: RefCell<Option<State>> = const { RefCell::new(None) };
     /// A hook call found the state in use, so the word being typed missed a key.
     static MISSED: Cell<bool> = const { Cell::new(false) };
+    /// A fix is on its way. Until its end marker arrives, typed keys wait in `HELD`.
+    /// These live outside the state, so the hook holds keys even while the state is in use.
+    static PENDING: Cell<bool> = const { Cell::new(false) };
+    /// When the fix was queued, so a fix that got stuck lets the keys go.
+    static PENDING_AT: Cell<Option<Instant>> = const { Cell::new(None) };
+    static HELD: RefCell<Vec<Held>> = const { RefCell::new(Vec::new()) };
 }
 
 /// Runs `f` on the state, or returns None when the state is in use.
@@ -133,7 +136,8 @@ fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> Option<R> {
         };
         let s = state.as_mut()?;
         if MISSED.take() {
-            s.engine.reset();
+            drop_word(s, "the hook missed a key");
+            s.skip_word = true;
         }
         Some(f(s))
     })
@@ -145,13 +149,10 @@ impl State {
             engine,
             settings,
             settings_mtime: settings::modified(),
-            main_thread: unsafe { GetCurrentThreadId() },
             self_elevated: process_elevated(unsafe { GetCurrentProcess() }),
             skip_window: false,
             password: false,
-            pending: false,
-            pending_at: Instant::now(),
-            held: Vec::new(),
+            skip_word: false,
             switching_to: None,
             queued: None,
             last_end_vk: VK_SPACE as u16,
@@ -433,42 +434,60 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
     if code >= 0 {
         let info = unsafe { &*(lparam.0 as *const KBDLLHOOKSTRUCT) };
         let down = wparam.0 as u32 == WM_KEYDOWN || wparam.0 as u32 == WM_SYSKEYDOWN;
-        if with_state(|s| on_key(s, info, down)) == Some(true) {
+        let swallow = hold_key(info, down).or_else(|| with_state(|s| on_key(s, info, down)));
+        if swallow == Some(true) {
             return LRESULT(1);
         }
     }
     unsafe { CallNextHookEx(None, code, wparam, lparam) }
 }
 
-/// Returns true to swallow the event.
-fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
+/// Lets the events of a fix through and holds typed keys while a fix is on its way.
+/// Returns true to swallow the event, or None for a key the engine reads.
+fn hold_key(info: &KBDLLHOOKSTRUCT, down: bool) -> Option<bool> {
     match info.dwExtraInfo {
-        TAG_OWN => return false,
+        TAG_OWN => return Some(false),
         TAG_END => {
-            s.pending = false;
-            if !s.held.is_empty() {
-                post(s, WM_APP_REPLAY);
+            PENDING.set(false);
+            if HELD.with_borrow(|h| !h.is_empty()) {
+                post(WM_APP_REPLAY);
             }
-            return true;
+            return Some(true);
         }
+        TAG_REPLAY => return None,
         _ => {}
     }
-    let replay = info.dwExtraInfo == TAG_REPLAY;
-    if s.pending && !replay {
-        s.held.push(Held {
+    if !PENDING.get() {
+        return None;
+    }
+    HELD.with_borrow_mut(|h| {
+        h.push(Held {
             vk: info.vkCode as u16,
             scan: info.scanCode as u16,
             up: !down,
             extended: info.flags.0 & LLKHF_EXTENDED.0 != 0,
-        });
-        return true;
+        })
+    });
+    Some(true)
+}
+
+/// Drops the word being typed, and logs why when it had keys.
+fn drop_word(s: &mut State, why: &str) {
+    let keys = s.engine.word_len();
+    if keys > 0 {
+        debug(format_args!("drop a word of {keys} keys: {why}"));
     }
+    s.engine.reset();
+}
+
+/// Returns true to swallow the event.
+fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     if !down {
         return false;
     }
     let vk = info.vkCode;
     if vk == VK_PAUSE {
-        debug(format_args!("pause, pending {}", s.pending));
+        debug(format_args!("pause, pending {}", PENDING.get()));
         let fix = if pressed(VK_SHIFT) {
             let lang = current_lang();
             s.engine.convert(lang)
@@ -492,7 +511,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     }
     // Read as a scan code, the character "1" would be the N key.
     if vk == VK_PACKET {
-        s.engine.reset();
+        drop_word(s, "text from another app");
         return false;
     }
     if !s.settings.enabled || s.skip_window || s.password {
@@ -500,6 +519,11 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         return false;
     }
     if pressed(VK_CONTROL) || pressed(VK_MENU) || pressed(VK_LWIN) || pressed(VK_RWIN) {
+        drop_word(s, "shortcut");
+        return false;
+    }
+    if s.skip_word {
+        s.skip_word = !matches!(vk, VK_SPACE | VK_RETURN | VK_TAB);
         s.engine.reset();
         return false;
     }
@@ -527,30 +551,34 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     if matches!(vk, VK_SPACE | VK_RETURN | VK_TAB) {
         s.last_end_vk = vk as u16;
         let lang = current_lang();
+        let keys = s.engine.word_len();
         let fix = s.engine.end_word(lang);
         // The log keeps the decision, not the word.
         let erase = fix.as_ref().map(|f| f.erase);
-        debug(format_args!("word end in {lang:?}: fix of {erase:?} keys"));
+        debug(format_args!(
+            "word end in {lang:?}: {keys} keys, fix of {erase:?} keys"
+        ));
         if let Some(fix) = fix {
             queue(s, fix, Some(vk as u16));
             return true;
         }
         return false;
     }
-    s.engine.reset();
+    drop_word(s, "other key");
     false
 }
 
 fn queue(s: &mut State, fix: Fix, end_vk: Option<u16>) {
-    s.pending = true;
-    s.pending_at = Instant::now();
+    PENDING.set(true);
+    PENDING_AT.set(Some(Instant::now()));
     s.queued = Some((fix, end_vk));
-    post(s, WM_APP_FIX);
+    post(WM_APP_FIX);
 }
 
-fn post(s: &State, msg: u32) {
+/// Posts to this thread's message loop. The hooks and the loop share the main thread.
+fn post(msg: u32) {
     unsafe {
-        let _ = PostThreadMessageW(s.main_thread, msg, WPARAM(0), LPARAM(0));
+        let _ = PostThreadMessageW(GetCurrentThreadId(), msg, WPARAM(0), LPARAM(0));
     }
 }
 
@@ -599,14 +627,18 @@ fn apply_queued_fix() {
     inputs.push(key_input(VK_MARKER, 0, KEYEVENTF_KEYUP, TAG_END));
     unsafe {
         let sent = SendInput(&inputs, size_of::<INPUT>() as i32);
+        debug(format_args!(
+            "fix: {} Backspaces, {} letters, end {end_vk:?}, sent {sent} of {}",
+            fix.erase,
+            fix.text.chars().count(),
+            inputs.len()
+        ));
         if sent as usize != inputs.len() {
             // Windows blocked the input, often for an elevated window. Stop waiting for the marker.
-            with_state(|s| {
-                s.pending = false;
-                if !s.held.is_empty() {
-                    post(s, WM_APP_REPLAY);
-                }
-            });
+            PENDING.set(false);
+            if HELD.with_borrow(|h| !h.is_empty()) {
+                post(WM_APP_REPLAY);
+            }
         }
         with_state(|s| s.switching_to = Some(fix.switch_to));
         switch_layout(GetForegroundWindow(), fix.switch_to);
@@ -621,17 +653,17 @@ const STUCK_FIX: Duration = Duration::from_secs(1);
 /// A menu's message loop drops the posted fix, and a switch to the secure desktop drops the
 /// end marker.
 fn release_stuck_fix() {
+    let late = PENDING_AT.get().is_none_or(|t| t.elapsed() >= STUCK_FIX);
+    if !PENDING.get() || !late {
+        return;
+    }
     let stuck = with_state(|s| {
-        if !s.pending || s.pending_at.elapsed() < STUCK_FIX {
-            return None;
-        }
         debug(format_args!("stuck fix, queued {}", s.queued.is_some()));
         if s.queued.is_none() {
-            s.pending = false;
+            PENDING.set(false);
         }
-        Some(s.queued.is_some())
-    })
-    .flatten();
+        s.queued.is_some()
+    });
     match stuck {
         // The held keys kept the screen as the fix expects it, so the fix still fits.
         Some(true) => apply_queued_fix(),
@@ -649,7 +681,8 @@ fn replay_held() {
         }
         std::thread::sleep(std::time::Duration::from_millis(5));
     }
-    let held = with_state(|s| std::mem::take(&mut s.held)).unwrap_or_default();
+    let held = HELD.take();
+    debug(format_args!("replay {} held key events", held.len()));
     let inputs: Vec<INPUT> = held.iter().map(replay_input).collect();
     unsafe {
         SendInput(&inputs, size_of::<INPUT>() as i32);
@@ -679,7 +712,10 @@ unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) 
             WM_LBUTTONDOWN | WM_RBUTTONDOWN | WM_MBUTTONDOWN | WM_XBUTTONDOWN
         )
     {
-        with_state(|s| s.engine.reset());
+        with_state(|s| {
+            drop_word(s, "click");
+            s.skip_word = false;
+        });
     }
     unsafe { CallNextHookEx(None, code, wparam, lparam) }
 }
@@ -706,7 +742,8 @@ unsafe extern "system" fn win_event(
             let focus = (hwnd.0 as isize, object, child);
             if s.last_focus != focus {
                 s.last_focus = focus;
-                s.engine.reset();
+                drop_word(s, "focus");
+                s.skip_word = false;
             }
         });
     }
@@ -740,10 +777,15 @@ fn foreground_changed() {
             s.target = hwnd;
         }
         reload_settings(s);
-        s.engine.reset();
+        drop_word(s, "window");
+        s.skip_word = false;
         s.password = false;
         let excluded = app.as_deref().is_some_and(|a| s.settings.is_excluded(a));
         s.skip_window = excluded || (elevated && !s.self_elevated);
+        debug(format_args!(
+            "front {hwnd:?} {app:?}, elevated {elevated}, skip {}",
+            s.skip_window
+        ));
     });
 }
 
@@ -833,18 +875,10 @@ fn target() -> Option<HWND> {
     with_state(|s| s.target).filter(|h| !h.is_invalid())
 }
 
-/// Appends a line to `%TEMP%\langflip-debug.log` in debug builds.
+/// Appends a line to the decision log. Tests write none.
 fn debug(line: std::fmt::Arguments) {
-    if cfg!(debug_assertions) {
-        use std::io::Write;
-        let path = std::env::temp_dir().join("langflip-debug.log");
-        if let Ok(mut f) = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(path)
-        {
-            let _ = writeln!(f, "{line}");
-        }
+    if !cfg!(test) {
+        crate::log::write(line);
     }
 }
 
@@ -915,12 +949,13 @@ mod tests {
     #[test]
     fn a_stuck_fix_lets_the_keys_go() {
         start();
-        with_state(|s| s.pending = true);
+        PENDING.set(true);
+        PENDING_AT.set(Some(Instant::now()));
         release_stuck_fix();
-        assert_eq!(with_state(|s| s.pending), Some(true));
-        with_state(|s| s.pending_at -= STUCK_FIX);
+        assert!(PENDING.get());
+        PENDING_AT.set(Some(Instant::now() - STUCK_FIX));
         release_stuck_fix();
-        assert_eq!(with_state(|s| s.pending), Some(false));
+        assert!(!PENDING.get());
     }
 
     #[test]
@@ -933,5 +968,39 @@ mod tests {
         });
         assert_eq!(inner, Some(None));
         assert!(!word_in_progress());
+    }
+
+    /// A key press from the keyboard.
+    fn press(vk: u32, scan: u32) -> KBDLLHOOKSTRUCT {
+        KBDLLHOOKSTRUCT {
+            vkCode: vk,
+            scanCode: scan,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn a_missed_key_leaves_the_word_as_typed() {
+        start();
+        with_state(|_| with_state(|_| ()));
+        assert_eq!(with_state(|s| s.skip_word), Some(true));
+        // The G key: the engine skips it, since the screen holds a key it missed.
+        assert_eq!(
+            with_state(|s| on_key(s, &press(0x47, 0x22), true)),
+            Some(false)
+        );
+        assert!(!word_in_progress());
+        with_state(|s| on_key(s, &press(VK_SPACE, 0x39), true));
+        assert_eq!(with_state(|s| s.skip_word), Some(false));
+    }
+
+    #[test]
+    fn keys_wait_behind_a_fix_while_the_state_is_in_use() {
+        start();
+        PENDING.set(true);
+        let held = with_state(|_| hold_key(&press(0x47, 0x22), true));
+        assert_eq!(held, Some(Some(true)));
+        assert_eq!(HELD.take().len(), 1);
+        PENDING.set(false);
     }
 }

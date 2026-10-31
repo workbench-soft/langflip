@@ -82,6 +82,11 @@ impl Engine {
         }
     }
 
+    /// How many keys the word being typed has.
+    pub fn word_len(&self) -> usize {
+        self.buffer.len()
+    }
+
     /// The caret moved, the window changed or a shortcut ran: the word is gone.
     pub fn reset(&mut self) {
         self.last = None;
