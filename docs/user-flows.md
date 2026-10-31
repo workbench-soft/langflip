@@ -108,3 +108,18 @@ flowchart LR
 flowchart LR
     A[Right click on the icon] --> B[Uncheck Запускать при входе] --> C[No start at login]
 ```
+
+## Pick the menu language
+
+1. The person right-clicks the tray icon.
+2. The person opens Language and clicks a language, such as Deutsch.
+3. The menu and the tooltip switch to that language at once.
+4. Langflip saves `language = "de"` in `settings.toml`, and later starts keep it.
+5. A click on System language puts the system language back.
+
+```mermaid
+flowchart LR
+    A[Right click on the icon] --> B[Language] --> C{Pick}
+    C -- a language --> D[Menu in that language] --> F[Saved in settings.toml]
+    C -- System language --> E[Menu in the system language] --> F
+```
