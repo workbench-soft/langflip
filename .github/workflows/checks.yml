@@ -27,5 +27,8 @@ jobs:
       - uses: actions/checkout@v7
       # The repo is public, and a public repo can't use the private workbench-soft/ci actions.
       - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          # A restored cache left oxfmt without its tinypool dependency.
+          cache: false
       - run: mise x -- rustup target add aarch64-apple-darwin
       - run: mise run check
