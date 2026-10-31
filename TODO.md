@@ -33,7 +33,6 @@
 
 ## chore/install-task (PR #14)
 
-
 ## feat/keep-after-two-undos (PR #23)
 
 - [ ] Check by hand on Windows: undo the fix of one word twice, and it shows under «Исключения» in the tray menu. A click on it removes it (2026-10-31).
