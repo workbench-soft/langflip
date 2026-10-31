@@ -4,7 +4,7 @@
 
 1. The person runs `langflip.exe` (Windows) or `Langflip` (macOS).
 2. On macOS the system asks for Accessibility and Input Monitoring access. The person allows both and starts Langflip again.
-3. The tray icon shows the current layout in black marker on yellow: `EN` or `RU`. Langflip writes `settings.toml` with the defaults and turns on start at login, with no question.
+3. The tray icon shows the current layout in navy on a holo foil tile: `EN` or `RU`. Langflip writes `settings.toml` with the defaults and turns on start at login, with no question.
 
 ```mermaid
 flowchart LR

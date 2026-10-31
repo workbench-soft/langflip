@@ -31,16 +31,16 @@ Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. Langflip converts the word bein
 
 ## The current layout on the icon
 
-The tray icon shows `EN` or `RU` in black marker on a yellow tile, for the layout of the window in front. A click on the taskbar keeps the last app window. A layout other than these 2 shows the app icon alone.
+The tray icon shows `EN` or `RU` in navy on a holo foil tile, for the layout of the window in front. A click on the taskbar keeps the last app window. A layout other than these 2 shows the app icon alone.
 
 - **Limits** a switch reaches the icon within 250 ms on Windows and 0.2 s on macOS.
 
 ## The app icon
 
-A Z and a Я in black marker over a yellow highlighter stripe on cream. Z and Я share a key on the keyboard. Windows shows it on `langflip.exe`, the desktop and Start menu shortcuts and in Settings, Apps.
+A navy А and Я on an iridescent holo foil card with a diagonal shine. Windows shows it on `langflip.exe`, the desktop and Start menu shortcuts and in Settings, Apps.
 
 - **Source** `crates/langflip/assets/icon.svg`. Both rounds of drafts sit in `design/icons/`.
-- **Tray** the tray shows the layout in the same marker on yellow.
+- **Tray** the tray shows the layout in navy on the same foil.
 - **Limits** macOS has no app bundle yet, so it shows no app icon.
 
 ## Pause with a click
