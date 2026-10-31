@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Docs** `docs/architecture.md` has a Decisions section: each choice, why it won, what it costs, the rivals and why they lost.
 - **Lint and format** `mise run lint` checks the Rust with rustfmt and clippy, the Python with ruff, the scripts with shellcheck and shfmt, and the docs with oxfmt. `mise run check` runs it first.
 
 - **Languages** the tray menu and tooltip speak the system language: English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian. Other languages get English.
