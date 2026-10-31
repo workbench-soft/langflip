@@ -92,6 +92,12 @@ While the word is typed, `decide_prefix` judges the keys so far:
 2. The swapped letters start no dictionary word of the other layout: wait.
 3. Score both without the end mark. Switch when the swapped letters score higher by `PREFIX_GAIN` (1.0).
 
+A word that was on screen before the caret goes to `decide_continued` instead:
+
+1. The engine holds the keys of that word in front of the new ones, with its layout. Backspace right after Space gives it the last word. On Windows `caret.rs` reads up to 40 characters before the caret through UI Automation, on its own thread 40 ms after a click, a sign, a shortcut or a focus change, and `layout::word_before` turns the last word into keys.
+2. New keys typed in the word's layout: keep.
+3. New keys typed in the other layout: switch them once the whole word starts a dictionary word of the word's layout, or is one on Space. The fix erases and types only the new keys.
+
 ## The model file
 
 `scripts/build_model.py` builds `model/langflip.model` from the `wordfreq` lists: the top 200,000 words per language train the triples, the top 100,000 of 4 letters or more form the dictionary. Words of 2 and 3 letters join it from a Zipf frequency of 4.5, words with digits such as `mp3` from 3.0, and the one letter words come from a list in the script (`a`, `i`; «а», «в», «и», «к», «о», «с», «у», «я»).

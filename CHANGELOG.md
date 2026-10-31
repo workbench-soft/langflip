@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Go on with a word** letters typed onto a word already on screen take that word's language. Langflip no longer switches them as if they started a new word. Backspace after Space brings the last word back, and on Windows a click or an arrow next to a word does too.
 - **Language menu** the tray menu has a Language submenu. Pick System language or one of 9 languages, each under its own name, and the menu switches at once. Langflip remembers the choice.
 - **Open source** the repo is public. Checks and Release run on GitHub Windows runners, and Checks runs on each PR too.
 - **Backspace** the Backspaces a fix sends carry the scan code a real key sends, so apps that drop them no longer keep `ghbd` in front of «привет».

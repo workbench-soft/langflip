@@ -12,6 +12,16 @@ Langflip types a word again in the right layout while the person types it, and s
 - **When it keeps a word** the word as typed is in the dictionary of its layout, or in `keep_words`.
 - **Limits** a rare word outside the dictionary misses about 1.5% of the time in each language. About 1 rare word in 1000 typed right gets changed. About 2 rare short words in 100 typed right get changed, such as «ем» into `tv`, and one letters `c`, `d`, `j` typed alone in English turn Russian. `mise run eval` measures both.
 
+## Go on with a word
+
+The person comes back to a word and types more letters onto it. Langflip judges them as the rest of that word, in its language.
+
+- **Same layout** letters typed in the word's layout stay: «при» plus «ятно» stays «приятно».
+- **Other layout** letters typed in the other layout turn into the word's layout once the whole word starts a dictionary word: «привет» plus `cndbt` gives «приветствие». Langflip retypes only the new letters.
+- **Mixed words** stay as typed when the whole word is no dictionary word: «Windowsом».
+- **How it finds the word** Backspace right after Space brings the last word back, on both systems. On Windows a click, an arrow, a sign or a field change makes Langflip read the word before the caret through UI Automation.
+- **Limits** apps without the UI Automation text pattern give no word, and the letters count as a new word. On macOS only Backspace after Space works.
+
 ## Undo a fix
 
 Pause on Windows, Ctrl+F12 on macOS, right after a fix. The word comes back as typed and the layout switches back. The second Undo of the same word puts it into `keep_words`, and Langflip leaves it as typed from then on.

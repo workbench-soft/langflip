@@ -40,6 +40,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 use windows::core::{PCWSTR, PWSTR, w};
 
 use crate::autostart;
+use crate::caret::Caret;
 use crate::language;
 use crate::settings::{self, Settings};
 use crate::tray::{Action, Tray};
@@ -55,6 +56,7 @@ const VK_MARKER: u16 = 0xFF;
 
 const WM_APP_FIX: u32 = WM_APP + 1;
 const WM_APP_REPLAY: u32 = WM_APP + 2;
+const WM_APP_CARET: u32 = WM_APP + 3;
 
 const VK_BACK: u32 = 0x08;
 const VK_TAB: u32 = 0x09;
@@ -112,6 +114,10 @@ struct State {
     target: HWND,
     switch: Option<Switch>,
     tray: Option<Tray>,
+    /// Reads the word before the caret once the word being typed got lost.
+    caret: Caret,
+    /// The latest read asked for. An older answer comes too late and is dropped.
+    caret_id: u64,
 }
 
 thread_local! {
@@ -141,11 +147,14 @@ fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> Option<R> {
 
 impl State {
     fn new(engine: Engine, settings: Settings, tray: Option<Tray>) -> State {
+        let main_thread = unsafe { GetCurrentThreadId() };
         State {
             engine,
             settings,
             settings_mtime: settings::modified(),
-            main_thread: unsafe { GetCurrentThreadId() },
+            main_thread,
+            caret: Caret::start(main_thread, WM_APP_CARET),
+            caret_id: 0,
             self_elevated: process_elevated(unsafe { GetCurrentProcess() }),
             skip_window: false,
             password: false,
@@ -214,6 +223,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             match msg.message {
                 WM_APP_FIX => apply_queued_fix(),
                 WM_APP_REPLAY => replay_held(),
+                WM_APP_CARET => go_on_with_caret_word(),
                 WM_TIMER
                     if with_state(|s| s.switch.as_ref().map(|w| w.timer)).flatten()
                         == Some(msg.wParam.0) =>
@@ -500,11 +510,11 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         return false;
     }
     if pressed(VK_CONTROL) || pressed(VK_MENU) || pressed(VK_LWIN) || pressed(VK_RWIN) {
-        s.engine.reset();
+        lose_word(s);
         return false;
     }
     if vk == VK_BACK {
-        s.engine.backspace();
+        s.engine.backspace(u32::from(s.last_end_vk) == VK_SPACE);
         return false;
     }
     let extended = info.flags.0 & LLKHF_EXTENDED.0 != 0;
@@ -537,8 +547,32 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         }
         return false;
     }
-    s.engine.reset();
+    lose_word(s);
     false
+}
+
+/// The caret moved, or a sign or a shortcut ended the word. The app then tells which word, if
+/// any, sits before the caret.
+fn lose_word(s: &mut State) {
+    s.engine.reset();
+    if s.settings.enabled && !s.skip_window && !s.password {
+        s.caret_id += 1;
+        s.caret.request(s.caret_id);
+    }
+}
+
+/// The text before the caret arrived. The word it ends with is the start of the next keys.
+fn go_on_with_caret_word() {
+    with_state(|s| {
+        let Some((id, text)) = s.caret.take() else {
+            return;
+        };
+        if id == s.caret_id {
+            // The log keeps the size and the layout, not the word.
+            let word = s.engine.continue_word(&text);
+            debug(format_args!("word before the caret: {word:?}"));
+        }
+    });
 }
 
 fn queue(s: &mut State, fix: Fix, end_vk: Option<u16>) {
@@ -679,7 +713,7 @@ unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) 
             WM_LBUTTONDOWN | WM_RBUTTONDOWN | WM_MBUTTONDOWN | WM_XBUTTONDOWN
         )
     {
-        with_state(|s| s.engine.reset());
+        with_state(lose_word);
     }
     unsafe { CallNextHookEx(None, code, wparam, lparam) }
 }
@@ -706,7 +740,7 @@ unsafe extern "system" fn win_event(
             let focus = (hwnd.0 as isize, object, child);
             if s.last_focus != focus {
                 s.last_focus = focus;
-                s.engine.reset();
+                lose_word(s);
             }
         });
     }

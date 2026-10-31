@@ -4,6 +4,8 @@
 
 #[cfg(windows)]
 mod autostart;
+#[cfg(windows)]
+mod caret;
 mod language;
 mod settings;
 mod tray;
