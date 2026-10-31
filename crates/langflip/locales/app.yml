@@ -89,3 +89,23 @@ menu.quit:
   ja: 終了
   ko: 종료
   nb: Avslutt
+menu.language:
+  en: Language
+  ru: Язык
+  de: Sprache
+  fr: Langue
+  es: Idioma
+  zh: 语言
+  ja: 言語
+  ko: 언어
+  nb: Språk
+menu.languageSystem:
+  en: System language
+  ru: Язык системы
+  de: Systemsprache
+  fr: Langue du système
+  es: Idioma del sistema
+  zh: 系统语言
+  ja: システムの言語
+  ko: 시스템 언어
+  nb: Systemspråk

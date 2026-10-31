@@ -15,6 +15,9 @@ pub struct Settings {
     pub excluded_apps: Vec<String>,
     /// Words to leave as typed. The second Undo of a word adds it.
     pub keep_words: Vec<String>,
+    /// The menu language, such as `de`. None follows the system language.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
     /// The file didn't parse. Saving would replace the person's text with the defaults.
     #[serde(skip)]
     read_only: bool,
@@ -26,6 +29,7 @@ impl Default for Settings {
             enabled: true,
             excluded_apps: Vec::new(),
             keep_words: Vec::new(),
+            language: None,
             read_only: false,
         }
     }
@@ -168,6 +172,7 @@ excluded_apps = [\"wow.exe\"
         let mut settings = Settings {
             enabled: false,
             keep_words: vec!["руддщ".to_owned()],
+            language: Some("de".to_owned()),
             ..Settings::default()
         };
         settings.save_to(&path);
@@ -176,6 +181,7 @@ excluded_apps = [\"wow.exe\"
         let read = Settings::load_from(&path);
         assert!(!read.enabled);
         assert_eq!(read.keep_words, ["руддщ", "ghbdtn"]);
+        assert_eq!(read.language.as_deref(), Some("de"));
         assert!(!path.with_extension("toml.tmp").exists());
     }
 }

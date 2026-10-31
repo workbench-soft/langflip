@@ -40,6 +40,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 use windows::core::{PCWSTR, PWSTR, w};
 
 use crate::autostart;
+use crate::language;
 use crate::settings::{self, Settings};
 use crate::tray::{Action, Tray};
 
@@ -178,7 +179,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             autostart::set(true);
         }
         let tray = Tray::new(settings.enabled, autostart);
-        tray.set_keep_words(&settings.keep_words);
+        tray.set_language(settings.language.as_deref(), &settings.keep_words);
         STATE.with(|s| *s.borrow_mut() = Some(State::new(engine, settings, Some(tray))));
 
         let _kb = SetWindowsHookExW(WH_KEYBOARD_LL, Some(keyboard_hook), None, 0)
@@ -280,6 +281,14 @@ fn handle_tray() {
                 show_keep_words(s);
             });
         }
+        Action::SetLanguage(choice) => {
+            with_state(|s| {
+                s.settings.language = choice;
+                s.settings.save();
+                s.settings_mtime = settings::modified();
+                show_language(s);
+            });
+        }
         Action::OpenSettings => open_settings(),
         Action::Quit => unsafe { PostQuitMessage(0) },
     }
@@ -326,7 +335,15 @@ fn reload_settings(s: &mut State) {
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
     }
-    show_keep_words(s);
+    show_language(s);
+}
+
+/// Sets the menu language from the settings and relabels the tray menu in it.
+fn show_language(s: &State) {
+    language::apply(s.settings.language.as_deref());
+    if let Some(tray) = &s.tray {
+        tray.set_language(s.settings.language.as_deref(), &s.settings.keep_words);
+    }
 }
 
 /// Shows the words Langflip keeps in the tray menu.
