@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **No English letters left in a word** a key Windows hands to Langflip while the tray icon changes no longer ends up in front of the fixed word. A word that missed a key stays as typed, and a key pressed during a fix waits for it.
+- **Log** Langflip on Windows writes its decisions to `%LOCALAPPDATA%\Langflip\langflip.log`: key counts, the app in front, why a word was dropped. Your words stay out of it.
 - **Backspace** the Backspaces a fix sends carry the scan code a real key sends, so apps that drop them no longer keep `ghbd` in front of «привет».
 - **Releases** the Release workflow has its `RELEASES_TOKEN` secret and publishes again.
 - **Start at sign in** on Windows a Task Scheduler task starts Langflip too, then each minute for 15 minutes. Langflip now starts when Explorer skips its Run key value after a reboot.

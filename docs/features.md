@@ -86,6 +86,12 @@ A right click on the icon opens it.
 - **Quit** quits.
 - **Language** the menu and the tooltip speak the system language when it is English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian, and English otherwise.
 
+## Decision log
+
+On Windows Langflip writes what it decided to `%LOCALAPPDATA%\Langflip\langflip.log`, with the local time: the app in front, the key count of each word, each fix and why a word was dropped. Send it along with a bug report.
+
+- **Limits** at 1 MB the log moves to `langflip.old.log`, so the two stay under 2 MB. It holds no letters you typed. macOS writes no log yet.
+
 ## Settings file
 
 `%APPDATA%\Langflip\settings.toml` on Windows, `~/Library/Application Support/Langflip/settings.toml` on macOS.

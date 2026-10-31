@@ -5,6 +5,8 @@
 #[cfg(windows)]
 mod autostart;
 mod language;
+#[cfg(windows)]
+mod log;
 mod settings;
 mod tray;
 

@@ -34,6 +34,7 @@ flowchart TB
 - **`langflip::autostart`** Windows autostart: the Run key, and a Task Scheduler task through `schtasks.exe` for when Explorer skips the Run key.
 - **`langflip::macos`** a session `CGEventTap`, `CGEvent` posts for the fix, Text Input Sources for the layout.
 - **`langflip::tray`** the tray icon and menu, shared by both systems.
+- **`langflip::log`** the Windows decision log in `%LOCALAPPDATA%\Langflip\langflip.log`, 1 MB, then `langflip.old.log`. Key counts, app names and decisions, never letters.
 - **`langflip::settings`** `settings.toml` in the user's app data folder.
 - **`crates/langflip/build.rs`** writes the name, publisher, version and a manifest into `langflip.exe`. The release build passes its date version in `LANGFLIP_VERSION`.
 
@@ -77,6 +78,7 @@ sequenceDiagram
 3. Space, Enter or Tab ends the word. The engine asks `decide`, unless the word already switched, and the hook swallows the end key when a fix comes back.
 4. The fix goes out as tagged events: Backspaces, the text as Unicode, the end key if there is one, an end marker. The hook lets tagged events through.
 5. Keys the person presses before the end marker comes back wait in the hook and replay after it. On Windows they wait up to 100 ms more for the window to take the new layout. A Windows fix whose end marker hasn't come back after 1 s, such as one typed while the tray menu was open, lets them go.
+6. On Windows the hook runs again inside a tray call that waits on Explorer, while the state is in use. The pending flag and the held keys sit outside the state, so keys still wait behind a fix. A key the engine missed that way leaves the word as typed until its end key, since a fix would erase too few letters.
 
 ## The decision
 
