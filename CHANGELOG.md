@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Open source** the repo is public. Checks and Release run on GitHub Windows runners, and Checks runs on each PR too.
 - **Backspace** the Backspaces a fix sends carry the scan code a real key sends, so apps that drop them no longer keep `ghbd` in front of «привет».
 - **Releases** the Release workflow has its `RELEASES_TOKEN` secret and publishes again.
 - **Start at sign in** on Windows a Task Scheduler task starts Langflip too, then each minute for 15 minutes. Langflip now starts when Explorer skips its Run key value after a reboot.
