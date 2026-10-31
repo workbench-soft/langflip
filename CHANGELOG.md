@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Open source** the repo is public. Checks and Release run on GitHub Windows runners, and Checks runs on each PR too.
 - **Releases** the Release workflow has its `RELEASES_TOKEN` secret and publishes again.
 - **Start at sign in** on Windows a Task Scheduler task starts Langflip too, then each minute for 15 minutes. Langflip now starts when Explorer skips its Run key value after a reboot.
 - **Docs** `docs/architecture.md` has a Decisions section: each choice, why it won, what it costs, the rivals and why they lost.

@@ -58,7 +58,7 @@ mise x -- cargo build --release -p langflip
 
 The binary lands in `target/release/`. `mise run install`, the same as a double click on `Langflip.cmd`, builds it and installs it on this PC in `%LOCALAPPDATA%\Programs\Langflip`, in place of the running copy. Set `LANGFLIP_VERSION` to give it a version other than the one in `Cargo.toml`.
 
-Each push to `main` that passes Checks makes a release: `.github/workflows/release.yml` builds `langflip.exe` on the self-hosted runner and publishes `Langflip-<version>-windows-x64.exe` in the public [workbench-soft.github.io releases](https://github.com/workbench-soft/workbench-soft.github.io/releases), with a date version such as `v2026.10.30.1`. It needs the `RELEASES_TOKEN` secret. The exe is unsigned yet, and there is no macOS build.
+Each push to `main` that passes Checks makes a release: `.github/workflows/release.yml` builds `langflip.exe` on a GitHub Windows runner and publishes `Langflip-<version>-windows-x64.exe` in the public [workbench-soft.github.io releases](https://github.com/workbench-soft/workbench-soft.github.io/releases), with a date version such as `v2026.10.30.1`. It needs the `RELEASES_TOKEN` secret. The exe is unsigned yet, and there is no macOS build.
 
 ## Rebuild the model
 
