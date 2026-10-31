@@ -33,7 +33,6 @@
 
 ## chore/install-task (PR #14)
 
-- [ ] Add the `RELEASES_TOKEN` secret to workbench-soft/langflip: each Release run fails without it, and no Langflip release exists yet (2026-10-30).
 
 ## feat/keep-after-two-undos (PR #23)
 
