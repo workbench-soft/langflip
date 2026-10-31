@@ -1,6 +1,6 @@
 # Builds Langflip from this checkout and installs it for the current user, in place of the running copy,
 # with a desktop and a Start menu shortcut and an entry in Settings, Apps.
-# Run it with `mise run install` or a double click on Langflip.cmd. The installed exe rewrites the autostart path on its first start.
+# Run it with `mise run install` or a double click on Langflip.cmd. The installed exe writes the Run value and the sign in task on its first start.
 $ErrorActionPreference = "Stop"
 
 $dir = Join-Path $env:LOCALAPPDATA "Programs\Langflip"
@@ -51,3 +51,5 @@ if (-not (Get-Process langflip -ErrorAction SilentlyContinue)) { Write-Output "l
 $run = (Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue).Langflip
 Write-Output "installed $($env:LANGFLIP_VERSION) at $exe"
 Write-Output "autostart: $(if ($run) { $run } else { 'off' })"
+$task = schtasks.exe /Query /TN Langflip /XML 2>$null | Out-String
+Write-Output "sign in task: $(if ($task -match '<Command>(.+)</Command>') { $Matches[1] } else { 'off' })"

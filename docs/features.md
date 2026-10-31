@@ -70,6 +70,8 @@ A double click on `Langflip.cmd` in the repo builds Langflip and installs it for
 The first start turns on start at login, with no question.
 
 - **Windows** a `Langflip` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. Each start rewrites the path, so a moved `langflip.exe` still starts.
+- **Windows backup** Explorer can skip a Run value at sign in. A `Langflip` task in the Task Scheduler starts Langflip at sign in too, then each minute for 15 minutes. A start with either one in place writes both again.
+- **Quit** a Quit from the tray in the first 15 minutes after sign in lasts up to a minute. Later it lasts until the next sign in.
 - **macOS** `~/Library/LaunchAgents/com.workbenchsoft.langflip.plist`. macOS shows a "Background item added" notice once.
 - **Limits** unchecking Start at sign in turns it off for good. Deleting `settings.toml` makes the next start count as the first again.
 

@@ -245,3 +245,14 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `crates/langflip/assets/tray/*.svg` and `*.png`: the new tray icons. `tray.rs` stays as it is.
   - `design/icons/2026-10-31-5`: round 5 of the drafts, with the pick in `picked.txt`.
 - **Docs** README, `docs/features.md`, `CHANGELOG.md`.
+
+### 2026-10-31 Autostart through the Task Scheduler too
+
+- **Why** after a reboot on 2026-10-31 Explorer ran OneDrive and LM Studio from the Run key and skipped Langflip. The Shell-Core log gives no reason. The person wants Langflip to start at each sign in without fail.
+- **Choice** a second path next to the Run key: a `Langflip` task in the Task Scheduler. It starts `langflip.exe` at sign in, then every minute for 15 minutes. A copy already running exits at once on the mutex, so extra starts cost nothing.
+- **15 minutes** a later Quit from the tray stays a quit until the next sign in.
+- **Each path restores the other** a start with either the Run value or the task in place counts autostart as on and writes both again.
+- **Changes**
+  - `autostart.rs`: the Run key code moves out of `windows.rs`, and `schtasks.exe` creates and deletes the task, with no console window.
+  - `scripts/uninstall-windows.ps1` deletes the task. `scripts/install-windows.ps1` prints whether the task is there.
+- **Docs** README, `docs/features.md`, `docs/architecture.md`, `CHANGELOG.md`.
