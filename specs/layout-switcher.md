@@ -235,3 +235,13 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `crates/langflip/assets/tray/*.svg` and `*.png`: the new tray icons. `tray.rs` stays as it is.
   - `design/icons/2026-10-31-3` and `2026-10-31-4`: rounds 3 and 4 of the drafts, with the pick in `picked.txt`.
 - **Docs** README, `docs/features.md`, `CHANGELOG.md`.
+
+### 2026-10-31 A holo foil icon
+
+- **Why** the person wants a neon icon. From the 5th round of drafts they picked icon 10: a navy А and Я on an iridescent foil card with a diagonal shine.
+- **Look** the app icon is the foil card with А and Я. The tray shows a navy `EN` or `RU` drawn big on the same foil tile, and the app icon for another layout. Off turns it grey, as before.
+- **Changes**
+  - `crates/langflip/assets/icon.svg` and `icon.ico`: the new app icon.
+  - `crates/langflip/assets/tray/*.svg` and `*.png`: the new tray icons. `tray.rs` stays as it is.
+  - `design/icons/2026-10-31-5`: round 5 of the drafts, with the pick in `picked.txt`.
+- **Docs** README, `docs/features.md`, `CHANGELOG.md`.
