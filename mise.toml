@@ -6,6 +6,7 @@ shellcheck = "0.11.0"
 shfmt = "3.14.1"
 ruff = "0.17.3"
 "npm:oxfmt" = "0.75.0"
+"npm:markdownlint-cli2" = "0.24.0"
 
 [tasks.model]
 description = "Rebuild model/langflip.model and model/testset.tsv from wordfreq"
@@ -14,6 +15,7 @@ run = "uv run --no-project --with wordfreq==3.1.1 python scripts/build_model.py"
 [tasks.lint]
 description = "Lint and format check the Rust, the Python, the scripts and the docs"
 run = [
+  "markdownlint-cli2",
   "cargo fmt --all --check",
   "cargo clippy --workspace --all-targets -- -D warnings",
   "ruff check",

@@ -2,7 +2,7 @@
 
 ## Local install on Windows
 
-- [ ] Send `langflip.exe` to Microsoft as a false positive at https://www.microsoft.com/wdsi/filesubmission, so the release exe isn't blocked for other people.
+- [ ] Send `langflip.exe` to Microsoft as a false positive at <https://www.microsoft.com/wdsi/filesubmission>, so the release exe isn't blocked for other people.
 
 ## app-audit
 
