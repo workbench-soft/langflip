@@ -98,8 +98,9 @@ struct State {
     /// A key went by while the state was in use, so the screen holds more of the word than the
     /// engine. The word gets no fix until its end key.
     skip_word: bool,
-    /// The layout the last fix switched to. Held keys wait for it before they replay.
-    switching_to: Option<Lang>,
+    /// The layout the last fix switched to, and when. A busy window takes it late, and until then
+    /// the keys typed in it already land in that layout.
+    expect: Option<(Lang, Instant)>,
     /// The fix and the end key to type after it, if any.
     queued: Option<(Fix, Option<u16>)>,
     /// The end key of the last finished word, for Undo and the manual fix.
@@ -121,6 +122,10 @@ thread_local! {
     /// When the fix was queued, so a fix that got stuck lets the keys go.
     static PENDING_AT: Cell<Option<Instant>> = const { Cell::new(None) };
     static HELD: RefCell<Vec<Held>> = const { RefCell::new(Vec::new()) };
+    /// End markers on their way, counting a queued fix. Keys wait until the last one arrives.
+    static MARKERS: Cell<u32> = const { Cell::new(0) };
+    /// The timer that checks whether the window took the new layout, so held keys can replay.
+    static REPLAY_TIMER: Cell<usize> = const { Cell::new(0) };
 }
 
 /// Runs `f` on the state, or returns None when the state is in use.
@@ -153,7 +158,7 @@ impl State {
             skip_window: false,
             password: false,
             skip_word: false,
-            switching_to: None,
+            expect: None,
             queued: None,
             last_end_vk: VK_SPACE as u16,
             last_focus: (0, 0, 0),
@@ -215,6 +220,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             match msg.message {
                 WM_APP_FIX => apply_queued_fix(),
                 WM_APP_REPLAY => replay_held(),
+                WM_TIMER if msg.wParam.0 == REPLAY_TIMER.get() => replay_held(),
                 WM_TIMER
                     if with_state(|s| s.switch.as_ref().map(|w| w.timer)).flatten()
                         == Some(msg.wParam.0) =>
@@ -448,8 +454,11 @@ fn hold_key(info: &KBDLLHOOKSTRUCT, down: bool) -> Option<bool> {
     match info.dwExtraInfo {
         TAG_OWN => return Some(false),
         TAG_END => {
-            PENDING.set(false);
-            if HELD.with_borrow(|h| !h.is_empty()) {
+            // Keys held until now go out with a marker of their own, and keys pressed while they
+            // replay wait behind it. Otherwise a busy PC types them ahead of the held ones.
+            let left = MARKERS.get().saturating_sub(1);
+            MARKERS.set(left);
+            if left == 0 {
                 post(WM_APP_REPLAY);
             }
             return Some(true);
@@ -489,7 +498,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     if vk == VK_PAUSE {
         debug(format_args!("pause, pending {}", PENDING.get()));
         let fix = if pressed(VK_SHIFT) {
-            let lang = current_lang();
+            let lang = layout(s);
             s.engine.convert(lang)
         } else {
             s.engine.undo()
@@ -537,7 +546,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     let key = key_for_scan(info.scanCode).filter(|k| !extended && !(k.is_digit() && shift));
     if let Some(key) = key {
         let caps = unsafe { GetKeyState(VK_CAPITAL) } & 1 != 0;
-        let lang = current_lang();
+        let lang = layout(s);
         if let Some(fix) = s.engine.key(Stroke::new(key, shift, caps), lang) {
             debug(format_args!(
                 "switch while typed in {lang:?}: fix of {} keys",
@@ -550,7 +559,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     }
     if matches!(vk, VK_SPACE | VK_RETURN | VK_TAB) {
         s.last_end_vk = vk as u16;
-        let lang = current_lang();
+        let lang = layout(s);
         let keys = s.engine.word_len();
         let fix = s.engine.end_word(lang);
         // The log keeps the decision, not the word.
@@ -571,6 +580,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
 fn queue(s: &mut State, fix: Fix, end_vk: Option<u16>) {
     PENDING.set(true);
     PENDING_AT.set(Some(Instant::now()));
+    MARKERS.set(MARKERS.get() + 1);
     s.queued = Some((fix, end_vk));
     post(WM_APP_FIX);
 }
@@ -635,12 +645,10 @@ fn apply_queued_fix() {
         ));
         if sent as usize != inputs.len() {
             // Windows blocked the input, often for an elevated window. Stop waiting for the marker.
-            PENDING.set(false);
-            if HELD.with_borrow(|h| !h.is_empty()) {
-                post(WM_APP_REPLAY);
-            }
+            MARKERS.set(MARKERS.get().saturating_sub(1));
+            post(WM_APP_REPLAY);
         }
-        with_state(|s| s.switching_to = Some(fix.switch_to));
+        with_state(|s| s.expect = Some((fix.switch_to, Instant::now())));
         switch_layout(GetForegroundWindow(), fix.switch_to);
     }
 }
@@ -659,9 +667,8 @@ fn release_stuck_fix() {
     }
     let stuck = with_state(|s| {
         debug(format_args!("stuck fix, queued {}", s.queued.is_some()));
-        if s.queued.is_none() {
-            PENDING.set(false);
-        }
+        // The queued fix sends the one marker still to come.
+        MARKERS.set(u32::from(s.queued.is_some()));
         s.queued.is_some()
     });
     match stuck {
@@ -672,20 +679,44 @@ fn release_stuck_fix() {
     }
 }
 
+/// How long held keys wait for the window to take the layout of the fix. A busy app takes longer.
+const LAYOUT_WAIT: Duration = Duration::from_millis(500);
+
+/// Types the held keys again, then an end marker, once the last marker came back.
 fn replay_held() {
+    if MARKERS.get() > 0 {
+        return;
+    }
+    if HELD.with_borrow(Vec::is_empty) {
+        PENDING.set(false);
+        return;
+    }
     // The window switches its layout on its own thread. Keys sent before that land in the old one.
-    let lang = with_state(|s| s.switching_to.take()).flatten();
-    for _ in 0..20 {
-        if lang.is_none() || current_lang() == lang {
-            break;
+    // The wait runs on a timer, so the hook keeps holding the keys typed meanwhile.
+    let waiting = with_state(|s| {
+        s.expect
+            .is_some_and(|(lang, at)| current_lang() != Some(lang) && at.elapsed() < LAYOUT_WAIT)
+    });
+    if waiting == Some(true) {
+        if REPLAY_TIMER.get() == 0 {
+            REPLAY_TIMER.set(unsafe { SetTimer(None, 0, 10, None) });
         }
-        std::thread::sleep(std::time::Duration::from_millis(5));
+        return;
+    }
+    let timer = REPLAY_TIMER.replace(0);
+    if timer != 0 {
+        let _ = unsafe { KillTimer(None, timer) };
     }
     let held = HELD.take();
     debug(format_args!("replay {} held key events", held.len()));
-    let inputs: Vec<INPUT> = held.iter().map(replay_input).collect();
-    unsafe {
-        SendInput(&inputs, size_of::<INPUT>() as i32);
+    let mut inputs: Vec<INPUT> = held.iter().map(replay_input).collect();
+    inputs.push(key_input(VK_MARKER, 0, KEYEVENTF_KEYUP, TAG_END));
+    MARKERS.set(1);
+    PENDING_AT.set(Some(Instant::now()));
+    let sent = unsafe { SendInput(&inputs, size_of::<INPUT>() as i32) };
+    if sent as usize != inputs.len() {
+        MARKERS.set(0);
+        PENDING.set(false);
     }
 }
 
@@ -863,6 +894,19 @@ fn current_lang() -> Option<Lang> {
     window_lang(unsafe { GetForegroundWindow() })
 }
 
+/// The layout the keys typed now land in. A window that hasn't taken the layout of the last fix
+/// yet still types in it, since Windows hands it the switch before the keys.
+fn layout(s: &mut State) -> Option<Lang> {
+    let now = current_lang();
+    match s.expect {
+        Some((lang, at)) if now != Some(lang) && at.elapsed() < LAYOUT_WAIT => Some(lang),
+        _ => {
+            s.expect = None;
+            now
+        }
+    }
+}
+
 fn window_lang(hwnd: HWND) -> Option<Lang> {
     unsafe {
         let thread = GetWindowThreadProcessId(hwnd, None);
@@ -950,12 +994,67 @@ mod tests {
     fn a_stuck_fix_lets_the_keys_go() {
         start();
         PENDING.set(true);
+        MARKERS.set(1);
         PENDING_AT.set(Some(Instant::now()));
         release_stuck_fix();
         assert!(PENDING.get());
         PENDING_AT.set(Some(Instant::now() - STUCK_FIX));
         release_stuck_fix();
         assert!(!PENDING.get());
+        assert_eq!(MARKERS.get(), 0);
+    }
+
+    /// The end marker of a fix or a replay.
+    fn marker() -> KBDLLHOOKSTRUCT {
+        KBDLLHOOKSTRUCT {
+            vkCode: VK_MARKER.into(),
+            dwExtraInfo: TAG_END,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn keys_wait_until_the_held_keys_replay() {
+        start();
+        PENDING.set(true);
+        MARKERS.set(1);
+        hold_key(&press(0x47, 0x22), true);
+        // The fix's marker came back, but the held G hasn't replayed yet.
+        assert_eq!(hold_key(&marker(), false), Some(true));
+        assert!(PENDING.get());
+        assert_eq!(hold_key(&press(0x48, 0x23), true), Some(true));
+        assert_eq!(HELD.with_borrow(Vec::len), 2);
+        HELD.take();
+        replay_held();
+        assert!(!PENDING.get());
+    }
+
+    #[test]
+    fn a_marker_keeps_the_keys_waiting_for_the_next_fix() {
+        start();
+        PENDING.set(true);
+        MARKERS.set(2);
+        hold_key(&marker(), false);
+        assert!(PENDING.get());
+        assert_eq!(MARKERS.get(), 1);
+        MARKERS.set(0);
+        PENDING.set(false);
+    }
+
+    #[test]
+    fn keys_after_a_fix_read_in_its_layout_until_the_window_takes_it() {
+        start();
+        let other = current_lang().map_or(Lang::Ru, Lang::other);
+        let lang = with_state(|s| {
+            s.expect = Some((other, Instant::now()));
+            layout(s)
+        });
+        assert_eq!(lang, Some(Some(other)));
+        let lang = with_state(|s| {
+            s.expect = Some((other, Instant::now() - LAYOUT_WAIT));
+            layout(s)
+        });
+        assert_eq!(lang, Some(current_lang()));
     }
 
     #[test]

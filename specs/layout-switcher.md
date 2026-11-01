@@ -48,7 +48,7 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 1. The key hook decides inside the callback. The model answers in microseconds.
 2. A word to fix: the hook swallows the end key and posts the fix to the main thread.
 3. The main thread sends Backspaces, the new word as Unicode text, the end key, and a closing marker key. Each injected event carries the Langflip tag, and the hook passes tagged events through.
-4. Keys the person presses before the closing marker arrives are held by the hook and replayed after it, so fast typing keeps its order.
+4. Keys the person presses before the closing marker arrives are held by the hook and replayed after it with a marker of their own, so fast typing keeps its order on a busy PC too.
 5. The main thread asks the window in focus to switch the layout.
 
 ### Windows
@@ -266,3 +266,12 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Missed key during a fix** the hook held keys only through the state. A key missed while a fix was on its way reached the app before the fix's Backspaces, which then erased it in place of a typed letter. The pending flag and the held keys move out of the state, so the hook always holds them.
 - **Changes** `log.rs` new, `windows.rs`, `main.rs`, `Cargo.toml`.
 - **Docs** README, `docs/features.md`, `docs/architecture.md`, `CHANGELOG.md`.
+
+### 2026-11-01 Letters keep their order on a busy PC
+
+- **Why** the person sees mixed up letters when the PC is slow.
+- **Gap after the marker** the fix's marker cleared the pending flag before the held keys replayed. Keys pressed in that gap reached the app ahead of the held ones. The main thread also slept up to 100 ms there, which widened the gap. Now the held keys replay with a marker of their own, and keys wait until the last marker arrives. A count of markers on their way, a queued fix included, decides when.
+- **Layout wait** held keys wait up to 500 ms for the window to take the layout of the fix, on a 10 ms timer in place of a sleep, so the hook keeps holding keys.
+- **Stale layout** a busy window reports the old layout for a while after the fix, though the keys typed in it already land in the new one. The engine read the next word in the old layout and could fix it back. For 500 ms after a fix, or until the window reports it, the engine takes the layout of the fix.
+- **Changes** `windows.rs`.
+- **Docs** `docs/architecture.md`, `CHANGELOG.md`.
