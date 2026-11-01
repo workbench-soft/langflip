@@ -21,17 +21,24 @@ pub struct Fix {
     pub retype_end: bool,
 }
 
-/// The last finished word, kept for Undo and for the manual fix hotkey.
+/// The last finished word, kept for Undo, for the manual fix hotkey and for Backspace.
 struct LastWord {
     strokes: Vec<Stroke>,
+    /// `strokes[..kept]` were on screen before the person typed the rest.
+    kept: usize,
     typed_in: Lang,
     /// Some when Langflip fixed the word: the text it typed.
     fixed: Option<String>,
+    /// The layout the whole word is on screen in, None when its parts differ.
+    shown_in: Option<Lang>,
 }
 
 pub struct Engine {
     model: Model,
     buffer: Vec<Stroke>,
+    /// `buffer[..kept]` type the word that was on screen before the caret, in `word_lang`.
+    kept: usize,
+    word_lang: Option<Lang>,
     /// Some once Langflip switched the word being typed: the layout it was typed in before.
     switched_from: Option<Lang>,
     last: Option<LastWord>,
@@ -48,6 +55,8 @@ impl Engine {
         Engine {
             model,
             buffer: Vec::new(),
+            kept: 0,
+            word_lang: None,
             switched_from: None,
             last: None,
             keep_words,
@@ -64,22 +73,63 @@ impl Engine {
             return None;
         }
         let current = current?;
-        let text = decide::decide_prefix(&self.model, &self.buffer, current, &self.keep_words)?;
+        let text = match self.word_lang {
+            Some(lang) => decide::decide_continued(
+                &self.model,
+                &self.buffer,
+                self.kept,
+                (current, lang),
+                &self.keep_words,
+                false,
+            )?,
+            None => decide::decide_prefix(&self.model, &self.buffer, current, &self.keep_words)?,
+        };
         self.switched_from = Some(current);
         Some(Fix {
-            erase: self.buffer.len() - 1,
+            erase: self.buffer.len() - self.kept - 1,
             text,
             switch_to: current.other(),
             retype_end: false,
         })
     }
 
-    pub fn backspace(&mut self) {
-        self.last = None;
-        self.buffer.pop();
-        if self.buffer.is_empty() {
+    /// Backspace. Right after Space, when `after_space`, it erases the Space and the person goes
+    /// on with the last word.
+    pub fn backspace(&mut self, after_space: bool) {
+        let last = self.last.take();
+        if self.buffer.pop().is_none() {
+            if let Some(last) = last.filter(|_| after_space) {
+                self.go_on_with(last);
+            }
+            return;
+        }
+        self.kept = self.kept.min(self.buffer.len());
+        if self.buffer.len() == self.kept {
             self.switched_from = None;
         }
+        if self.buffer.is_empty() {
+            self.word_lang = None;
+        }
+    }
+
+    fn go_on_with(&mut self, last: LastWord) {
+        let Some(lang) = last.shown_in else { return };
+        self.kept = last.strokes.len();
+        self.buffer = last.strokes;
+        self.word_lang = Some(lang);
+    }
+
+    /// The text before the caret, read from the app after the caret moved. Its last word becomes
+    /// the start of the word being typed. Returns the number of its keys and its layout.
+    pub fn continue_word(&mut self, before_caret: &str) -> Option<(usize, Lang)> {
+        if !self.buffer.is_empty() {
+            return None;
+        }
+        let (strokes, lang) = layout::word_before(before_caret)?;
+        self.kept = strokes.len();
+        self.buffer = strokes;
+        self.word_lang = Some(lang);
+        Some((self.kept, lang))
     }
 
     /// How many keys the word being typed has.
@@ -91,36 +141,64 @@ impl Engine {
     pub fn reset(&mut self) {
         self.last = None;
         self.buffer.clear();
+        self.kept = 0;
+        self.word_lang = None;
         self.switched_from = None;
     }
 
     /// An end key finished the word. Returns the fix to apply before the end key goes through.
     pub fn end_word(&mut self, current: Option<Lang>) -> Option<Fix> {
         let strokes = std::mem::take(&mut self.buffer);
+        let kept = std::mem::take(&mut self.kept);
+        let word_lang = self.word_lang.take();
         self.last = None;
         let current = current?;
         if let Some(typed_in) = self.switched_from.take() {
             // Switched while typed: a second decision could flip it back.
-            let fixed = Some(layout::text_for(&strokes, typed_in.other()));
+            let fixed = Some(layout::text_for(&strokes[kept..], typed_in.other()));
             self.last = Some(LastWord {
                 strokes,
+                kept,
                 typed_in,
                 fixed,
+                shown_in: Some(typed_in.other()),
             });
             return None;
         }
-        let choice = decide::decide(&self.model, &strokes, current, &self.keep_words);
-        let fix = choice.map(|c| Fix {
-            erase: strokes.len(),
-            text: c.text,
+        let (text, shown_in) = match word_lang {
+            Some(lang) => {
+                let text = decide::decide_continued(
+                    &self.model,
+                    &strokes,
+                    kept,
+                    (current, lang),
+                    &self.keep_words,
+                    true,
+                );
+                let whole = text.is_some() || current == lang || kept == strokes.len();
+                (text, whole.then_some(lang))
+            }
+            None => match decide::decide(&self.model, &strokes, current, &self.keep_words) {
+                Some(c) => {
+                    let whole = c.convert == strokes.len();
+                    (Some(c.text), whole.then_some(current.other()))
+                }
+                None => (None, Some(current)),
+            },
+        };
+        let fix = text.map(|text| Fix {
+            erase: strokes.len() - kept,
+            text,
             switch_to: current.other(),
             retype_end: false,
         });
         let fixed = fix.as_ref().map(|f| f.text.clone());
         self.last = Some(LastWord {
             strokes,
+            kept,
             typed_in: current,
             fixed,
+            shown_in,
         });
         fix
     }
@@ -129,7 +207,7 @@ impl Engine {
     pub fn undo(&mut self) -> Option<Fix> {
         let last = self.last.take()?;
         let fixed = last.fixed?;
-        let typed = layout::text_for(&last.strokes, last.typed_in);
+        let typed = layout::text_for(&last.strokes[last.kept..], last.typed_in);
         let word = typed.to_lowercase();
         let count = self.undone.entry(word.clone()).or_default();
         *count += 1;
@@ -145,16 +223,16 @@ impl Engine {
         })
     }
 
-    /// Converts the word being typed, or the last word, to the other layout.
+    /// Converts the keys typed of the word being typed, or of the last word, to the other layout.
     pub fn convert(&mut self, current: Option<Lang>) -> Option<Fix> {
-        if !self.buffer.is_empty() {
+        if self.buffer.len() > self.kept {
             let current = current?;
-            self.switched_from = None;
+            let kept = self.kept;
             let strokes = std::mem::take(&mut self.buffer);
-            let text = layout::text_for(&strokes, current.other());
+            self.reset();
             return Some(Fix {
-                erase: strokes.len(),
-                text,
+                erase: strokes.len() - kept,
+                text: layout::text_for(&strokes[kept..], current.other()),
                 switch_to: current.other(),
                 retype_end: false,
             });
@@ -165,9 +243,10 @@ impl Engine {
             return self.undo();
         }
         let target = last.typed_in.other();
+        let added = &last.strokes[last.kept..];
         Some(Fix {
-            erase: last.strokes.len() + 1,
-            text: layout::text_for(&last.strokes, target),
+            erase: added.len() + 1,
+            text: layout::text_for(added, target),
             switch_to: target,
             retype_end: true,
         })
@@ -368,5 +447,71 @@ mod tests {
         assert_eq!(fix.text, "руддщ");
         assert_eq!(fix.erase, 6);
         assert!(fix.retype_end);
+    }
+
+    /// Types `added` in `lang` onto the word before the caret, then Space. Returns the fixes.
+    fn go_on(e: &mut Engine, added: &str, lang: Lang) -> Vec<Fix> {
+        let mut current = lang;
+        let mut fixes = Vec::new();
+        for s in layout::strokes_for(added, lang).unwrap() {
+            if let Some(fix) = e.key(s, Some(current)) {
+                current = fix.switch_to;
+                fixes.push(fix);
+            }
+        }
+        fixes.extend(e.end_word(Some(current)));
+        fixes
+    }
+
+    #[test]
+    fn keys_in_the_word_layout_stay() {
+        let mut e = engine();
+        assert_eq!(e.continue_word("Скажи при"), Some((3, Lang::Ru)));
+        assert_eq!(go_on(&mut e, "ятно", Lang::Ru), []);
+        assert_eq!(e.continue_word("test"), Some((4, Lang::En)));
+        assert_eq!(go_on(&mut e, "ing", Lang::En), []);
+    }
+
+    #[test]
+    fn keys_in_the_other_layout_join_the_word() {
+        let mut e = engine();
+        e.continue_word("привет");
+        let fixes = go_on(&mut e, "cndbt", Lang::En);
+        assert_eq!(fixes.len(), 1);
+        assert_eq!(fixes[0].switch_to, Lang::Ru);
+        // Only the typed keys go: «привет» stays on screen.
+        assert_eq!((fixes[0].erase, fixes[0].text.as_str()), (0, "с"));
+    }
+
+    #[test]
+    fn a_mixed_word_stays_as_typed() {
+        let mut e = engine();
+        e.continue_word("Windows");
+        assert_eq!(go_on(&mut e, "ом", Lang::Ru), []);
+    }
+
+    #[test]
+    fn backspace_after_space_goes_on_with_the_word() {
+        let mut e = engine();
+        assert_eq!(type_word(&mut e, "работ", Lang::Ru), None);
+        e.backspace(true);
+        let fixes = go_on(&mut e, "f", Lang::En);
+        assert_eq!((fixes[0].erase, fixes[0].text.as_str()), (0, "а"));
+
+        // Enter may have sent the word away.
+        let mut e = engine();
+        type_word(&mut e, "работ", Lang::Ru);
+        e.backspace(false);
+        assert!(e.buffer.is_empty() && e.word_lang.is_none());
+    }
+
+    #[test]
+    fn backspace_into_the_old_word_lets_it_go() {
+        let mut e = engine();
+        e.continue_word("ab");
+        for _ in 0..3 {
+            e.backspace(true);
+        }
+        assert!(e.buffer.is_empty() && e.word_lang.is_none());
     }
 }

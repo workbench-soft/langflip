@@ -196,6 +196,29 @@ pub fn strokes_for(word: &str, lang: Lang) -> Option<Vec<Stroke>> {
         .collect()
 }
 
+/// The word the text ends with: the strokes that type it and its layout. None when the text ends
+/// in a space or a sign, or the word holds a character neither layout types.
+pub fn word_before(text: &str) -> Option<(Vec<Stroke>, Lang)> {
+    let start = text
+        .char_indices()
+        .rev()
+        .take_while(|&(_, c)| c.is_alphanumeric() || c == '\'')
+        .last()?
+        .0;
+    let word = &text[start..];
+    let lang = if word
+        .chars()
+        .any(|c| matches!(c, 'а'..='я' | 'А'..='Я' | 'ё' | 'Ё'))
+    {
+        Lang::Ru
+    } else if word.chars().any(|c| c.is_ascii_alphabetic()) {
+        Lang::En
+    } else {
+        return None;
+    };
+    Some((strokes_for(word, lang)?, lang))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,5 +238,18 @@ mod tests {
         let caps = Stroke::new(Key::Comma, false, true);
         assert_eq!(char_for(caps, Lang::Ru), 'Б');
         assert_eq!(char_for(caps, Lang::En), ',');
+    }
+
+    #[test]
+    fn finds_the_word_before_the_caret() {
+        let (strokes, lang) = word_before("Скажи привет").unwrap();
+        assert_eq!(lang, Lang::Ru);
+        assert_eq!(text_for(&strokes, lang), "привет");
+        let (strokes, lang) = word_before("I don't").unwrap();
+        assert_eq!(lang, Lang::En);
+        assert_eq!(text_for(&strokes, lang), "don't");
+        for text in ["", "привет ", "по-", "2026", "日本"] {
+            assert_eq!(word_before(text), None, "{text}");
+        }
     }
 }

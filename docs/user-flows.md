@@ -47,6 +47,27 @@ sequenceDiagram
     P->>A: ет and Space
 ```
 
+## Go on with a word
+
+1. «привет» sits in the text, and the English layout is on.
+2. The person clicks right after «привет», or presses Backspace right after its Space.
+3. The person types `c`.
+4. Langflip erases `c`, types «с» and switches to Russian. «привет» stays.
+5. The person types the rest, «твие», in Russian.
+
+```mermaid
+sequenceDiagram
+    participant P as Person
+    participant L as Langflip
+    participant A as App
+    P->>A: click after «привет»
+    L->>A: read the text before the caret
+    P->>L: c
+    L->>A: «с»
+    L->>A: switch layout to Russian
+    P->>A: твие and Space
+```
+
 ## Undo
 
 1. Langflip just fixed a word the person meant as typed, such as `vtnf` meant as a code name.
