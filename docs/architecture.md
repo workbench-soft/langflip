@@ -77,7 +77,7 @@ sequenceDiagram
 2. A letter key goes into the buffer with its Shift and Caps Lock state. A digit without Shift goes in too, and types the same in both layouts. From the 4th letter the engine asks `decide_prefix`, and the hook swallows the key when a fix comes back. The fix types it in the other layout. One such fix per word.
 3. Space, Enter or Tab ends the word. The engine asks `decide`, unless the word already switched, and the hook swallows the end key when a fix comes back.
 4. The fix goes out as tagged events: Backspaces, the text as Unicode, the end key if there is one, an end marker. The hook lets tagged events through.
-5. Keys the person presses before the end marker comes back wait in the hook and replay after it. On Windows they wait up to 100 ms more for the window to take the new layout. A Windows fix whose end marker hasn't come back after 1 s, such as one typed while the tray menu was open, lets them go.
+5. Keys the person presses before the end marker comes back wait in the hook and replay after it. On Windows they replay with an end marker of their own, and keys pressed meanwhile wait behind it. They wait up to 500 ms more for the window to take the new layout, on a timer, so the hook keeps running. Until the window reports the new layout, the engine reads its keys in that layout. A Windows fix whose end marker hasn't come back after 1 s, such as one typed while the tray menu was open, lets them go.
 6. On Windows the hook runs again inside a tray call that waits on Explorer, while the state is in use. The pending flag and the held keys sit outside the state, so keys still wait behind a fix. A key the engine missed that way leaves the word as typed until its end key, since a fix would erase too few letters.
 
 ## The decision
@@ -156,7 +156,7 @@ The choices that shape Langflip, the most costly to undo first.
 
 - **Picked** the fix sends Backspaces, then the word as Unicode text, then an end marker. Each event carries the Langflip tag, so the hook lets it through. Keys typed during a fix wait in the hook and replay after the marker.
 - **Why** Unicode text comes out right whatever layout the window has at that moment. The tag keeps Langflip from judging its own keys.
-- **Trade-off** keys typed during a fix replay before the layout switch lands, so they keep the old layout. A fix that gets stuck, such as one typed while the tray menu is open, needs a 1 s timeout to let the held keys go.
+- **Trade-off** keys typed during a fix wait up to 500 ms for the layout switch to land, and an app that never reports it delays them that long. A fix that gets stuck, such as one typed while the tray menu is open, needs a 1 s timeout to let the held keys go.
 - **Rejected**
   - **Switch the layout, then replay the scan codes** a window takes up to 100 ms to take the new layout. Keys sent before that would come out in the old one.
 - **Cost to undo** medium. Both platform layers send the fix.
