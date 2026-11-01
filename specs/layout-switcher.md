@@ -278,3 +278,13 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - An app without the UI Automation text pattern gives no text, and Langflip starts a new word as before.
   - Chromium and Electron apps turn on their accessibility tree for the first UI Automation call, which costs them some memory.
 - **Docs** `docs/features.md`, `docs/architecture.md`, `docs/user-flows.md`, `CHANGELOG.md`.
+
+### 2026-11-01 A decision log in every build, and no fix after a missed key
+
+- **Why** the person still sees English letters left in front of a fixed word, such as `ghbdпривет`. The installed build writes no log, so nobody can tell which app and which step lost the keys.
+- **Log** each build appends to `%LOCALAPPDATA%\Langflip\langflip.log`, local time first. At 1 MB it moves to `langflip.old.log`, so the two files stay under 2 MB.
+- **What it holds** decisions only: key counts, the layout, the app name in front, focus changes, a word dropped and why, keys the hook missed, a `SendInput` that typed less than asked. The keys of a word stay out, as AGENTS.md requires.
+- **Missed key** while a tray call waits on Explorer, Windows runs the keyboard hook inside it and the hook finds the state in use. That key goes to the app unseen. Before, the rest of the word could still get a fix, which erased only the keys seen and left the earlier ones. Now the word waits for its end key with no fix.
+- **Missed key during a fix** the hook held keys only through the state. A key missed while a fix was on its way reached the app before the fix's Backspaces, which then erased it in place of a typed letter. The pending flag and the held keys move out of the state, so the hook always holds them.
+- **Changes** `log.rs` new, `windows.rs`, `main.rs`, `Cargo.toml`.
+- **Docs** README, `docs/features.md`, `docs/architecture.md`, `CHANGELOG.md`.

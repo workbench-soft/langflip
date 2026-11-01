@@ -3,6 +3,8 @@
 ## Unreleased
 
 - **Go on with a word** letters typed onto a word already on screen take that word's language. Langflip no longer switches them as if they started a new word. Backspace after Space brings the last word back, and on Windows a click or an arrow next to a word does too.
+- **No English letters left in a word** a key Windows hands to Langflip while the tray icon changes no longer ends up in front of the fixed word. A word that missed a key stays as typed, and a key pressed during a fix waits for it.
+- **Log** Langflip on Windows writes its decisions to `%LOCALAPPDATA%\Langflip\langflip.log`: key counts, the app in front, why a word was dropped. Your words stay out of it.
 - **Language menu** the tray menu has a Language submenu. Pick System language or one of 9 languages, each under its own name, and the menu switches at once. Langflip remembers the choice.
 - **Open source** the repo is public. Checks and Release run on GitHub Windows runners, and Checks runs on each PR too.
 - **Backspace** the Backspaces a fix sends carry the scan code a real key sends, so apps that drop them no longer keep `ghbd` in front of «привет».
