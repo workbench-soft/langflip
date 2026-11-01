@@ -2,7 +2,7 @@
 
 ## Local install on Windows
 
-- [ ] Send `langflip.exe` to Microsoft as a false positive at <https://www.microsoft.com/wdsi/filesubmission>, so the release exe isn't blocked for other people.
+- [ ] Check the Microsoft verdict for submission `ea1ee24f-7698-4888-a42b-9879b72e15aa` at <https://www.microsoft.com/en-us/wdsi/submission/ea1ee24f-7698-4888-a42b-9879b72e15aa>. If it says clean, rescan `langflip.exe` with Defender (sent 2026-11-01).
 
 ## app-audit
 
