@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Markdown** markdownlint-cli2 lints the docs in `mise run lint`.
+
 - **Agent docs** `AGENTS.md` states each rule with MUST, SHOULD or MAY.
 - **Busy PC** letters typed right after a fix keep their order when the PC is slow, and the next word no longer flips back to the old layout.
 - **Go on with a word** letters typed onto a word already on screen take that word's language. Langflip no longer switches them as if they started a new word. Backspace after Space brings the last word back, and on Windows a click or an arrow next to a word does too.

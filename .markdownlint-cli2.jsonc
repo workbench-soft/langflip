@@ -1,0 +1,18 @@
+{
+  "config": {
+    // Tables and long links run past 80 columns.
+    "MD013": false,
+    // Each bullet opens with its point in bold, which looks like a heading to MD036.
+    "MD036": false,
+  },
+  // CLAUDE.md holds only the @AGENTS.md import line.
+  "ignores": [
+    "**/node_modules/**",
+    "**/target/**",
+    "**/dist/**",
+    "**/build/**",
+    "CLAUDE.md",
+    "**/CLAUDE.md",
+  ],
+  "globs": ["**/*.md"],
+}
