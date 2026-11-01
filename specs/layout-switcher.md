@@ -257,6 +257,28 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
   - `scripts/uninstall-windows.ps1` deletes the task. `scripts/install-windows.ps1` prints whether the task is there.
 - **Docs** README, `docs/features.md`, `docs/architecture.md`, `CHANGELOG.md`.
 
+### 2026-11-01 Go on with a word already on screen
+
+- **Why** the person comes back to a word and types more letters onto it. Langflip judged those letters as a new word and could switch them to the wrong layout. The person wants them judged as the rest of that word, in its language.
+- **Rule** the word before the caret sets the language.
+  - Letters typed in the layout of that word stay as typed.
+  - Letters typed in the other layout turn into the word's layout once the whole word starts a dictionary word of it while typed, or is one at Space. `привет` with `cndbt` typed in English gives «приветствие».
+  - Otherwise the letters stay as typed, so `Windows` with «ом» stays «Windowsом».
+- **How Langflip learns the word**
+  - **Backspace after Space** the person erases the Space after a word: Langflip takes the word back from memory. Only after Space, since Enter in a chat sends the message.
+  - **Windows** after a click, an arrow key, a sign, a shortcut or a focus change, a separate thread reads up to 40 characters before the caret through UI Automation, 40 ms later. The text stays in memory and goes when the next word starts.
+- **Changes**
+  - `layout.rs`: `word_before` finds the word a text ends with, its layout and its keys.
+  - `decide.rs`: `decide_continued` judges the letters added to such a word.
+  - `lib.rs`: `Engine` keeps the keys of the word already on screen apart from the keys typed now, and a fix erases and types only the new ones. `continue_word` takes the text before the caret. `backspace` takes the last word back after Space.
+  - `caret.rs`: the UI Automation thread on Windows.
+  - `windows.rs`, `macos.rs`: pass Backspace with the end key. Windows asks for the text before the caret where the word got lost.
+- **Limits**
+  - macOS takes a word back only through Backspace after Space. A click or an arrow there still starts a new word.
+  - An app without the UI Automation text pattern gives no text, and Langflip starts a new word as before.
+  - Chromium and Electron apps turn on their accessibility tree for the first UI Automation call, which costs them some memory.
+- **Docs** `docs/features.md`, `docs/architecture.md`, `docs/user-flows.md`, `CHANGELOG.md`.
+
 ### 2026-11-01 A decision log in every build, and no fix after a missed key
 
 - **Why** the person still sees English letters left in front of a fixed word, such as `ghbdпривет`. The installed build writes no log, so nobody can tell which app and which step lost the keys.

@@ -131,3 +131,30 @@ pub fn decide_prefix_with(
     let swapped_score = model.lang(other).score_start(&swapped);
     (swapped_score - typed_score > gain).then(|| text_for(strokes, other))
 }
+
+/// Judges the keys typed onto a word that was on screen before: `strokes[..kept]` type it in
+/// `lang`. Keys typed in `lang` stay. Keys typed in the other layout turn into `lang` once the
+/// whole word starts a dictionary word of `lang`, or is one when `finished`.
+/// Returns the new keys as `lang` types them.
+pub fn decide_continued(
+    model: &Model,
+    strokes: &[Stroke],
+    kept: usize,
+    (current, lang): (Lang, Lang),
+    keep_words: &HashSet<String>,
+    finished: bool,
+) -> Option<String> {
+    let added = &strokes[kept..];
+    if current == lang || added.is_empty() || !strokes.iter().all(|s| in_word(s.key, lang)) {
+        return None;
+    }
+    let typed = text_for(added, current).to_lowercase();
+    let word = text_for(strokes, lang).to_lowercase();
+    let dict = model.lang(lang);
+    let found = if finished {
+        !keep_words.contains(&typed) && dict.contains(&word)
+    } else {
+        !keep_words.iter().any(|w| w.starts_with(&typed)) && dict.starts_word(&word)
+    };
+    found.then(|| text_for(added, lang))
+}

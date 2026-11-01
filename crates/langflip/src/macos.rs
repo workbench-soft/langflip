@@ -400,7 +400,7 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
         return false;
     }
     if code == KEY_DELETE {
-        s.engine.backspace();
+        s.engine.backspace(s.last_end_key == KEY_SPACE);
         return false;
     }
     // A digit with Shift types other signs in each layout, so it clears the word below.
