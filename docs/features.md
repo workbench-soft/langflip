@@ -12,6 +12,8 @@ Langflip types a word again in the right layout while the person types it, and s
 - **When it keeps a word** the word as typed is in the dictionary of its layout, or in `keep_words`.
 - **Limits** a rare word outside the dictionary misses about 1.5% of the time in each language. About 1 rare word in 1000 typed right gets changed. About 2 rare short words in 100 typed right get changed, such as «ем» into `tv`, and one letters `c`, `d`, `j` typed alone in English turn Russian. `mise run eval` measures both.
 
+Spec: [layout-switcher](../specs/layout-switcher.md).
+
 ## Go on with a word
 
 The person comes back to a word and types more letters onto it. Langflip judges them as the rest of that word, in its language.
@@ -22,6 +24,8 @@ The person comes back to a word and types more letters onto it. Langflip judges 
 - **How it finds the word** Backspace right after Space brings the last word back, on both systems. On Windows a click, an arrow, a sign or a field change makes Langflip read the word before the caret through UI Automation.
 - **Limits** apps without the UI Automation text pattern give no word, and the letters count as a new word. On macOS only Backspace after Space works.
 
+Spec: [layout-switcher](../specs/layout-switcher.md).
+
 ## Undo a fix
 
 Pause on Windows, Ctrl+F12 on macOS, right after a fix. The word comes back as typed and the layout switches back. The second Undo of the same word puts it into `keep_words`, and Langflip leaves it as typed from then on.
@@ -29,9 +33,13 @@ Pause on Windows, Ctrl+F12 on macOS, right after a fix. The word comes back as t
 - **Limits** works only before the next key press, click or window switch.
 - **Count** Langflip counts the first Undo in memory only. A restart sets it back to 0.
 
+Spec: [layout-switcher](../specs/layout-switcher.md).
+
 ## Convert by hand
 
 Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. Langflip converts the word being typed, or the last word, to the other layout. Short words convert too.
+
+Spec: [layout-switcher](../specs/layout-switcher.md).
 
 ## Skip apps and fields
 
@@ -39,11 +47,15 @@ Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. Langflip converts the word bein
 - **Password fields** skipped on Windows (fields marked protected) and on macOS (secure input).
 - **Admin windows** on Windows, skipped unless Langflip itself runs as admin.
 
+Spec: [layout-switcher](../specs/layout-switcher.md).
+
 ## The current layout on the icon
 
 The tray icon shows `EN` or `RU` in navy on a holo foil tile, for the layout of the window in front. A click on the taskbar keeps the last app window. A layout other than these 2 shows the app icon alone.
 
 - **Limits** a switch reaches the icon within 250 ms on Windows and 0.2 s on macOS.
+
+Spec: [layout-switcher](../specs/layout-switcher.md).
 
 ## The app icon
 
@@ -53,11 +65,15 @@ A navy А and Я on an iridescent holo foil card with a diagonal shine. Windows 
 - **Tray** the tray shows the layout in navy on the same foil.
 - **Limits** macOS has no app bundle yet, so it shows no app icon.
 
+Spec: [layout-switcher](../specs/layout-switcher.md).
+
 ## Pause with a click
 
 A left click on the tray icon turns fixing off, and the whole icon turns grey with the layout letters kept. The next click turns it on. The tooltip says which state Langflip is in.
 
 - **Limits** the pause waits 0.5 s after the click, in case a second click makes it a double click.
+
+Spec: [layout-switcher](../specs/layout-switcher.md).
 
 ## Switch the layout with a double click
 
@@ -65,6 +81,8 @@ A double click on the tray icon switches the layout between Russian and English.
 
 - **Windows** the click puts the taskbar in front, so Langflip brings back the window that was in front and switches its layout. The icon shows that window's layout, not the taskbar's. The new layout stays in the other windows too, as with the Windows hotkey.
 - **macOS** switches the current input source.
+
+Spec: [layout-switcher](../specs/layout-switcher.md).
 
 ## Install on Windows
 
@@ -75,6 +93,8 @@ A double click on `Langflip.cmd` in the repo builds Langflip and installs it for
 - **Uninstall** stops Langflip and removes the program folder, the shortcuts and the autostart. `settings.toml` stays.
 - **Limits** needs mise and the Rust toolchain. The release download has no installer.
 
+Spec: [layout-switcher](../specs/layout-switcher.md).
+
 ## Start at login
 
 The first start turns on start at login, with no question.
@@ -84,6 +104,8 @@ The first start turns on start at login, with no question.
 - **Quit** a Quit from the tray in the first 15 minutes after sign in lasts up to a minute. Later it lasts until the next sign in.
 - **macOS** `~/Library/LaunchAgents/com.workbenchsoft.langflip.plist`. macOS shows a "Background item added" notice once.
 - **Limits** unchecking Start at sign in turns it off for good. Deleting `settings.toml` makes the next start count as the first again.
+
+Spec: [layout-switcher](../specs/layout-switcher.md).
 
 ## Tray menu
 
@@ -97,11 +119,15 @@ A right click on the icon opens it.
 - **Quit** quits.
 - **System language** the default. The menu and the tooltip speak the system language when it is English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian, and English otherwise. A new system language shows after the next start.
 
+Spec: [layout-switcher](../specs/layout-switcher.md), [menu-languages](../specs/menu-languages.md).
+
 ## Decision log
 
 On Windows Langflip writes what it decided to `%LOCALAPPDATA%\Langflip\langflip.log`, with the local time: the app in front, the key count of each word, each fix and why a word was dropped. Send it along with a bug report.
 
 - **Limits** at 1 MB the log moves to `langflip.old.log`, so the two stay under 2 MB. It holds no letters you typed. macOS writes no log yet.
+
+Spec: [layout-switcher](../specs/layout-switcher.md).
 
 ## Settings file
 
@@ -115,3 +141,5 @@ On Windows Langflip writes what it decided to `%LOCALAPPDATA%\Langflip\langflip.
 | `language`      | the menu language, such as `de`. No key follows the system language      |
 
 - **Limits** a file with a mistake in it stays as it is. Langflip runs on the defaults and saves no change until the file reads again.
+
+Spec: [layout-switcher](../specs/layout-switcher.md).

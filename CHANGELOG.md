@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Docs** each heading of `docs/features.md` links its spec, and each feature that had no spec got one.
 - **Markdown** markdownlint-cli2 lints the docs in `mise run lint`.
 
 - **Agent docs** `AGENTS.md` states each rule with MUST, SHOULD or MAY.
