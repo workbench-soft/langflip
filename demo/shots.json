@@ -1,0 +1,14 @@
+[
+  {
+    "name": "01-to-russian",
+    "platform": "windows",
+    "caption": "ghbdtn rfr ltkf becomes привет как дела as you type",
+    "steps": "a demo window, the English layout on, Langflip running"
+  },
+  {
+    "name": "02-to-english",
+    "platform": "windows",
+    "caption": "The keys of hello world in the Russian layout become hello world",
+    "steps": "the same window with the Russian layout on"
+  }
+]
