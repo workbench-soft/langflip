@@ -118,6 +118,22 @@ A word that was on screen before the caret goes to `decide_continued` instead:
 
 None at run time. `mise run model` downloads the `wordfreq` package from PyPI.
 
+## CI secrets
+
+Each secret below sits in the GitHub Actions secrets of this repo.
+`.github/secret-rotation.json` holds how to make a new value, and the
+`rotate-secrets` skill stores it without an agent seeing it.
+
+| Secret           | Where a new value comes from                             | After a change                                                     |
+| ---------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
+| `RELEASES_TOKEN` | <https://github.com/settings/personal-access-tokens/new> | Revoke the old token once every repo of the group has the new one. |
+
+- **Kept values** a keystore and its passwords can't be issued again. A copy
+  sits outside the repo on the PC and another in Bitwarden.
+- **Shared values** `RELEASES_TOKEN`, `PLAY_SERVICE_ACCOUNT_JSON` and
+  `CLOUDFLARE_API_TOKEN` hold one value across the studio repos. The account
+  list sits in `docs/accounts.md` of the `workspace` repo.
+
 ## Decisions
 
 The choices that shape Langflip, the most costly to undo first.

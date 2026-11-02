@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Docs** the architecture page lists each CI secret, where a new value comes from and what breaks after a change.
 - **CI** the release gate runs on a GitHub runner, since the repo is public.
 
 - **CI** Release waits while a PR of an agent session is open, so the last merge of a batch releases them all.
