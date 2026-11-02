@@ -7,6 +7,13 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the E
 - **Systems** Windows 10 and later, macOS 13 and later.
 - **Privacy** no network and no typing log. The current word lives in memory until the next one starts. The decision log in `%LOCALAPPDATA%\Langflip\langflip.log` holds key counts and app names, not letters.
 
+## Screenshots
+
+![ghbdtn rfr ltkf becomes привет как дела as you type](docs/screenshots/01-to-russian.png)
+![The keys of hello world in the Russian layout become hello world](docs/screenshots/02-to-english.png)
+
+`mise run demo` takes them again: it types into a demo window while Langflip runs, and takes the keyboard for about 5 seconds.
+
 ## Use it
 
 - **Fix** happens while the word is typed, from the 4th letter, as soon as Langflip is sure. Otherwise on Space, Enter or Tab.

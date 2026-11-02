@@ -57,3 +57,11 @@ run = [
   "cargo build -p langflip",
   "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-windows.ps1",
 ]
+
+[tasks.demo]
+description = "Type into a demo window while Langflip runs and save the README screenshots (Windows, takes the keyboard for 5 seconds)"
+tools = { oxipng = "10.2.1" }
+run = [
+  "powershell -NoProfile -ExecutionPolicy Bypass -File demo/capture.ps1",
+  "oxipng -o 4 --strip safe docs/screenshots/*.png",
+]
