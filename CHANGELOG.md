@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **CI** the release gate runs on a GitHub runner, since the repo is public.
+
 - **CI** Release waits while a PR of an agent session is open, so the last merge of a batch releases them all.
 - **Screenshots** the README shows a word fixed into Russian and one into English. `mise run demo` takes them again.
 - **Docs** each heading of `docs/features.md` links its spec, and each feature that had no spec got one.

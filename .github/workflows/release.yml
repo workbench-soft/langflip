@@ -28,7 +28,8 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","local"]') }}
+    # A public repo runs on GitHub runners, so a fork PR reaches no runner on the PC.
+    runs-on: ubuntu-latest
     permissions:
       pull-requests: read
     outputs:
