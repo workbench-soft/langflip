@@ -180,11 +180,27 @@ impl State {
 
 pub fn run(engine: Engine, settings: Settings, first_start: bool) {
     unsafe {
-        // A second copy would fix each word twice.
-        let _mutex = CreateMutexW(None, true, w!("Local\\Langflip"));
-        if GetLastError() == ERROR_ALREADY_EXISTS {
-            return;
-        }
+        // A second copy would fix each word twice. After an update the old copy
+        // still holds the mutex for a moment, so the new one waits up to 10 seconds.
+        let mut tries = if std::env::args().any(|a| a == "--updated") {
+            50
+        } else {
+            0
+        };
+        let _mutex = loop {
+            let mutex = CreateMutexW(None, true, w!("Local\\Langflip"));
+            if GetLastError() != ERROR_ALREADY_EXISTS {
+                break mutex;
+            }
+            if tries == 0 {
+                return;
+            }
+            tries -= 1;
+            if let Ok(handle) = mutex {
+                let _ = CloseHandle(handle);
+            }
+            std::thread::sleep(Duration::from_millis(200));
+        };
         let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
 
         // Autostart turns on by itself after install. Later starts keep the person's choice,
@@ -221,6 +237,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             flags,
         );
         foreground_changed();
+        crate::update::start(GetCurrentThreadId());
         // Windows tells no other process when a window switches its layout, so the tray asks.
         SetTimer(None, 0, 250, None);
 

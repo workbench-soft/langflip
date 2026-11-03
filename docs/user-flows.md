@@ -27,6 +27,22 @@ flowchart LR
     C -. later .-> E[Settings, Apps, Uninstall] --> F[Folder and shortcuts removed]
 ```
 
+## Update Langflip
+
+1. A minute after the start, and about once a day, Langflip asks GitHub for its releases.
+2. A newer release brings a dialog: «Langflip 2026.11.05.1 is out», the size in MB, Update and Later.
+3. **Update** Langflip downloads the exe, swaps it in and restarts. The tray icon comes back in a few seconds.
+4. **Later** the dialog stays away for that version until the next start.
+
+```mermaid
+flowchart LR
+    A[Start or daily check] --> B{Newer release?}
+    B -- no or offline --> A
+    B -- yes --> C[Dialog: Update or Later]
+    C -- Later --> A
+    C -- Update --> D[Download and swap the exe] --> E[Langflip restarts]
+```
+
 ## A word in the wrong layout
 
 1. The English layout is on. The person types `ghb`.

@@ -1,3 +1,7 @@
 * text=auto eol=lf
 model/langflip.model binary
 *.cmd text eol=crlf
+CHANGELOG.md merge=union
+TODO.md merge=union
+docs/features.md merge=union
+docs/user-flows.md merge=union

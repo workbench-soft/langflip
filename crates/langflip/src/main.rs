@@ -6,11 +6,15 @@
 mod autostart;
 #[cfg(windows)]
 mod caret;
+#[cfg(windows)]
+mod dialog;
 mod language;
 #[cfg(windows)]
 mod log;
 mod settings;
 mod tray;
+#[cfg(windows)]
+mod update;
 
 #[cfg(target_os = "macos")]
 mod macos;

@@ -109,3 +109,53 @@ menu.languageSystem:
   ja: システムの言語
   ko: 시스템 언어
   nb: Systemspråk
+update.found:
+  en: Langflip %{version} is out
+  ru: Вышел Langflip %{version}
+  de: Langflip %{version} ist da
+  fr: Langflip %{version} est disponible
+  es: Langflip %{version} ya está disponible
+  zh: Langflip %{version} 已发布
+  ja: Langflip %{version} が出ました
+  ko: Langflip %{version} 버전이 나왔어요
+  nb: Langflip %{version} er ute
+update.details:
+  en: Update downloads %{size} MB and restarts Langflip. The settings stay.
+  ru: «Обновить» скачает %{size} МБ и перезапустит Langflip. Настройки останутся.
+  de: „Aktualisieren“ lädt %{size} MB herunter und startet Langflip neu. Die Einstellungen bleiben.
+  fr: « Mettre à jour » télécharge %{size} Mo et relance Langflip. Les réglages restent.
+  es: «Actualizar» descarga %{size} MB y reinicia Langflip. Los ajustes se mantienen.
+  zh: “更新”会下载 %{size} MB 并重启 Langflip。设置保持不变。
+  ja: 「更新」で %{size} MB をダウンロードし、Langflip を再起動します。設定はそのままです。
+  ko: 업데이트를 누르면 %{size} MB를 내려받고 Langflip을 다시 시작해요. 설정은 그대로예요.
+  nb: «Oppdater» laster ned %{size} MB og starter Langflip på nytt. Innstillingene blir værende.
+update.now:
+  en: Update
+  ru: Обновить
+  de: Aktualisieren
+  fr: Mettre à jour
+  es: Actualizar
+  zh: 更新
+  ja: 更新
+  ko: 업데이트
+  nb: Oppdater
+update.later:
+  en: Later
+  ru: Позже
+  de: Später
+  fr: Plus tard
+  es: Más tarde
+  zh: 稍后
+  ja: 後で
+  ko: 나중에
+  nb: Senere
+update.failed:
+  en: Langflip could not update. It tries again tomorrow.
+  ru: Langflip не смог обновиться. Он попробует завтра.
+  de: Langflip konnte sich nicht aktualisieren. Es versucht es morgen wieder.
+  fr: Langflip n’a pas pu se mettre à jour. Il réessaiera demain.
+  es: Langflip no pudo actualizarse. Lo intentará mañana.
+  zh: Langflip 更新失败。明天会再试。
+  ja: Langflip を更新できませんでした。明日もう一度試します。
+  ko: Langflip을 업데이트하지 못했어요. 내일 다시 시도해요.
+  nb: Langflip kunne ikke oppdatere seg. Det prøver igjen i morgen.

@@ -95,6 +95,17 @@ A double click on `Langflip.cmd` in the repo builds Langflip and installs it for
 
 Spec: [layout-switcher](../specs/layout-switcher.md).
 
+## Update from GitHub
+
+On Windows Langflip asks GitHub for a newer release a minute after it starts, then about once a day. A newer one brings a dialog with its version and size, and the buttons Update and Later.
+
+- **Update** downloads the new exe, swaps it for the running one and restarts Langflip. The settings stay.
+- **Later** stays quiet about that version until the next start.
+- **Offline** a missing connection or a GitHub error shows no sign. Langflip asks again an hour later.
+- **Limits** a build from source with the Cargo version, such as `cargo run`, skips the check. macOS has no release, so it has no check.
+
+Spec: [self-update](../specs/self-update.md).
+
 ## Start at login
 
 The first start turns on start at login, with no question.

@@ -6,7 +6,7 @@ Langflip on Windows checks GitHub for a newer release at start and then about on
 
 ## User flows
 
-1. Langflip starts, waits 30 seconds, then asks GitHub for the releases.
+1. Langflip starts, waits a minute, then asks GitHub for the releases.
 2. GitHub lists a `langflip-v*` release newer than the running version, with an `.exe`.
 3. A dialog shows «Langflip 2026.11.05.1 is out» and the size in MB, with Update and Later.
 4. **Update** Langflip downloads the exe, checks its size, swaps it for the running one and starts the new copy. The old copy quits and its tray icon goes.
