@@ -35,6 +35,8 @@ flowchart TB
 - **`langflip::macos`** a session `CGEventTap`, `CGEvent` posts for the fix, Text Input Sources for the layout.
 - **`langflip::tray`** the tray icon and menu, shared by both systems.
 - **`langflip::log`** the Windows decision log in `%LOCALAPPDATA%\Langflip\langflip.log`, 1 MB, then `langflip.old.log`. Key counts, app names and decisions, never letters.
+- **`langflip::update`** on Windows, a thread that asks GitHub for the newest `langflip-v*` release with `ureq`, then swaps the exe with `self-replace` and restarts Langflip.
+- **`langflip::dialog`** the Windows task dialog for the update question, looked up in Common Controls 6 at run time.
 - **`langflip::settings`** `settings.toml` in the user's app data folder.
 - **`crates/langflip/build.rs`** writes the name, publisher, version and a manifest into `langflip.exe`. The release build passes its date version in `LANGFLIP_VERSION`.
 
@@ -116,7 +118,8 @@ A word that was on screen before the caret goes to `decide_continued` instead:
 
 ## Outside services
 
-None at run time. `mise run model` downloads the `wordfreq` package from PyPI.
+- **GitHub API** on Windows Langflip asks `api.github.com` for the releases of `workbench-soft/workbench-soft.github.io` once a day, with no token. It sends only its version in the User-Agent.
+- **PyPI** `mise run model` downloads the `wordfreq` package.
 
 ## CI secrets
 
@@ -195,6 +198,17 @@ The choices that shape Langflip, the most costly to undo first.
   - **Run from `target`** the autostart path would point into the repo.
   - **Mac App Store** its sandbox blocks input to other apps.
 - **Cost to undo** low. The release workflow and the install scripts change.
+
+### Self update: the GitHub releases list, ureq and self-replace
+
+- **Picked** a thread asks the GitHub releases list of `workbench-soft.github.io` with `ureq`, picks the newest `langflip-v*` tag with an `.exe`, and `self-replace` swaps the running exe. A task dialog asks first, on the update thread.
+- **Why** the exe is the whole install, so a swap in place is the whole update. The site repo holds the releases of every app, so `releases/latest` would name another app.
+- **Trade-off** no signature check, only HTTPS and the asset size. `ureq` adds rustls and its root certificates to the exe.
+- **Rejected**
+  - **`self_update`** pulls `reqwest` and expects one app per repo.
+  - **WinHTTP by hand** more unsafe code than the two crates.
+  - **A dialog on the main thread** its modal loop would drop the fix messages the keyboard hook posts.
+- **Cost to undo** low. `update.rs`, `dialog.rs` and 3 lines in `windows.rs`.
 
 ### Model storage: built into the exe
 

@@ -4,13 +4,14 @@
 fn main() {
     println!("cargo:rerun-if-env-changed=LANGFLIP_VERSION");
     println!("cargo:rerun-if-changed=assets/icon.ico");
-    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
-        return;
-    }
-
     // The release workflow sets a date version such as 2026.10.30.1. Local builds keep the Cargo one.
     let version = std::env::var("LANGFLIP_VERSION")
         .unwrap_or_else(|_| std::env::var("CARGO_PKG_VERSION").unwrap());
+    // The update check compares it with the releases on GitHub.
+    println!("cargo:rustc-env=LANGFLIP_VERSION={version}");
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
+        return;
+    }
 
     let mut res = winresource::WindowsResource::new();
     res.set("ProductName", "Langflip")
@@ -58,5 +59,10 @@ const MANIFEST: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
     </application>
   </compatibility>
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"/>
+    </dependentAssembly>
+  </dependency>
 </assembly>
 "#;

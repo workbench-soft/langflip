@@ -36,3 +36,8 @@
 
 - [ ] Check by hand on Windows: undo the fix of one word twice, and it shows under «Исключения» in the tray menu. A click on it removes it (2026-10-31).
 - [ ] Run `mise run smoke` with Punto Switcher closed: `windows.rs` now refreshes the tray menu after Undo, and the smoke test wasn't run (2026-10-31).
+
+## feat/self-update (PR #50)
+
+- [ ] Run `mise run install` from the latest `main`, so the installed Langflip has the update check. Auto mode denies it, since it stops the running Langflip (2026-11-03).
+- [ ] Once a release newer than the installed one is out, wait a minute after a Langflip start: the dialog «Langflip <version> is out» shows. Press Update and check that the tray icon comes back and `%LOCALAPPDATA%\Langflip\langflip.log` says `updated to <version>, restarting`. The swap and the restart were not run on this PC, since the installed copy holds the single instance mutex (2026-11-03).

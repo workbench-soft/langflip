@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Updates** Langflip on Windows checks GitHub for a newer release at start and about once a day. A dialog offers it with Update and Later, and Update swaps the exe and restarts Langflip.
 - **Agent rules** `AGENTS.md` holds the lessons of the past week: what fails for an agent here, and what it does instead.
 - **Docs** the architecture page lists each CI secret, where a new value comes from and what breaks after a change.
 - **CI** the release gate runs on a GitHub runner, since the repo is public.

@@ -36,7 +36,7 @@ Double-click `Langflip.cmd` in the repo folder. It builds Langflip, installs it 
 - **Remove it** Settings, Apps, Installed apps, Langflip, Uninstall. The settings file stays.
 - **Needs** [mise](https://mise.jdx.dev) on `PATH`, then `mise install` once in the repo.
 
-The release download is a bare `langflip.exe` with no installer yet.
+The release download is a bare `langflip.exe` with no installer yet. An installed Langflip updates itself from GitHub: a dialog offers each new release, with Update and Later.
 
 ## Run it from source
 
