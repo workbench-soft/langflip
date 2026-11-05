@@ -3,19 +3,20 @@ name: Release
 # Publishes langflip.exe after Checks passes on a push to main, with a date version like 2026.10.30.1, then 2026.10.30.2.
 # A docs only push skips Checks, so it makes no release.
 on:
-  workflow_run:
-    workflows: [Checks]
-    types: [completed]
+  push:
     branches: [main]
+    paths: ["**", "!**.md", "!docs/**"]
+  # The repo is public, so PRs from outside get checked too.
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: write
 
 env:
   GH_TOKEN: ${{ github.token }}
-  # Pins the commit Checks passed, since workflow_run starts on main's tip, which may be newer.
-  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+  SHA: ${{ github.sha }}
 
 # Windows runs steps in PowerShell unless told otherwise.
 defaults:
@@ -23,38 +24,9 @@ defaults:
     shell: bash
 
 jobs:
-  # Holds the release while an agent session still has a PR open. Dependabot and PRs idle for 6 hours don't hold it.
-  gate:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
-    # A public repo runs on GitHub runners, so a fork PR reaches no runner on the PC.
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    outputs:
-      go: ${{ steps.open.outputs.go }}
-    steps:
-      - id: open
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          open=$(gh pr list -R "$GITHUB_REPOSITORY" --state open --json number,author,updatedAt --jq '[.[] | select((.author.is_bot | not) and (.updatedAt | fromdateiso8601) > now - 21600) | "#" + (.number | tostring)] | join(" ")')
-          if [ -n "$open" ] && [ "$GITHUB_EVENT_NAME" != workflow_dispatch ]; then
-            echo "::notice::Release waits for the open PRs $open"
-            echo go=false >> "$GITHUB_OUTPUT"
-          else
-            echo go=true >> "$GITHUB_OUTPUT"
-          fi
-
   release:
-    needs: gate
-    if: needs.gate.outputs.go == 'true'
-    # One release at a time, so each sees the previous tag. A newer one cancels the running one, whose build is stale.
-    concurrency:
-      group: release
-      cancel-in-progress: true
+    if: github.ref == 'refs/heads/main'
+
     # The repo is public, so GitHub runners cost nothing and fork PRs stay off the PC.
     runs-on: windows-latest
     steps:
@@ -87,6 +59,14 @@ jobs:
 
       # Every app publishes to the workbench-soft.github.io repo, where the in-app updater looks.
       # Tags pushed with the workflow token don't trigger other workflows.
+      - name: Wait for matching checks before publication
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHECKS_WORKFLOW: checks.yml
+        run: bash .github/scripts/wait-for-checks.sh
+
       - name: Tag the commit and publish the release
         env:
           TAG: ${{ steps.version.outputs.tag }}
