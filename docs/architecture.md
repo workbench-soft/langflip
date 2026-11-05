@@ -247,3 +247,7 @@ The choices that shape Langflip, the most costly to undo first.
 - **Rejected**
   - **Fluent** a second translation tool for a job the org rules already give to `rust-i18n`.
 - **Cost to undo** low. The strings file, `language.rs` and the Language submenu in `tray.rs`.
+
+## Release build timing
+
+Release builds MUST start on pushes alongside their matching checks. Publication MUST wait for successful checks of the same commit and branch. Open PRs MUST NOT delay the build. LocalCI MUST record the causing run, commit and PR before cancelling a replaced build or a release whose checks failed.
