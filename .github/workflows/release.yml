@@ -1,25 +1,30 @@
 name: Release
 
-# Release starts once Checks pass on main, so no job holds a runner while it waits.
+# Release builds beside Checks, publishes once they pass on the commit, and stops when they fail.
+# No job waits on a runner for the other workflow. release-gate.sh ties them together.
 # A docs only push skips Checks, so it makes no release.
 on:
+  push:
+    branches: [main]
+  # The local-ci page starts it this way. A run by hand publishes once Checks of the commit passed.
+  workflow_dispatch:
+
+    # One release at a time. A newer run waiting here replaces an older waiting one, and ships its commits too.
+  # Checks ending publishes the build, or cancels it when they failed.
   workflow_run:
     workflows: [Checks]
     types: [completed]
-  # A run by hand ships main again, once its Checks passed. The local-ci page starts it this way.
-  workflow_dispatch:
-
-# One release at a time. A newer run waiting here replaces an older waiting one, and ships its commits too.
-concurrency:
-  group: release
 
 permissions:
-  actions: read
+  # release-gate.sh reads the runs of the commit, cancels a build and downloads its files.
+  actions: write
   contents: write
 
 env:
   GH_TOKEN: ${{ github.token }}
   SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  CHECKS_WORKFLOW: checks.yml
+  RELEASE_WORKFLOW: release.yml
 
 # Windows runs steps in PowerShell unless told otherwise.
 defaults:
@@ -27,14 +32,9 @@ defaults:
     shell: bash
 
 jobs:
-  release:
-    # Only Checks that passed on a push to main of this repo, or a run by hand on main, start it.
-    if: >-
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main' &&
-      github.event.workflow_run.head_repository.full_name == github.repository &&
-      contains(fromJSON('["push","workflow_dispatch"]'), github.event.workflow_run.event))
+  build:
+    # Builds beside Checks. A run by hand from another branch would build a commit no check passed.
+    if: github.event_name != 'workflow_run' && github.ref == 'refs/heads/main'
     # The repo is public, so GitHub runners cost nothing and fork PRs stay off the PC.
     runs-on: windows-latest
     steps:
@@ -48,18 +48,6 @@ jobs:
           ref: ${{ env.SHA }}
           # Full history, since the notes and the next version need all past tags and commits.
           fetch-depth: 0
-
-      # A run by hand looks up Checks of the commit once and stops unless they passed. It doesn't wait.
-      - name: Check that Checks passed on this commit
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          CHECKS_WORKFLOW: checks.yml
-        run: |
-          result=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$CHECKS_WORKFLOW/runs?head_sha=$SHA&branch=main&per_page=1" --jq '.workflow_runs[0].conclusion // "missing"')
-          if [ "$result" != success ]; then
-            echo "::error::Checks of $SHA: $result. Run Checks on main, and this follows once they pass."
-            exit 1
-          fi
 
       # The repo is public, and a public repo can't use the private workbench-soft/ci actions.
       - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
@@ -77,10 +65,70 @@ jobs:
         run: |
           LANGFLIP_VERSION="${TAG#v}" mise x -- cargo build --release -p langflip
           cp "target/release/langflip.exe" "Langflip-${TAG#v}-windows-x64.exe"
+      - name: Keep the tag with the files
+        run: echo "${{ steps.version.outputs.tag }}" > release-tag
+      # The publish job may run on another runner, so the files and the tag travel as an artifact.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: |
+            release-tag
+            Langflip-*-windows-x64.exe
+          if-no-files-found: error
+          retention-days: 1
+      # The last step, so a Checks run that ends after it starts publish through workflow_run.
+      - name: Look up Checks of this commit once
+        id: checks
+        run: sh .github/scripts/release-gate.sh checks
+    outputs:
+      checks: ${{ steps.checks.outputs.checks }}
+
+  publish:
+    # Right after the build when Checks already passed, else once Checks pass on a push to main of this repo.
+    needs: build
+    if: >-
+      !cancelled() && (needs.build.outputs.checks == 'success' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && contains(fromJSON('["push","workflow_dispatch"]'), github.event.workflow_run.event)))
+    # One publish at a time, so each sees the tag of the one before. A newer waiting one replaces an older waiting one.
+    concurrency:
+      group: release-publish
+    # The repo is public, so a GitHub runner costs 0 and fork code stays off the PC.
+    runs-on: ubuntu-latest
+    steps:
+      # The release notes need every earlier tag and commit.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+          fetch-depth: 0
+      - name: Find the build of this commit
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" != workflow_run ]; then
+            echo "run=${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          else
+            sh .github/scripts/release-gate.sh build
+          fi
+      - if: steps.gate.outputs.run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          run-id: ${{ steps.gate.outputs.run }}
+          github-token: ${{ github.token }}
+      # The steps below read the tag the build picked, as steps.version.outputs.tag.
+      - name: Read the tag the build picked
+        if: steps.gate.outputs.run
+        id: version
+        run: |
+          git fetch --quiet --force --tags origin
+          if [ -n "$(git tag --points-at "$SHA")" ]; then
+            echo "$SHA has a release already: $(git tag --points-at "$SHA" | tr '\n' ' ')"
+          else
+            echo "tag=$(cat release-tag)" >> "$GITHUB_OUTPUT"
+          fi
 
       # Every app publishes to the workbench-soft.github.io repo, where the in-app updater looks.
       # Tags pushed with the workflow token don't trigger other workflows.
       - name: Tag the commit and publish the release
+        if: steps.version.outputs.tag
         env:
           TAG: ${{ steps.version.outputs.tag }}
           PUBLIC_REPO: workbench-soft/workbench-soft.github.io
@@ -97,3 +145,16 @@ jobs:
             grep '^langflip-v' | tail -n +4 | while read -r old; do
               gh release delete "$old" --repo "$PUBLIC_REPO" --cleanup-tag --yes
             done
+
+  cancel:
+    # A failed Checks run stops the build of the same commit.
+    if: >-
+      github.event_name == 'workflow_run' && contains(fromJSON('["failure","timed_out"]'), github.event.workflow_run.conclusion) && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository
+    # The repo is public, so a GitHub runner costs 0 and fork code stays off the PC.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+          sparse-checkout: .github/scripts
+      - run: sh .github/scripts/release-gate.sh cancel
