@@ -8,8 +8,6 @@ on:
     branches: [main]
   # The local-ci page starts it this way. A run by hand publishes once Checks of the commit passed.
   workflow_dispatch:
-
-    # One release at a time. A newer run waiting here replaces an older waiting one, and ships its commits too.
   # Checks ending publishes the build, or cancels it when they failed.
   workflow_run:
     workflows: [Checks]
