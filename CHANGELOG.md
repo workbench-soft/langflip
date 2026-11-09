@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **CI** a push of Markdown or docs only builds no release, where the build used to wait for Checks that skip it.
 - **Docs** the README and the CI spec describe Release building beside Checks on GitHub runners.
 
 - **CI** Release builds beside Checks again and publishes once they pass, through `release-gate.sh`. A failed Checks run cancels the build. No job waits on a runner for the other workflow.

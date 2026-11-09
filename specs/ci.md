@@ -35,3 +35,8 @@ Each push to `main` runs Checks and builds a release beside them. The release pu
 
 - **Why** the repo went public and moved to GitHub runners, and Release now builds beside Checks through `release-gate.sh`. The top of this spec still described the PC runners and `wait-for-checks.sh`.
 - **Changes** the top of this spec and the README describe the current shape. A stray comment in the `on:` block of `release.yml` goes.
+
+## Update 2026-11-10: a docs push builds no release
+
+- **Why** Checks skip a push of Markdown or docs, but Release still built and waited for a Checks run that is missing.
+- **Change** the push trigger of `release.yml` takes the same paths as Checks. `release-gate.sh` comes from the repo-ci template again.

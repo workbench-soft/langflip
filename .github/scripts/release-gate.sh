@@ -1,6 +1,6 @@
 #!/bin/sh
 # Ties Release to the Checks run of the same commit, so no job waits on a runner for the other.
-#   release-gate.sh checks    outputs checks=success, failure or pending, once
+#   release-gate.sh checks    outputs checks=success, failure, pending or none, once
 #   release-gate.sh build     on workflow_run of Checks: outputs run=<id> when the build of the commit
 #                             finished and nothing in its own run publishes it
 #   release-gate.sh cancel    cancels the unfinished Release runs of the commit
@@ -20,8 +20,10 @@ job() { # run name: status/conclusion of the job with that name, or of its first
 
 case $1 in
   checks)
-    result=$(runs "$CHECKS_WORKFLOW" '.[0] | if . == null or .status != "completed" then "pending" else .conclusion end')
+    result=$(runs "$CHECKS_WORKFLOW" '.[0] | if . == null then "none" elif .status != "completed" then "pending" else .conclusion end')
     echo "Checks of $SHA: $result"
+    # A run by hand on a commit whose push Checks skipped. Run Checks by hand, and their end publishes it.
+    [ "$result" != none ] || echo "No Checks run for $SHA. Start Checks by hand to publish this build."
     echo "checks=$result" >>"$GITHUB_OUTPUT"
     ;;
   build)

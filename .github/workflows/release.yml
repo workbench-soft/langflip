@@ -6,6 +6,8 @@ name: Release
 on:
   push:
     branches: [main]
+    # The same paths as Checks, so a push they skip builds no release.
+    paths: ["**", "!**.md", "!docs/**"]
   # The local-ci page starts it this way. A run by hand publishes once Checks of the commit passed.
   workflow_dispatch:
   # Checks ending publishes the build, or cancels it when they failed.
