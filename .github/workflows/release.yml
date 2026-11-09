@@ -1,21 +1,25 @@
 name: Release
 
-# Builds langflip.exe beside Checks on a push to main and publishes it once they pass, with a date version like 2026.10.30.1, then 2026.10.30.2.
+# Release starts once Checks pass on main, so no job holds a runner while it waits.
 # A docs only push skips Checks, so it makes no release.
 on:
-  push:
-    branches: [main]
-    paths: ["**", "!**.md", "!docs/**"]
+  workflow_run:
+    workflows: [Checks]
+    types: [completed]
+  # A run by hand ships main again, once its Checks passed. The local-ci page starts it this way.
   workflow_dispatch:
 
+# One release at a time. A newer run waiting here replaces an older waiting one, and ships its commits too.
+concurrency:
+  group: release
+
 permissions:
-  # wait-for-checks.sh reads the checks runs of the commit.
   actions: read
   contents: write
 
 env:
   GH_TOKEN: ${{ github.token }}
-  SHA: ${{ github.sha }}
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
 # Windows runs steps in PowerShell unless told otherwise.
 defaults:
@@ -24,8 +28,13 @@ defaults:
 
 jobs:
   release:
-    # A run by hand from another branch would tag a commit no check passed, so it releases main only.
-    if: github.ref == 'refs/heads/main'
+    # Only Checks that passed on a push to main of this repo, or a run by hand on main, start it.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      contains(fromJSON('["push","workflow_dispatch"]'), github.event.workflow_run.event))
     # The repo is public, so GitHub runners cost nothing and fork PRs stay off the PC.
     runs-on: windows-latest
     steps:
@@ -39,6 +48,19 @@ jobs:
           ref: ${{ env.SHA }}
           # Full history, since the notes and the next version need all past tags and commits.
           fetch-depth: 0
+
+      # A run by hand looks up Checks of the commit once and stops unless they passed. It doesn't wait.
+      - name: Check that Checks passed on this commit
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          CHECKS_WORKFLOW: checks.yml
+        run: |
+          result=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$CHECKS_WORKFLOW/runs?head_sha=$SHA&branch=main&per_page=1" --jq '.workflow_runs[0].conclusion // "missing"')
+          if [ "$result" != success ]; then
+            echo "::error::Checks of $SHA: $result. Run Checks on main, and this follows once they pass."
+            exit 1
+          fi
+
       # The repo is public, and a public repo can't use the private workbench-soft/ci actions.
       - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
@@ -55,11 +77,6 @@ jobs:
         run: |
           LANGFLIP_VERSION="${TAG#v}" mise x -- cargo build --release -p langflip
           cp "target/release/langflip.exe" "Langflip-${TAG#v}-windows-x64.exe"
-
-      - name: Wait for the checks run of this commit
-        env:
-          CHECKS_WORKFLOW: checks.yml
-        run: sh .github/scripts/wait-for-checks.sh
 
       # Every app publishes to the workbench-soft.github.io repo, where the in-app updater looks.
       # Tags pushed with the workflow token don't trigger other workflows.

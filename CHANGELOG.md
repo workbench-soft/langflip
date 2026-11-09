@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **CI** Release starts on `workflow_run` once Checks pass on `main`, one at a time. It no longer holds a PC runner while it waits, which starved Checks and timed releases out.
+
 - **Parallel release builds** releases build beside checks after a push. Only publication waits for matching checks; open PRs hold no build.
 - **CI** the Release workflow reads like the `repo-ci` template again, and the docs lose the agent rules and the keystore line pasted in by the CI rollout.
 
