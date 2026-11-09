@@ -131,8 +131,6 @@ Each secret below sits in the GitHub Actions secrets of this repo.
 | ---------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
 | `RELEASES_TOKEN` | <https://github.com/settings/personal-access-tokens/new> | Revoke the old token once every repo of the group has the new one. |
 
-- **Kept values** a keystore and its passwords can't be issued again. A copy
-  sits outside the repo on the PC and another in Bitwarden.
 - **Shared values** `RELEASES_TOKEN`, `PLAY_SERVICE_ACCOUNT_JSON` and
   `CLOUDFLARE_API_TOKEN` hold one value across the studio repos. The account
   list sits in `docs/accounts.md` of the `workspace` repo.
@@ -247,7 +245,3 @@ The choices that shape Langflip, the most costly to undo first.
 - **Rejected**
   - **Fluent** a second translation tool for a job the org rules already give to `rust-i18n`.
 - **Cost to undo** low. The strings file, `language.rs` and the Language submenu in `tray.rs`.
-
-## Release build timing
-
-Release builds MUST start on pushes alongside their matching checks. Publication MUST wait for successful checks of the same commit and branch. Open PRs MUST NOT delay the build. LocalCI MUST record the causing run, commit and PR before cancelling a replaced build or a release whose checks failed.

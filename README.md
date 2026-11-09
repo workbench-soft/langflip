@@ -81,7 +81,3 @@ Each push to `main` that passes Checks makes a release: `.github/workflows/relea
 ## License
 
 The code is MIT. The model in `model/` comes from [wordfreq](https://github.com/rspeer/wordfreq) data and is under CC BY-SA 4.0, as that data is.
-
-## Release build timing
-
-Release builds MUST start on pushes alongside their matching checks. Publication MUST wait for successful checks of the same commit and branch. Open PRs MUST NOT delay the build. LocalCI MUST record the causing run, commit and PR before cancelling a replaced build or a release whose checks failed.

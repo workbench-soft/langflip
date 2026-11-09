@@ -1,21 +1,20 @@
 name: Release
 
-# Publishes langflip.exe after Checks passes on a push to main, with a date version like 2026.10.30.1, then 2026.10.30.2.
+# Builds langflip.exe beside Checks on a push to main and publishes it once they pass, with a date version like 2026.10.30.1, then 2026.10.30.2.
 # A docs only push skips Checks, so it makes no release.
 on:
   push:
     branches: [main]
     paths: ["**", "!**.md", "!docs/**"]
-  # The repo is public, so PRs from outside get checked too.
   workflow_dispatch:
 
 permissions:
+  # wait-for-checks.sh reads the checks runs of the commit.
   actions: read
   contents: write
 
 env:
   GH_TOKEN: ${{ github.token }}
-
   SHA: ${{ github.sha }}
 
 # Windows runs steps in PowerShell unless told otherwise.
@@ -25,8 +24,8 @@ defaults:
 
 jobs:
   release:
+    # A run by hand from another branch would tag a commit no check passed, so it releases main only.
     if: github.ref == 'refs/heads/main'
-
     # The repo is public, so GitHub runners cost nothing and fork PRs stay off the PC.
     runs-on: windows-latest
     steps:
@@ -57,16 +56,13 @@ jobs:
           LANGFLIP_VERSION="${TAG#v}" mise x -- cargo build --release -p langflip
           cp "target/release/langflip.exe" "Langflip-${TAG#v}-windows-x64.exe"
 
+      - name: Wait for the checks run of this commit
+        env:
+          CHECKS_WORKFLOW: checks.yml
+        run: sh .github/scripts/wait-for-checks.sh
+
       # Every app publishes to the workbench-soft.github.io repo, where the in-app updater looks.
       # Tags pushed with the workflow token don't trigger other workflows.
-      - name: Wait for matching checks before publication
-        shell: bash
-        working-directory: ${{ github.workspace }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CHECKS_WORKFLOW: checks.yml
-        run: bash .github/scripts/wait-for-checks.sh
-
       - name: Tag the commit and publish the release
         env:
           TAG: ${{ steps.version.outputs.tag }}
