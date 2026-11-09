@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Parallel release builds** releases build beside checks after a push. Only publication waits for matching checks; open PRs hold no build.
+- **CI** the Release workflow reads like the `repo-ci` template again, and the docs lose the agent rules and the keystore line pasted in by the CI rollout.
 
 - **Updates** Langflip on Windows checks GitHub for a newer release at start and about once a day. A dialog offers it with Update and Later, and Update swaps the exe and restarts Langflip.
 - **Agent rules** `AGENTS.md` holds the lessons of the past week: what fails for an agent here, and what it does instead.
