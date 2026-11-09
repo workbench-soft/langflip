@@ -16,7 +16,7 @@ on:
     types: [completed]
 
 permissions:
-  # release-gate.sh reads the runs of the commit, cancels a build and downloads its files.
+  # release-gate.sh reads the runs of the commit, and cancels a build.
   actions: write
   contents: write
 
@@ -25,6 +25,10 @@ env:
   SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
   CHECKS_WORKFLOW: checks.yml
   RELEASE_WORKFLOW: release.yml
+  # The files the build hands to publish, as cache paths.
+  RELEASE_FILES: |
+    release-tag
+    Langflip-*-windows-x64.exe
 
 # Windows runs steps in PowerShell unless told otherwise.
 defaults:
@@ -67,15 +71,13 @@ jobs:
           cp "target/release/langflip.exe" "Langflip-${TAG#v}-windows-x64.exe"
       - name: Keep the tag with the files
         run: echo "${{ steps.version.outputs.tag }}" > release-tag
-      # The publish job may run on another runner, so the files and the tag travel as an artifact.
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      # The publish job may run on another runner, so the files and the tag travel through the cache.
+      # The artifact storage of the org is full, and the cache of each repo holds 10 GB.
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          name: release
-          path: |
-            release-tag
-            Langflip-*-windows-x64.exe
-          if-no-files-found: error
-          retention-days: 1
+          key: release-${{ github.run_id }}
+          path: ${{ env.RELEASE_FILES }}
+          enableCrossOsArchive: true
       # The last step, so a Checks run that ends after it starts publish through workflow_run.
       - name: Look up Checks of this commit once
         id: checks
@@ -108,11 +110,12 @@ jobs:
             sh .github/scripts/release-gate.sh build
           fi
       - if: steps.gate.outputs.run
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          name: release
-          run-id: ${{ steps.gate.outputs.run }}
-          github-token: ${{ github.token }}
+          key: release-${{ steps.gate.outputs.run }}
+          path: ${{ env.RELEASE_FILES }}
+          enableCrossOsArchive: true
+          fail-on-cache-miss: true
       # The steps below read the tag the build picked, as steps.version.outputs.tag.
       - name: Read the tag the build picked
         if: steps.gate.outputs.run

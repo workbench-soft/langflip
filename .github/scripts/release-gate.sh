@@ -13,8 +13,9 @@ runs() { # workflow filter
   gh api "repos/$repo/actions/workflows/$1/runs?head_sha=$SHA&branch=main&per_page=20" \
     --jq "[.workflow_runs[] | select(.event == \"push\" or .event == \"workflow_dispatch\")] | sort_by(-.id) | $2"
 }
-job() { # run name: status/conclusion of the job with that name
-  gh api "repos/$repo/actions/runs/$1/jobs" --jq ".jobs[] | select(.name == \"$2\") | .status + \"/\" + (.conclusion // \"-\")"
+job() { # run name: status/conclusion of the job with that name, or of its first matrix leg
+  gh api "repos/$repo/actions/runs/$1/jobs" \
+    --jq "[.jobs[] | select(.name == \"$2\" or (.name | startswith(\"$2 (\")))][0] | .status + \"/\" + (.conclusion // \"-\")"
 }
 
 case $1 in
