@@ -57,7 +57,6 @@ unsafe extern "C" {
 struct State {
     engine: Engine,
     settings: Settings,
-    settings_mtime: Option<std::time::SystemTime>,
     /// The front app and whether it is excluded.
     front_pid: i32,
     skip_app: bool,
@@ -95,7 +94,6 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
         *s.borrow_mut() = Some(State {
             engine,
             settings,
-            settings_mtime: settings::modified(),
             front_pid: 0,
             skip_app: false,
             pending: false,
@@ -158,7 +156,6 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
             with_state(|s| {
                 s.settings.enabled = on;
                 s.settings.save();
-                s.settings_mtime = settings::modified();
                 s.engine.reset();
             });
         }
@@ -171,7 +168,6 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
         Action::RemoveKeepWord(word) => {
             with_state(|s| {
                 s.settings.remove_keep_word(&word);
-                s.settings_mtime = settings::modified();
                 s.engine.keep_words = s.settings.keep_set();
                 show_keep_words(s);
             });
@@ -180,7 +176,6 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
             with_state(|s| {
                 s.settings.language = choice;
                 s.settings.save();
-                s.settings_mtime = settings::modified();
                 show_language(s);
             });
         }
@@ -240,12 +235,9 @@ fn set_autostart(on: bool) {
 }
 
 fn reload_settings(s: &mut State) {
-    let mtime = settings::modified();
-    if mtime == s.settings_mtime {
+    if !s.settings.reload() {
         return;
     }
-    s.settings_mtime = mtime;
-    s.settings = Settings::load();
     s.engine.keep_words = s.settings.keep_set();
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
@@ -377,7 +369,6 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
             if s.settings.store_keep_words(&s.engine.keep_words) {
                 show_keep_words(s);
             }
-            s.settings_mtime = settings::modified();
             // Only a finished word had an end key, which the fix erased and types again.
             let end = fix.retype_end.then_some(s.last_end_key);
             send_fix(s, fix, end);

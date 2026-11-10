@@ -21,6 +21,9 @@ pub struct Settings {
     /// The file didn't parse. Saving would replace the person's text with the defaults.
     #[serde(skip)]
     read_only: bool,
+    /// When the file changed as this copy last read or saved it, so an edit by hand gets picked up.
+    #[serde(skip)]
+    mtime: Option<SystemTime>,
 }
 
 impl Default for Settings {
@@ -31,6 +34,7 @@ impl Default for Settings {
             keep_words: Vec::new(),
             language: None,
             read_only: false,
+            mtime: None,
         }
     }
 }
@@ -44,29 +48,33 @@ pub fn path() -> PathBuf {
     base.join("Langflip").join("settings.toml")
 }
 
-/// When the file last changed, so an edit by hand gets picked up.
-pub fn modified() -> Option<SystemTime> {
-    std::fs::metadata(path()).and_then(|m| m.modified()).ok()
+fn modified(path: &Path) -> Option<SystemTime> {
+    std::fs::metadata(path).and_then(|m| m.modified()).ok()
 }
 
 impl Settings {
-    /// Reads the file, or writes the defaults when there is none yet.
-    pub fn load() -> Settings {
-        Settings::load_first().0
-    }
-
-    /// [`Settings::load`], plus true when the file did not exist: the first start after install.
+    /// Reads the file, or writes the defaults when there is none yet. True when there was none:
+    /// the first start after install.
     pub fn load_first() -> (Settings, bool) {
         let first = !path().exists();
-        (Settings::load_existing(), first)
+        (Settings::load_from(&path()), first)
     }
 
-    fn load_existing() -> Settings {
-        Settings::load_from(&path())
+    /// Reads the file again when it changed since this copy read or saved it. True when it did.
+    pub fn reload(&mut self) -> bool {
+        self.reload_from(&path())
+    }
+
+    fn reload_from(&mut self, path: &Path) -> bool {
+        if modified(path) == self.mtime {
+            return false;
+        }
+        *self = Settings::load_from(path);
+        true
     }
 
     fn load_from(path: &Path) -> Settings {
-        match std::fs::read_to_string(path) {
+        let mut settings = match std::fs::read_to_string(path) {
             Ok(text) => toml::from_str(&text).unwrap_or_else(|err| {
                 report(format_args!(
                     "{} is not valid, using defaults until it is fixed: {}",
@@ -79,7 +87,7 @@ impl Settings {
                 }
             }),
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                let settings = Settings::default();
+                let mut settings = Settings::default();
                 settings.save_to(path);
                 settings
             }
@@ -94,14 +102,16 @@ impl Settings {
                     ..Settings::default()
                 }
             }
-        }
+        };
+        settings.mtime = modified(path);
+        settings
     }
 
-    pub fn save(&self) {
+    pub fn save(&mut self) {
         self.save_to(&path());
     }
 
-    fn save_to(&self, path: &Path) {
+    fn save_to(&mut self, path: &Path) {
         if self.read_only {
             return;
         }
@@ -114,9 +124,12 @@ impl Settings {
                 let temp = path.with_extension("toml.tmp");
                 let written =
                     std::fs::write(&temp, text).and_then(|()| std::fs::rename(&temp, path));
-                if let Err(err) = written {
-                    let _ = std::fs::remove_file(&temp);
-                    report(format_args!("can't save {}: {err}", path.display()));
+                match written {
+                    Ok(()) => self.mtime = modified(path),
+                    Err(err) => {
+                        let _ = std::fs::remove_file(&temp);
+                        report(format_args!("can't save {}: {err}", path.display()));
+                    }
                 }
             }
             Err(err) => report(format_args!("can't encode settings: {err}")),
@@ -210,21 +223,23 @@ excluded_apps = [\"wow.exe\"
 
     #[test]
     fn keeps_a_file_that_is_not_utf8() {
-        let path = temp_file("cp1251.toml");
+        let file = TempFile::new("cp1251.toml");
+        let path = &file.0;
         // An editor that saved the Russian word 'руддщ' in Windows-1251.
         let bytes = b"keep_words = [\"\xf0\xf3\xe4\xe4\xf9\"]\n";
-        std::fs::write(&path, bytes).unwrap();
-        let mut settings = Settings::load_from(&path);
+        std::fs::write(path, bytes).unwrap();
+        let mut settings = Settings::load_from(path);
         settings.enabled = false;
-        settings.save_to(&path);
-        assert_eq!(std::fs::read(&path).unwrap(), bytes);
+        settings.save_to(path);
+        assert_eq!(std::fs::read(path).unwrap(), bytes);
     }
 
     #[test]
     fn writes_the_defaults_when_there_is_no_file() {
-        let path = temp_file("missing.toml");
-        let _ = std::fs::remove_file(&path);
-        Settings::load_from(&path);
+        let file = TempFile::new("missing.toml");
+        let path = &file.0;
+        let _ = std::fs::remove_file(path);
+        Settings::load_from(path);
         assert!(path.exists());
     }
 
@@ -260,5 +275,28 @@ excluded_apps = [\"wow.exe\" \"x\"]
         assert_eq!(read.keep_words, ["руддщ", "ghbdtn"]);
         assert_eq!(read.language.as_deref(), Some("de"));
         assert!(!path.with_extension("toml.tmp").exists());
+    }
+
+    #[test]
+    fn reloads_an_edit_by_hand_only() {
+        let file = TempFile::new("edited.toml");
+        let path = &file.0;
+        let mut settings = Settings::load_from(path);
+        settings.enabled = false;
+        settings.save_to(path);
+        assert!(!settings.reload_from(path));
+        std::fs::write(
+            path,
+            "enabled = true
+",
+        )
+        .unwrap();
+        // A later time than the save, however coarse the file system clock.
+        let later = SystemTime::now() + std::time::Duration::from_secs(10);
+        let edited = std::fs::File::options().write(true).open(path).unwrap();
+        edited.set_modified(later).unwrap();
+        assert!(settings.reload_from(path));
+        assert!(settings.enabled);
+        assert!(!settings.reload_from(path));
     }
 }

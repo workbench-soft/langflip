@@ -80,7 +80,6 @@ struct Switch {
 struct State {
     engine: Engine,
     settings: Settings,
-    settings_mtime: Option<std::time::SystemTime>,
     self_elevated: bool,
     /// The window in front is excluded or elevated, or its focus is a password field.
     skip_window: bool,
@@ -148,7 +147,6 @@ impl State {
         State {
             engine,
             settings,
-            settings_mtime: settings::modified(),
             caret: Caret::start(main_thread, WM_APP_CARET),
             caret_id: 0,
             self_elevated: process_elevated(unsafe { GetCurrentProcess() }),
@@ -270,7 +268,6 @@ fn handle_tray() {
             with_state(|s| {
                 s.settings.enabled = on;
                 s.settings.save();
-                s.settings_mtime = settings::modified();
                 s.engine.reset();
             });
         }
@@ -299,7 +296,6 @@ fn handle_tray() {
         Action::RemoveKeepWord(word) => {
             with_state(|s| {
                 s.settings.remove_keep_word(&word);
-                s.settings_mtime = settings::modified();
                 s.engine.keep_words = s.settings.keep_set();
                 show_keep_words(s);
             });
@@ -308,7 +304,6 @@ fn handle_tray() {
             with_state(|s| {
                 s.settings.language = choice;
                 s.settings.save();
-                s.settings_mtime = settings::modified();
                 show_language(s);
             });
         }
@@ -348,12 +343,9 @@ fn finish_switch() {
 
 /// Picks up an edit of the settings file made by hand.
 fn reload_settings(s: &mut State) {
-    let mtime = settings::modified();
-    if mtime == s.settings_mtime {
+    if !s.settings.reload() {
         return;
     }
-    s.settings_mtime = mtime;
-    s.settings = Settings::load();
     s.engine.keep_words = s.settings.keep_set();
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
@@ -537,7 +529,6 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
             if s.settings.store_keep_words(&s.engine.keep_words) {
                 show_keep_words(s);
             }
-            s.settings_mtime = settings::modified();
             // Only a finished word had an end key, which the fix erased and types again.
             let end = fix.retype_end.then_some(s.last_end_vk.0);
             queue(s, fix, end);
