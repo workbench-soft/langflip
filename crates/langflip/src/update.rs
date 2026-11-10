@@ -77,11 +77,17 @@ pub fn start(main_thread: u32) {
     }
 }
 
-fn run(main_thread: u32) {
-    let agent: ureq::Agent = ureq::Agent::config_builder()
+/// GitHub sends the exe through a redirect. A redirect to plain http fails instead of downloading.
+fn agent() -> ureq::Agent {
+    ureq::Agent::config_builder()
+        .https_only(true)
         .timeout_global(Some(Duration::from_secs(120)))
         .build()
-        .into();
+        .into()
+}
+
+fn run(main_thread: u32) {
+    let agent = agent();
     // Later stays quiet about its version until the next start.
     let mut declined = None;
     let mut next = SystemTime::now();
@@ -252,6 +258,12 @@ mod tests {
         assert!(verify(b"abd", Some(abc)).is_err());
         assert!(verify(b"abc", None).is_err());
         assert!(verify(b"abc", Some("md5:900150983cd24fb0d6963f7d28e17f72")).is_err());
+    }
+
+    #[test]
+    fn refuses_plain_http() {
+        let err = agent().get("http://127.0.0.1:9/langflip.exe").call();
+        assert!(matches!(err, Err(ureq::Error::RequireHttpsOnly(_))));
     }
 
     #[test]
