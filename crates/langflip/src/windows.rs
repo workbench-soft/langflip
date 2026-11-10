@@ -269,6 +269,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             }
             handle_tray();
         }
+        crate::log::flush();
     }
 }
 
