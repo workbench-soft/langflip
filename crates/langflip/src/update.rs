@@ -51,14 +51,19 @@ fn numbers(version: &str) -> Vec<u32> {
     version.split('.').map(|p| p.parse().unwrap_or(0)).collect()
 }
 
-/// The newest release with an exe, when it beats `current`.
+/// The newest release with the x64 exe the release workflow names, when it beats `current`.
+/// The version also names a file in %TEMP%, so it holds only digits and dots.
 fn newest(releases: Vec<Release>, current: &str) -> Option<Update> {
     releases
         .into_iter()
         .filter(|r| !r.draft)
         .filter_map(|r| {
             let version = r.tag_name.strip_prefix(TAG)?.to_owned();
-            let exe = r.assets.into_iter().find(|a| a.name.ends_with(".exe"))?;
+            if version.is_empty() || !version.chars().all(|c| c.is_ascii_digit() || c == '.') {
+                return None;
+            }
+            let name = format!("Langflip-{version}-windows-x64.exe");
+            let exe = r.assets.into_iter().find(|a| a.name == name)?;
             Some(Update {
                 version,
                 size: exe.size,
@@ -246,9 +251,32 @@ mod tests {
 
     #[test]
     fn the_same_or_an_older_release_is_no_update() {
-        let releases = || vec![release("langflip-v2026.11.02.1", false, "a.exe")];
+        let releases = || {
+            vec![release(
+                "langflip-v2026.11.02.1",
+                false,
+                "Langflip-2026.11.02.1-windows-x64.exe",
+            )]
+        };
         assert!(newest(releases(), "2026.11.02.1").is_none());
         assert!(newest(releases(), "2026.11.10.1").is_none());
+    }
+
+    #[test]
+    fn skips_another_exe_and_a_tag_that_is_no_version() {
+        let releases = vec![
+            release(
+                "langflip-v2026.11.10.1",
+                false,
+                "Langflip-2026.11.10.1-windows-arm64.exe",
+            ),
+            release(
+                "langflip-v../../evil",
+                false,
+                "Langflip-../../evil-windows-x64.exe",
+            ),
+        ];
+        assert!(newest(releases, "2026.11.02.1").is_none());
     }
 
     #[test]
@@ -268,7 +296,13 @@ mod tests {
 
     #[test]
     fn compares_numbers_not_text() {
-        let releases = || vec![release("langflip-v2026.11.03.1", false, "a.exe")];
+        let releases = || {
+            vec![release(
+                "langflip-v2026.11.03.1",
+                false,
+                "Langflip-2026.11.03.1-windows-x64.exe",
+            )]
+        };
         // `mise run install` writes the day without a leading zero and a 0 counter.
         assert!(newest(releases(), "2026.11.3.0").is_some());
         assert!(newest(releases(), "2026.11.3").is_some());
