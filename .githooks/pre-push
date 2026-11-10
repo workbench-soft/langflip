@@ -1,0 +1,6 @@
+#!/bin/sh
+# Checks runs after a push to main, so a lint or format error caught there is a red run on main.
+# This runs the same lint first and refuses the push when it fails.
+# Agents push with CI=1, so only a GitHub runner skips it.
+[ -n "$GITHUB_ACTIONS" ] && exit 0
+mise run lint || exit 1

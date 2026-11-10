@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Lint before the push** a pre-push hook runs `mise run lint`, so a lint or format error stays on the PC instead of failing Checks on `main`.
+
 - **Updates** Langflip installs only an exe whose SHA-256 matches the one GitHub lists, over https only, and picks the Windows x64 exe by its exact name. A slow link gets 15 minutes to download, and a stalled one gives up after 30 s.
 - **Settings** a settings.toml Langflip can't read stays as it is, and an edit by hand survives an Undo. Problems with the file go to langflip.log on Windows, with no words from it.
 - **Typing** the keyboard hook no longer waits on the log file: lines go to a thread of their own.
