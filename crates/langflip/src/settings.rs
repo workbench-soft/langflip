@@ -77,10 +77,21 @@ impl Settings {
                     ..Settings::default()
                 }
             }),
-            Err(_) => {
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
                 let settings = Settings::default();
                 settings.save_to(path);
                 settings
+            }
+            // Not UTF-8, or locked by another program: the person's text stays as it is.
+            Err(err) => {
+                eprintln!(
+                    "langflip: can't read {}, using defaults until it is fixed: {err}",
+                    path.display()
+                );
+                Settings {
+                    read_only: true,
+                    ..Settings::default()
+                }
             }
         }
     }
@@ -164,6 +175,26 @@ excluded_apps = [\"wow.exe\"
         settings.keep_words.push("руддщ".to_owned());
         settings.save_to(&path);
         assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+    }
+
+    #[test]
+    fn keeps_a_file_that_is_not_utf8() {
+        let path = temp_file("cp1251.toml");
+        // An editor that saved the Russian word 'руддщ' in Windows-1251.
+        let bytes = b"keep_words = [\"\xf0\xf3\xe4\xe4\xf9\"]\n";
+        std::fs::write(&path, bytes).unwrap();
+        let mut settings = Settings::load_from(&path);
+        settings.enabled = false;
+        settings.save_to(&path);
+        assert_eq!(std::fs::read(&path).unwrap(), bytes);
+    }
+
+    #[test]
+    fn writes_the_defaults_when_there_is_no_file() {
+        let path = temp_file("missing.toml");
+        let _ = std::fs::remove_file(&path);
+        Settings::load_from(&path);
+        assert!(path.exists());
     }
 
     #[test]
