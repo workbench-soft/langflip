@@ -1,0 +1,30 @@
+name: Docs
+
+# Checks skips a push or PR that changes only Markdown or docs/, so this lints those.
+# A lint error left there would fail the next Checks run and hold back its release.
+on:
+  push:
+    branches: [main]
+    paths: ["**.md", "docs/**"]
+  pull_request:
+    paths: ["**.md", "docs/**"]
+
+permissions:
+  contents: read
+
+env:
+  # Only the two tools below get installed. The Rust toolchain stays out.
+  MISE_EXEC_AUTO_INSTALL: "false"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          install_args: npm:markdownlint-cli2 npm:oxfmt
+          # A restored cache left oxfmt without its tinypool dependency.
+          cache: false
+      - run: mise x -- markdownlint-cli2
+      - run: mise x -- oxfmt --check
