@@ -6,19 +6,36 @@
 
 ## app-audit
 
-- [ ] Run `mise run install` from the latest `main` (AGENTS.md asks for it after an app change). The audit agent's permission check blocked it, since it stops the running Langflip and replaces its exe (PR #17, 2026-10-30).
-- [ ] Run `mise run smoke` with Punto Switcher closed: the audit changed `windows.rs` (state borrow, stuck fix, Unicode input, Shift+Pause) and didn't run it (2026-10-30).
+- [ ] Run `mise run install` from the latest `main` after the audit PR of 2026-11-10 merges. Auto mode denies it, since it stops the running Langflip and replaces its exe.
+- [ ] Run `mise run smoke` with Punto Switcher closed: the audit of 2026-11-10 moved the log off the keyboard hook and swapped the key codes in `windows.rs` for the `windows` crate names, and didn't run it.
 - [ ] Check by hand on Windows: type a word with the tray menu open, close the menu, and the keyboard works within 1 s.
 - [ ] Check by hand on Windows: Shift+Pause in the middle of `ghb` gives «при» with no Space after it.
-- [ ] Check on a Mac: Ctrl+Shift+F12 in the middle of a word adds no Space. CI only compiles `macos.rs`.
-- Left: Undo before Space after a switch while typed does nothing. It needs a kept-word state in `Engine` and a save at word end, in the code `fix/fast-model-load` is debugging.
+- [ ] Check on a Mac: Ctrl+Shift+F12 in the middle of a word adds no Space, and the keys still map right. CI only compiles `macos.rs`, and the audit of 2026-11-10 swapped its 43 key codes for `core-graphics` names.
+- [ ] Once a release after the audit of 2026-11-10 is out, press Update in the dialog and check that `%LOCALAPPDATA%\Langflip\langflip.log` says `updated to <version>, restarting`. The SHA-256 check and the https only redirect ran in tests, not on a real update.
+- [ ] Check the second Checks run on `main` after the audit PR: the rust-cache step should cut `mise run check` from about 3 min. Check the first run of the new Docs workflow.
+- Left: Undo before Space after a switch while typed does nothing. It needs a kept-word state in `Engine` and a save at word end.
 - Left: `/`, `-` and Shift+digit drop the word with no decision, so «еру.» in the Russian layout stays. Ending the word on them changes what Langflip fixes and needs the smoke test.
-- Left: the key handling is written twice, in `windows.rs` and `macos.rs`. Moving it into `langflip-core` is a refactor of both platforms, and macOS can't run here.
+- Left: the key handling is written twice, in `windows.rs` and `macos.rs`, and so are `reload_settings`, `show_language`, `show_keep_words` and three tray arms. Moving them into `langflip-core` or `tray.rs` is a refactor of both platforms, and macOS can't run here.
+- Left: the keep list has two owners, `Engine.keep_words` and `Settings.keep_words`, synced by hand. It ties into the Undo save inside the hook.
 - Left: macOS doesn't retry the event tap after access is granted, so a restart is needed. No Mac here to test it.
 - Left: Windows drops a slow keyboard hook with no sign, and Langflip doesn't set it again. Needs a test on a device.
 - Left: Undo saves `settings.toml` inside the keyboard hook. A slow disk could make Windows drop the hook. Low risk on a local disk.
+- Left: a broken or unreadable `settings.toml` now leaves a line in `langflip.log`, but Langflip shows no sign. A dialog or tray mark is a product call and new UI text.
+- Left: a tray toggle or Undo saves the copy in memory without a reload first, so a hand edit with no focus change in between can be lost. A guess, the window is narrow.
+- Left: the "update failed" dialog shows when the swap worked and only the restart failed. Changing it changes the message.
+- Left: two pushes to `main` inside one build window take the same version, and the second publish fails at the tag push. The fix picks the version at publish, but the exe has it baked in.
+- Left: the release workflow keeps 3 releases, so one can vanish under an open Update dialog and the download 404s. A pipeline change.
+- Left: `per_page=100` on the shared releases repo stops updates past about 34 apps (55 of 100 slots used today). A `langflip-latest` release, as `reddit-desk-latest` does, changes the release format.
+- Left: no rollback when a new exe is broken, since self-replace keeps no old copy. The SHA-256 check lowers the risk.
+- Left: no third-party licence notices ship beside the exe. It needs a tool such as cargo-about and a new release asset.
+- Left: rustls, ring and ureq are about half the code (1.1 of 2.3 MiB `.text`), and ureq ignores the Windows proxy. WinHTTP through the `windows` crate is a library swap.
+- Left: Open settings file may do nothing on a PC with no `.toml` app. A Notepad fallback needs a run of the app to check.
+- Left: a 250 ms timer polls the layout forever. A small battery gain, can't measure here.
+- Left: `mise run eval` scores a copy of the Engine flow, so continued words and keep words go unmeasured. Engine takes no threshold for the sweep, effort M.
+- Left: the `auto-launch` crate could replace the macOS LaunchAgent code, but its plist name differs and old installs would keep a stray agent.
+- Left: no PowerShell lint for `scripts/*.ps1`. A new tool needs the `stack` skill.
 - Left: `actions/checkout@v7` and `workbench-soft/ci/actions/setup@main` aren't pinned to a commit in the release job that reads `RELEASES_TOKEN`. The org setup action is shared, so pin it across all repos at once.
-- Left: no in-app update and an unsigned exe. Signing costs money, and the update flow is a product call (see the `app-update` skill).
+- Left: an unsigned exe. Signing costs money.
 
 ## fix/fast-model-load
 
