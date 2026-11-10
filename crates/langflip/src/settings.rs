@@ -68,10 +68,11 @@ impl Settings {
     fn load_from(path: &Path) -> Settings {
         match std::fs::read_to_string(path) {
             Ok(text) => toml::from_str(&text).unwrap_or_else(|err| {
-                eprintln!(
-                    "langflip: {} is not valid, using defaults until it is fixed: {err}",
-                    path.display()
-                );
+                report(format_args!(
+                    "{} is not valid, using defaults until it is fixed: {}",
+                    path.display(),
+                    problem(&text, &err)
+                ));
                 Settings {
                     read_only: true,
                     ..Settings::default()
@@ -84,10 +85,10 @@ impl Settings {
             }
             // Not UTF-8, or locked by another program: the person's text stays as it is.
             Err(err) => {
-                eprintln!(
-                    "langflip: can't read {}, using defaults until it is fixed: {err}",
+                report(format_args!(
+                    "can't read {}, using defaults until it is fixed: {err}",
                     path.display()
-                );
+                ));
                 Settings {
                     read_only: true,
                     ..Settings::default()
@@ -115,10 +116,10 @@ impl Settings {
                     std::fs::write(&temp, text).and_then(|()| std::fs::rename(&temp, path));
                 if let Err(err) = written {
                     let _ = std::fs::remove_file(&temp);
-                    eprintln!("langflip: can't save {}: {err}", path.display());
+                    report(format_args!("can't save {}: {err}", path.display()));
                 }
             }
-            Err(err) => eprintln!("langflip: can't encode settings: {err}"),
+            Err(err) => report(format_args!("can't encode settings: {err}")),
         }
     }
 
@@ -150,6 +151,25 @@ impl Settings {
         self.keep_words.retain(|w| w.to_lowercase() != word);
         self.save();
     }
+}
+
+/// Where the file breaks and why. The full error quotes the line, which can hold a kept word.
+fn problem(text: &str, err: &toml::de::Error) -> String {
+    match err.span() {
+        Some(span) => {
+            let line = text[..span.start.min(text.len())].matches('\n').count() + 1;
+            format!("line {line}, {}", err.message())
+        }
+        None => err.message().to_owned(),
+    }
+}
+
+/// The release exe on Windows has no console, so a problem goes to the decision log there.
+fn report(line: std::fmt::Arguments) {
+    #[cfg(all(windows, not(test)))]
+    crate::log::write(line);
+    #[cfg(any(not(windows), test))]
+    eprintln!("langflip: {line}");
 }
 
 #[cfg(test)]
@@ -195,6 +215,20 @@ excluded_apps = [\"wow.exe\"
         let _ = std::fs::remove_file(&path);
         Settings::load_from(&path);
         assert!(path.exists());
+    }
+
+    #[test]
+    fn names_the_broken_line_without_its_words() {
+        let text = "keep_words = [\"ghbdtn\"]
+excluded_apps = [\"wow.exe\" \"x\"]
+";
+        let err = toml::from_str::<Settings>(text).err().unwrap();
+        let problem = problem(text, &err);
+        assert!(problem.starts_with("line 2, "), "{problem}");
+        assert!(
+            !problem.contains("ghbdtn") && !problem.contains("wow.exe"),
+            "{problem}"
+        );
     }
 
     #[test]
