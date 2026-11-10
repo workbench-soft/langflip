@@ -69,6 +69,13 @@ impl Settings {
         if modified(path) == self.mtime {
             return false;
         }
+        // An editor that holds the file while it saves: keep this copy and try at the next change.
+        if let Err(err) = std::fs::File::open(path)
+            && err.kind() != std::io::ErrorKind::NotFound
+        {
+            report(format_args!("can't read {} yet: {err}", path.display()));
+            return false;
+        }
         *self = Settings::load_from(path);
         true
     }
@@ -275,6 +282,35 @@ excluded_apps = [\"wow.exe\" \"x\"]
         assert_eq!(read.keep_words, ["руддщ", "ghbdtn"]);
         assert_eq!(read.language.as_deref(), Some("de"));
         assert!(!path.with_extension("toml.tmp").exists());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn keeps_its_words_while_an_editor_locks_the_file() {
+        use std::os::windows::fs::OpenOptionsExt;
+        let file = TempFile::new("locked.toml");
+        let path = &file.0;
+        std::fs::write(
+            path,
+            "keep_words = [\"ghbdtn\"]
+",
+        )
+        .unwrap();
+        let mut settings = Settings::load_from(path);
+        let later = SystemTime::now() + std::time::Duration::from_secs(10);
+        let edit = std::fs::File::options().write(true).open(path).unwrap();
+        edit.set_modified(later).unwrap();
+        drop(edit);
+        // No sharing: the next open fails as it does while an editor saves.
+        let lock = std::fs::File::options()
+            .read(true)
+            .share_mode(0)
+            .open(path)
+            .unwrap();
+        assert!(!settings.reload_from(path));
+        assert_eq!(settings.keep_words, ["ghbdtn"]);
+        drop(lock);
+        assert!(settings.reload_from(path));
     }
 
     #[test]
