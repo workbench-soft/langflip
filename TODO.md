@@ -6,6 +6,7 @@
 
 ## app-audit
 
+- [ ] Clean up after the app audit of 2026-11-10 (PR #56 merged): auto mode denied it. Run in Git Bash from `$WBS_ROOT/langflip`: `git worktree remove --force ../langflip-app-audit-2026-11-10; git branch -D job/app-audit-2026-11-10 job/app-audit-2026-11-10-todo; git push origin --delete job/app-audit-2026-11-10 job/app-audit-2026-11-10-todo; rm -rf ../.trash`.
 - [ ] Run `mise run install` from the latest `main` after the audit PR of 2026-11-10 merges. Auto mode denies it, since it stops the running Langflip and replaces its exe.
 - [ ] Run `mise run smoke` with Punto Switcher closed: the audit of 2026-11-10 moved the log off the keyboard hook and swapped the key codes in `windows.rs` for the `windows` crate names, and didn't run it.
 - [ ] Check by hand on Windows: type a word with the tray menu open, close the menu, and the keyboard works within 1 s.
