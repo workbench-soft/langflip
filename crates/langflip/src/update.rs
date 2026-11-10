@@ -19,6 +19,10 @@ const VERSION: &str = env!("LANGFLIP_VERSION");
 const USER_AGENT: &str = concat!("Langflip/", env!("LANGFLIP_VERSION"));
 const DAY: Duration = Duration::from_secs(24 * 60 * 60);
 const HOUR: Duration = Duration::from_secs(60 * 60);
+/// A stalled connection gives up after this long without a byte.
+const STALL: Duration = Duration::from_secs(30);
+/// The 6 MB exe gets this long in all, so a link of 64 kbit/s still finishes.
+const TOTAL: Duration = Duration::from_secs(15 * 60);
 /// The exe is a few MB. The cap guards against a wrong file.
 const MAX_BYTES: u64 = 64 * 1024 * 1024;
 
@@ -86,7 +90,9 @@ pub fn start(main_thread: u32) {
 fn agent() -> ureq::Agent {
     ureq::Agent::config_builder()
         .https_only(true)
-        .timeout_global(Some(Duration::from_secs(120)))
+        .timeout_connect(Some(STALL))
+        .timeout_per_read(Some(STALL))
+        .timeout_global(Some(TOTAL))
         .build()
         .into()
 }
@@ -292,6 +298,16 @@ mod tests {
     fn refuses_plain_http() {
         let err = agent().get("http://127.0.0.1:9/langflip.exe").call();
         assert!(matches!(err, Err(ureq::Error::RequireHttpsOnly(_))));
+    }
+
+    #[test]
+    fn a_slow_link_finishes_and_a_stalled_one_gives_up() {
+        let config = agent().config().clone();
+        let t = config.timeouts();
+        // 5,903,360 bytes, the size of the 2026.11.10.2 exe, at 64 kbit/s.
+        let slow = Duration::from_secs(5_903_360 * 8 / 64_000);
+        assert!(t.global.is_some_and(|g| g > slow));
+        assert_eq!(config.timeout_per_read(), Some(STALL));
     }
 
     #[test]
