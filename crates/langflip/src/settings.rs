@@ -176,25 +176,36 @@ fn report(line: std::fmt::Arguments) {
 mod tests {
     use super::*;
 
-    fn temp_file(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("langflip-test-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        dir.join(name)
+    /// A file in the temp folder, removed when the test ends.
+    struct TempFile(PathBuf);
+
+    impl TempFile {
+        fn new(name: &str) -> TempFile {
+            let file = format!("langflip-test-{}-{name}", std::process::id());
+            TempFile(std::env::temp_dir().join(file))
+        }
+    }
+
+    impl Drop for TempFile {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
     }
 
     #[test]
     fn keeps_a_file_it_cannot_read() {
-        let path = temp_file("broken.toml");
+        let file = TempFile::new("broken.toml");
+        let path = &file.0;
         let text = "keep_words = [\"ghbdtn\"]
 excluded_apps = [\"wow.exe\"
 ";
-        std::fs::write(&path, text).unwrap();
-        let mut settings = Settings::load_from(&path);
+        std::fs::write(path, text).unwrap();
+        let mut settings = Settings::load_from(path);
         assert!(settings.keep_words.is_empty());
         settings.enabled = false;
         settings.keep_words.push("руддщ".to_owned());
-        settings.save_to(&path);
-        assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+        settings.save_to(path);
+        assert_eq!(std::fs::read_to_string(path).unwrap(), text);
     }
 
     #[test]
@@ -233,17 +244,18 @@ excluded_apps = [\"wow.exe\" \"x\"]
 
     #[test]
     fn saves_and_reads_back() {
-        let path = temp_file("saved.toml");
+        let file = TempFile::new("saved.toml");
+        let path = &file.0;
         let mut settings = Settings {
             enabled: false,
             keep_words: vec!["руддщ".to_owned()],
             language: Some("de".to_owned()),
             ..Settings::default()
         };
-        settings.save_to(&path);
+        settings.save_to(path);
         settings.keep_words.push("ghbdtn".to_owned());
-        settings.save_to(&path);
-        let read = Settings::load_from(&path);
+        settings.save_to(path);
+        let read = Settings::load_from(path);
         assert!(!read.enabled);
         assert_eq!(read.keep_words, ["руддщ", "ghbdtn"]);
         assert_eq!(read.language.as_deref(), Some("de"));
