@@ -8,13 +8,24 @@
 # Git Bash on the runner has no jq, so each query goes through gh --jq.
 set -eu
 repo=$GITHUB_REPOSITORY
+# A TLS timeout or a 5xx from GitHub failed a whole release, so each call gets 4 tries, 10 s, 20 s, 40 s apart.
+api() {
+  wait=10
+  for try in 1 2 3 4; do
+    gh api "$@" && return 0
+    [ "$try" = 4 ] && return 1
+    echo "GitHub API call failed, try $((try + 1)) of 4 in ${wait}s." >&2
+    sleep "$wait"
+    wait=$((wait * 2))
+  done
+}
 # The runs of SHA on main from a push or a run by hand, newest first, then a jq filter over them.
 runs() { # workflow filter
-  gh api "repos/$repo/actions/workflows/$1/runs?head_sha=$SHA&branch=main&per_page=20" \
+  api "repos/$repo/actions/workflows/$1/runs?head_sha=$SHA&branch=main&per_page=20" \
     --jq "[.workflow_runs[] | select(.event == \"push\" or .event == \"workflow_dispatch\")] | sort_by(-.id) | $2"
 }
 job() { # run name: status/conclusion of the job with that name, or of its first matrix leg
-  gh api "repos/$repo/actions/runs/$1/jobs" \
+  api "repos/$repo/actions/runs/$1/jobs" \
     --jq "[.jobs[] | select(.name == \"$2\" or (.name | startswith(\"$2 (\")))][0] | .status + \"/\" + (.conclusion // \"-\")"
 }
 
