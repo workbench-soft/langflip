@@ -99,7 +99,7 @@ Spec: [layout-switcher](../specs/layout-switcher.md).
 
 On Windows Langflip asks GitHub for a newer release a minute after it starts, then about once a day. A newer one brings a dialog with its version and size, and the buttons Update and Later.
 
-- **Update** downloads the new exe, swaps it for the running one and restarts Langflip. The settings stay.
+- **Update** downloads the new exe, checks its size and the SHA-256 GitHub lists for it, swaps for the running one and restarts Langflip. The settings stay.
 - **Later** stays quiet about that version until the next start.
 - **Offline** a missing connection or a GitHub error shows no sign. Langflip asks again an hour later.
 - **Limits** a build from source with the Cargo version, such as `cargo run`, skips the check. macOS has no release, so it has no check.
