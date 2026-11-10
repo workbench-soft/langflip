@@ -34,7 +34,11 @@ fn main() {
     let engine = Engine::new(model, settings.keep_set());
 
     #[cfg(windows)]
-    windows::run(engine, settings, first_start);
+    {
+        windows::run(engine, settings, first_start);
+        // Every way out of run, a second copy that gives up included, keeps its last log lines.
+        log::flush();
+    }
     #[cfg(target_os = "macos")]
     macos::run(engine, settings, first_start);
     #[cfg(not(any(windows, target_os = "macos")))]
