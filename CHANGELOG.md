@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Updates** Langflip installs only an exe whose SHA-256 matches the one GitHub lists, over https only, and picks the Windows x64 exe by its exact name. A slow link gets 15 minutes to download, and a stalled one gives up after 30 s.
+- **Settings** a settings.toml Langflip can't read stays as it is, and an edit by hand survives an Undo. Problems with the file go to langflip.log on Windows, with no words from it.
+- **Typing** the keyboard hook no longer waits on the log file: lines go to a thread of their own.
+- **Docs** the README says the update check talks to GitHub. AGENTS.md lists every check and settles the install rule in auto mode.
+- **CI** Checks keep the compiled crates between runs, a docs only push gets its Markdown linted, and shellcheck reads release-gate.sh.
+
 - **CI** a push of Markdown or docs only builds no release, where the build used to wait for Checks that skip it.
 - **Docs** the README and the CI spec describe Release building beside Checks on GitHub runners.
 

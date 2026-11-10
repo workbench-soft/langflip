@@ -7,12 +7,11 @@ use std::process::{Command, Stdio};
 use windows::Win32::System::Registry::{
     HKEY_CURRENT_USER, REG_SZ, RRF_RT_REG_SZ, RegDeleteKeyValueW, RegGetValueW, RegSetKeyValueW,
 };
+use windows::Win32::System::Threading::CREATE_NO_WINDOW;
 use windows::core::{PCWSTR, w};
 
 const RUN_KEY: PCWSTR = w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
 const TASK: &str = "Langflip";
-/// Keeps schtasks.exe from flashing a console window.
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// Either path counts, so the next `set(true)` puts back the one that went missing.
 pub fn enabled() -> bool {
@@ -87,7 +86,8 @@ fn schtasks(args: &[&str]) -> bool {
         .args(args)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .creation_flags(CREATE_NO_WINDOW)
+        // Keeps schtasks.exe from flashing a console window.
+        .creation_flags(CREATE_NO_WINDOW.0)
         .status()
         .is_ok_and(|s| s.success())
 }

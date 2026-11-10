@@ -16,7 +16,7 @@ use core_foundation::runloop::{
 use core_foundation::string::{CFString, CFStringRef};
 use core_graphics::event::{
     CGEvent, CGEventFlags, CGEventTap, CGEventTapLocation, CGEventTapOptions, CGEventTapPlacement,
-    CGEventTapProxy, CGEventType, CallbackResult, EventField,
+    CGEventTapProxy, CGEventType, CallbackResult, EventField, KeyCode,
 };
 use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 use langflip_core::{Engine, Fix, Key, Lang, Stroke};
@@ -35,12 +35,6 @@ const TAG_END: i64 = 0x4C46_0002;
 const TAG_REPLAY: i64 = 0x4C46_0003;
 /// A key code no Mac keyboard sends, used only for the end marker. The tap drops it.
 const KEY_MARKER: u16 = 0x7F;
-
-const KEY_RETURN: u16 = 0x24;
-const KEY_TAB: u16 = 0x30;
-const KEY_SPACE: u16 = 0x31;
-const KEY_DELETE: u16 = 0x33;
-const KEY_F12: u16 = 0x6F;
 
 #[link(name = "Carbon", kind = "framework")]
 unsafe extern "C" {
@@ -63,7 +57,6 @@ unsafe extern "C" {
 struct State {
     engine: Engine,
     settings: Settings,
-    settings_mtime: Option<std::time::SystemTime>,
     /// The front app and whether it is excluded.
     front_pid: i32,
     skip_app: bool,
@@ -101,12 +94,11 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
         *s.borrow_mut() = Some(State {
             engine,
             settings,
-            settings_mtime: settings::modified(),
             front_pid: 0,
             skip_app: false,
             pending: false,
             held: Vec::new(),
-            last_end_key: KEY_SPACE,
+            last_end_key: KeyCode::SPACE,
             tray: Some(tray),
             tap: None,
         })
@@ -164,7 +156,6 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
             with_state(|s| {
                 s.settings.enabled = on;
                 s.settings.save();
-                s.settings_mtime = settings::modified();
                 s.engine.reset();
             });
         }
@@ -177,7 +168,6 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
         Action::RemoveKeepWord(word) => {
             with_state(|s| {
                 s.settings.remove_keep_word(&word);
-                s.settings_mtime = settings::modified();
                 s.engine.keep_words = s.settings.keep_set();
                 show_keep_words(s);
             });
@@ -186,7 +176,6 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
             with_state(|s| {
                 s.settings.language = choice;
                 s.settings.save();
-                s.settings_mtime = settings::modified();
                 show_language(s);
             });
         }
@@ -246,12 +235,9 @@ fn set_autostart(on: bool) {
 }
 
 fn reload_settings(s: &mut State) {
-    let mtime = settings::modified();
-    if mtime == s.settings_mtime {
+    if !s.settings.reload() {
         return;
     }
-    s.settings_mtime = mtime;
-    s.settings = Settings::load();
     s.engine.keep_words = s.settings.keep_set();
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
@@ -277,49 +263,49 @@ fn show_keep_words(s: &State) {
 /// The key at this US position. Mac key codes follow the key, not the layout.
 fn key_for_code(code: u16) -> Option<Key> {
     Some(match code {
-        0x12 => Key::Digit1,
-        0x13 => Key::Digit2,
-        0x14 => Key::Digit3,
-        0x15 => Key::Digit4,
-        0x17 => Key::Digit5,
-        0x16 => Key::Digit6,
-        0x1A => Key::Digit7,
-        0x1C => Key::Digit8,
-        0x19 => Key::Digit9,
-        0x1D => Key::Digit0,
-        0x00 => Key::A,
-        0x01 => Key::S,
-        0x02 => Key::D,
-        0x03 => Key::F,
-        0x04 => Key::H,
-        0x05 => Key::G,
-        0x06 => Key::Z,
-        0x07 => Key::X,
-        0x08 => Key::C,
-        0x09 => Key::V,
-        0x0B => Key::B,
-        0x0C => Key::Q,
-        0x0D => Key::W,
-        0x0E => Key::E,
-        0x0F => Key::R,
-        0x10 => Key::Y,
-        0x11 => Key::T,
-        0x1E => Key::BracketRight,
-        0x1F => Key::O,
-        0x20 => Key::U,
-        0x21 => Key::BracketLeft,
-        0x22 => Key::I,
-        0x23 => Key::P,
-        0x25 => Key::L,
-        0x26 => Key::J,
-        0x27 => Key::Quote,
-        0x28 => Key::K,
-        0x29 => Key::Semicolon,
-        0x2B => Key::Comma,
-        0x2D => Key::N,
-        0x2E => Key::M,
-        0x2F => Key::Period,
-        0x32 => Key::Backquote,
+        KeyCode::ANSI_1 => Key::Digit1,
+        KeyCode::ANSI_2 => Key::Digit2,
+        KeyCode::ANSI_3 => Key::Digit3,
+        KeyCode::ANSI_4 => Key::Digit4,
+        KeyCode::ANSI_5 => Key::Digit5,
+        KeyCode::ANSI_6 => Key::Digit6,
+        KeyCode::ANSI_7 => Key::Digit7,
+        KeyCode::ANSI_8 => Key::Digit8,
+        KeyCode::ANSI_9 => Key::Digit9,
+        KeyCode::ANSI_0 => Key::Digit0,
+        KeyCode::ANSI_A => Key::A,
+        KeyCode::ANSI_S => Key::S,
+        KeyCode::ANSI_D => Key::D,
+        KeyCode::ANSI_F => Key::F,
+        KeyCode::ANSI_H => Key::H,
+        KeyCode::ANSI_G => Key::G,
+        KeyCode::ANSI_Z => Key::Z,
+        KeyCode::ANSI_X => Key::X,
+        KeyCode::ANSI_C => Key::C,
+        KeyCode::ANSI_V => Key::V,
+        KeyCode::ANSI_B => Key::B,
+        KeyCode::ANSI_Q => Key::Q,
+        KeyCode::ANSI_W => Key::W,
+        KeyCode::ANSI_E => Key::E,
+        KeyCode::ANSI_R => Key::R,
+        KeyCode::ANSI_Y => Key::Y,
+        KeyCode::ANSI_T => Key::T,
+        KeyCode::ANSI_RIGHT_BRACKET => Key::BracketRight,
+        KeyCode::ANSI_O => Key::O,
+        KeyCode::ANSI_U => Key::U,
+        KeyCode::ANSI_LEFT_BRACKET => Key::BracketLeft,
+        KeyCode::ANSI_I => Key::I,
+        KeyCode::ANSI_P => Key::P,
+        KeyCode::ANSI_L => Key::L,
+        KeyCode::ANSI_J => Key::J,
+        KeyCode::ANSI_QUOTE => Key::Quote,
+        KeyCode::ANSI_K => Key::K,
+        KeyCode::ANSI_SEMICOLON => Key::Semicolon,
+        KeyCode::ANSI_COMMA => Key::Comma,
+        KeyCode::ANSI_N => Key::N,
+        KeyCode::ANSI_M => Key::M,
+        KeyCode::ANSI_PERIOD => Key::Period,
+        KeyCode::ANSI_GRAVE => Key::Backquote,
         _ => return None,
     })
 }
@@ -373,7 +359,7 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
 
     let control = flags.contains(CGEventFlags::CGEventFlagControl);
     let shift = flags.contains(CGEventFlags::CGEventFlagShift);
-    if code == KEY_F12 && control {
+    if code == KeyCode::F12 && control {
         let fix = if shift {
             s.engine.convert(current_lang())
         } else {
@@ -383,7 +369,6 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
             if s.settings.store_keep_words(&s.engine.keep_words) {
                 show_keep_words(s);
             }
-            s.settings_mtime = settings::modified();
             // Only a finished word had an end key, which the fix erased and types again.
             let end = fix.retype_end.then_some(s.last_end_key);
             send_fix(s, fix, end);
@@ -399,8 +384,8 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
         s.engine.reset();
         return false;
     }
-    if code == KEY_DELETE {
-        s.engine.backspace(s.last_end_key == KEY_SPACE);
+    if code == KeyCode::DELETE {
+        s.engine.backspace(s.last_end_key == KeyCode::SPACE);
         return false;
     }
     // A digit with Shift types other signs in each layout, so it clears the word below.
@@ -412,7 +397,7 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
         }
         return false;
     }
-    if matches!(code, KEY_SPACE | KEY_RETURN | KEY_TAB) {
+    if matches!(code, KeyCode::SPACE | KeyCode::RETURN | KeyCode::TAB) {
         s.last_end_key = code;
         if let Some(fix) = s.engine.end_word(current_lang()) {
             send_fix(s, fix, Some(code));
@@ -473,8 +458,8 @@ fn send_fix(s: &mut State, fix: Fix, end_key: Option<u16>) {
     s.pending = true;
     let none = CGEventFlags::CGEventFlagNull;
     for _ in 0..fix.erase {
-        post_key(KEY_DELETE, true, none, TAG_OWN);
-        post_key(KEY_DELETE, false, none, TAG_OWN);
+        post_key(KeyCode::DELETE, true, none, TAG_OWN);
+        post_key(KeyCode::DELETE, false, none, TAG_OWN);
     }
     // One event carries at most 20 UTF-16 units.
     let units: Vec<u16> = fix.text.encode_utf16().collect();

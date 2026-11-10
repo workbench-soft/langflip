@@ -1,6 +1,6 @@
 # Architecture
 
-Langflip is a Cargo workspace with 2 crates and a model file. It has no server and makes no network calls.
+Langflip is a Cargo workspace with 2 crates and a model file. It has no server. Its one network call is the Windows update check in `update.rs`, to the GitHub releases API, with no typed text.
 
 ```mermaid
 flowchart TB

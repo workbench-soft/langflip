@@ -24,7 +24,9 @@ use windows::Win32::UI::Accessibility::{
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, GetKeyState, GetKeyboardLayout, GetKeyboardLayoutList, HKL, INPUT, INPUT_0,
     INPUT_KEYBOARD, KEYBD_EVENT_FLAGS, KEYBDINPUT, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP,
-    KEYEVENTF_UNICODE, MAPVK_VK_TO_VSC, MapVirtualKeyW, SendInput, VIRTUAL_KEY,
+    KEYEVENTF_UNICODE, MAPVK_VK_TO_VSC, MapVirtualKeyW, SendInput, VIRTUAL_KEY, VK_BACK,
+    VK_CAPITAL, VK_CONTROL, VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_MENU, VK_PACKET,
+    VK_PAUSE, VK_RCONTROL, VK_RETURN, VK_RMENU, VK_RSHIFT, VK_RWIN, VK_SHIFT, VK_SPACE, VK_TAB,
 };
 use windows::Win32::UI::Shell::ShellExecuteW;
 
@@ -58,20 +60,6 @@ const WM_APP_FIX: u32 = WM_APP + 1;
 const WM_APP_REPLAY: u32 = WM_APP + 2;
 const WM_APP_CARET: u32 = WM_APP + 3;
 
-const VK_BACK: u32 = 0x08;
-const VK_TAB: u32 = 0x09;
-const VK_RETURN: u32 = 0x0D;
-const VK_SHIFT: i32 = 0x10;
-const VK_CONTROL: i32 = 0x11;
-const VK_MENU: i32 = 0x12;
-const VK_PAUSE: u32 = 0x13;
-const VK_CAPITAL: i32 = 0x14;
-const VK_SPACE: u32 = 0x20;
-const VK_LWIN: i32 = 0x5B;
-const VK_RWIN: i32 = 0x5C;
-/// A character another app types with `KEYEVENTF_UNICODE`. Its scan code holds the character.
-const VK_PACKET: u32 = 0xE7;
-
 /// A key press or release swallowed while a fix was being typed.
 #[derive(Clone, Copy)]
 struct Held {
@@ -92,7 +80,6 @@ struct Switch {
 struct State {
     engine: Engine,
     settings: Settings,
-    settings_mtime: Option<std::time::SystemTime>,
     self_elevated: bool,
     /// The window in front is excluded or elevated, or its focus is a password field.
     skip_window: bool,
@@ -106,7 +93,7 @@ struct State {
     /// The fix and the end key to type after it, if any.
     queued: Option<(Fix, Option<u16>)>,
     /// The end key of the last finished word, for Undo and the manual fix.
-    last_end_vk: u16,
+    last_end_vk: VIRTUAL_KEY,
     last_focus: (isize, i32, i32),
     /// The last window in front other than the taskbar, which a tray click brings to the front.
     target: HWND,
@@ -160,7 +147,6 @@ impl State {
         State {
             engine,
             settings,
-            settings_mtime: settings::modified(),
             caret: Caret::start(main_thread, WM_APP_CARET),
             caret_id: 0,
             self_elevated: process_elevated(unsafe { GetCurrentProcess() }),
@@ -169,7 +155,7 @@ impl State {
             skip_word: false,
             expect: None,
             queued: None,
-            last_end_vk: VK_SPACE as u16,
+            last_end_vk: VK_SPACE,
             last_focus: (0, 0, 0),
             target: HWND::default(),
             switch: None,
@@ -281,7 +267,6 @@ fn handle_tray() {
             with_state(|s| {
                 s.settings.enabled = on;
                 s.settings.save();
-                s.settings_mtime = settings::modified();
                 s.engine.reset();
             });
         }
@@ -310,7 +295,6 @@ fn handle_tray() {
         Action::RemoveKeepWord(word) => {
             with_state(|s| {
                 s.settings.remove_keep_word(&word);
-                s.settings_mtime = settings::modified();
                 s.engine.keep_words = s.settings.keep_set();
                 show_keep_words(s);
             });
@@ -319,7 +303,6 @@ fn handle_tray() {
             with_state(|s| {
                 s.settings.language = choice;
                 s.settings.save();
-                s.settings_mtime = settings::modified();
                 show_language(s);
             });
         }
@@ -359,12 +342,9 @@ fn finish_switch() {
 
 /// Picks up an edit of the settings file made by hand.
 fn reload_settings(s: &mut State) {
-    let mtime = settings::modified();
-    if mtime == s.settings_mtime {
+    if !s.settings.reload() {
         return;
     }
-    s.settings_mtime = mtime;
-    s.settings = Settings::load();
     s.engine.keep_words = s.settings.keep_set();
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
@@ -455,12 +435,26 @@ fn key_for_scan(scan: u32) -> Option<Key> {
     })
 }
 
-fn is_modifier(vk: u32) -> bool {
-    matches!(vk, 0x10..=0x12 | 0x14 | 0x5B | 0x5C | 0xA0..=0xA5)
+fn is_modifier(vk: VIRTUAL_KEY) -> bool {
+    matches!(
+        vk,
+        VK_SHIFT
+            | VK_CONTROL
+            | VK_MENU
+            | VK_CAPITAL
+            | VK_LWIN
+            | VK_RWIN
+            | VK_LSHIFT
+            | VK_RSHIFT
+            | VK_LCONTROL
+            | VK_RCONTROL
+            | VK_LMENU
+            | VK_RMENU
+    )
 }
 
-fn pressed(vk: i32) -> bool {
-    unsafe { GetAsyncKeyState(vk) < 0 }
+fn pressed(vk: VIRTUAL_KEY) -> bool {
+    unsafe { GetAsyncKeyState(vk.0.into()) < 0 }
 }
 
 unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
@@ -521,7 +515,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     if !down {
         return false;
     }
-    let vk = info.vkCode;
+    let vk = VIRTUAL_KEY(info.vkCode as u16);
     if vk == VK_PAUSE {
         debug(format_args!("pause, pending {}", PENDING.get()));
         let fix = if pressed(VK_SHIFT) {
@@ -534,9 +528,8 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
             if s.settings.store_keep_words(&s.engine.keep_words) {
                 show_keep_words(s);
             }
-            s.settings_mtime = settings::modified();
             // Only a finished word had an end key, which the fix erased and types again.
-            let end = fix.retype_end.then_some(s.last_end_vk);
+            let end = fix.retype_end.then_some(s.last_end_vk.0);
             queue(s, fix, end);
             return true;
         }
@@ -545,7 +538,8 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     if is_modifier(vk) {
         return false;
     }
-    // Read as a scan code, the character "1" would be the N key.
+    // A character another app types with `KEYEVENTF_UNICODE`. Its scan code holds the character:
+    // read as a scan code, the character "1" would be the N key.
     if vk == VK_PACKET {
         drop_word(s, "text from another app");
         return false;
@@ -564,7 +558,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         return false;
     }
     if vk == VK_BACK {
-        s.engine.backspace(u32::from(s.last_end_vk) == VK_SPACE);
+        s.engine.backspace(s.last_end_vk == VK_SPACE);
         return false;
     }
     let extended = info.flags.0 & LLKHF_EXTENDED.0 != 0;
@@ -572,7 +566,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
     // A digit with Shift types other signs in each layout, so it clears the word below.
     let key = key_for_scan(info.scanCode).filter(|k| !extended && !(k.is_digit() && shift));
     if let Some(key) = key {
-        let caps = unsafe { GetKeyState(VK_CAPITAL) } & 1 != 0;
+        let caps = unsafe { GetKeyState(VK_CAPITAL.0.into()) } & 1 != 0;
         let lang = layout(s);
         if let Some(fix) = s.engine.key(Stroke::new(key, shift, caps), lang) {
             debug(format_args!(
@@ -585,7 +579,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         return false;
     }
     if matches!(vk, VK_SPACE | VK_RETURN | VK_TAB) {
-        s.last_end_vk = vk as u16;
+        s.last_end_vk = vk;
         let lang = layout(s);
         let keys = s.engine.word_len();
         let fix = s.engine.end_word(lang);
@@ -595,7 +589,7 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
             "word end in {lang:?}: {keys} keys, fix of {erase:?} keys"
         ));
         if let Some(fix) = fix {
-            queue(s, fix, Some(vk as u16));
+            queue(s, fix, Some(vk.0));
             return true;
         }
         return false;
@@ -671,7 +665,7 @@ fn apply_queued_fix() {
     };
     let mut inputs = Vec::new();
     for _ in 0..fix.erase {
-        tap(&mut inputs, VK_BACK as u16);
+        tap(&mut inputs, VK_BACK.0);
     }
     for unit in fix.text.encode_utf16() {
         inputs.push(key_input(0, unit, KEYEVENTF_UNICODE, TAG_OWN));
@@ -781,7 +775,7 @@ fn replay_input(h: &Held) -> INPUT {
         flags |= KEYEVENTF_EXTENDEDKEY;
     }
     // Another app's character goes out as that character, not as a key.
-    if u32::from(h.vk) == VK_PACKET {
+    if h.vk == VK_PACKET.0 {
         return key_input(0, h.scan, flags | KEYEVENTF_UNICODE, TAG_REPLAY);
     }
     key_input(h.vk, h.scan, flags, TAG_REPLAY)
@@ -1020,7 +1014,7 @@ mod tests {
     fn text_from_other_apps_is_no_key() {
         start();
         let digit_one = KBDLLHOOKSTRUCT {
-            vkCode: VK_PACKET,
+            vkCode: VK_PACKET.0.into(),
             scanCode: u32::from(b'1'),
             ..Default::default()
         };
@@ -1031,7 +1025,7 @@ mod tests {
     #[test]
     fn text_from_other_apps_replays_as_text() {
         let held = Held {
-            vk: VK_PACKET as u16,
+            vk: VK_PACKET.0,
             scan: u16::from(b'1'),
             up: false,
             extended: false,
@@ -1140,7 +1134,7 @@ mod tests {
             Some(false)
         );
         assert!(!word_in_progress());
-        with_state(|s| on_key(s, &press(VK_SPACE, 0x39), true));
+        with_state(|s| on_key(s, &press(VK_SPACE.0.into(), 0x39), true));
         assert_eq!(with_state(|s| s.skip_word), Some(false));
     }
 

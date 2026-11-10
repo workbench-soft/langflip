@@ -20,7 +20,7 @@ run = [
   "cargo clippy --workspace --all-targets -- -D warnings",
   "ruff check",
   "ruff format --check",
-  "shellcheck .github/scripts/next-version.sh .github/scripts/release-notes.sh",
+  "shellcheck .github/scripts/next-version.sh .github/scripts/release-gate.sh .github/scripts/release-notes.sh",
   "shfmt -i 2 -ci -d .github/scripts",
   "oxfmt --check",
 ]

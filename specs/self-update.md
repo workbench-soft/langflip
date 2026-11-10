@@ -28,7 +28,7 @@ Offline, on a GitHub error or with no newer release, Langflip shows nothing and 
 ## Limits
 
 - **macOS** has no release, so the check runs on Windows only.
-- **Signature** the exe is unsigned. HTTPS and the size check guard the download.
+- **Signature** the exe is unsigned. HTTPS only redirects, the size and the SHA-256 GitHub lists for the asset guard the download.
 - **Progress** the dialog closes during the download, a few MB that take seconds. The new copy appears in the tray when it is done.
 - **Rate limit** GitHub allows 60 calls an hour without a token. Langflip makes one call a day.
 
@@ -40,3 +40,9 @@ Offline, on a GitHub error or with no newer release, Langflip shows nothing and 
 - **Changes** `update.rs` for the check, the dialog, the download and the swap. `build.rs` for the version and the manifest. `windows.rs` starts the update thread and waits for the mutex after an update. `locales/app.yml` gets the dialog strings in the 9 languages. `Cargo.toml` adds `ureq`, `serde_json` and `self-replace`.
 - **Steps** this spec, then the code, the strings and the docs.
 - **Docs** `docs/features.md`, `docs/architecture.md`, `README.md`, `CHANGELOG.md`.
+
+### 2026-11-10 The download is checked against its SHA-256
+
+- **Why** the app audit of 2026-11-10 found the update checked only the byte count, followed redirects to plain http, took any `.exe` asset and gave up on links under 49 KB/s.
+- **Changes** `update.rs` checks the asset `digest` with BCryptHash and installs nothing without one, sets `https_only`, matches `Langflip-<version>-windows-x64.exe` by name, takes a version of digits and dots only, and waits 30 s per read and 15 min in all. `Cargo.toml` adds the `Win32_Security_Cryptography` feature.
+- **Docs** `docs/features.md`, `README.md`, `docs/architecture.md`, `CHANGELOG.md`.
