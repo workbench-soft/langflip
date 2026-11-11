@@ -5,7 +5,7 @@ The keywords MUST, MUST NOT, SHOULD, SHOULD NOT and MAY follow [RFC 2119](https:
 ## Tooling
 
 - **mise** each command MUST run through mise: `mise run check`, `mise x -- cargo build -p langflip`.
-- **Checks** `mise run check` MUST pass before a commit. It runs markdownlint, rustfmt, clippy, ruff, shellcheck, shfmt, oxfmt, actionlint, the tests and the macOS compile, as the `check` and `lint` tasks in `mise.toml` list.
+- **Checks** `mise run check` MUST pass before a commit. It runs markdownlint, rustfmt, clippy, cargo-shear, ruff, shellcheck, shfmt, oxfmt, actionlint, the tests and the macOS compile, as the `check` and `lint` tasks in `mise.toml` list.
 - **Model** a change to `scripts/build_model.py` or `decide.rs` MUST come with `mise run model` (when the model changes) and `mise run eval`. The commit body MUST give the false fix and miss rates.
 - **Smoke test** a change to `windows.rs` SHOULD pass `mise run smoke`. It types into a test window, so Punto Switcher MUST be closed and the person warned first.
 

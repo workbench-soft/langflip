@@ -8,6 +8,7 @@ ruff = "0.17.3"
 "npm:oxfmt" = "0.75.0"
 "npm:markdownlint-cli2" = "0.24.0"
 actionlint = "1.7.12"
+"github:Boshen/cargo-shear" = "1.14.0"
 
 [tasks.model]
 description = "Rebuild model/langflip.model and model/testset.tsv from wordfreq"
@@ -19,6 +20,7 @@ run = [
   "markdownlint-cli2",
   "cargo fmt --all --check",
   "cargo clippy --workspace --all-targets -- -D warnings",
+  "cargo shear",
   "ruff check",
   "ruff format --check",
   "shellcheck .github/scripts/next-version.sh .github/scripts/release-gate.sh .github/scripts/release-notes.sh",
