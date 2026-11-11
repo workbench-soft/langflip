@@ -501,6 +501,26 @@ mod tests {
     }
 
     #[test]
+    fn a_kept_word_stays_on_the_word_before_the_caret() {
+        let mut e = engine();
+        e.keep_words.insert("cndbt".to_owned());
+        e.continue_word("привет");
+        assert_eq!(go_on(&mut e, "cndbt", Lang::En), []);
+    }
+
+    #[test]
+    fn a_sign_that_may_end_the_word_waits_for_the_next_key() {
+        // «трубка» typed in English: "nhe," may be an English word and its comma.
+        let mut e = engine();
+        let switched: Vec<bool> = layout::strokes_for("nhe,rf", Lang::En)
+            .unwrap()
+            .into_iter()
+            .map(|s| e.key(s, Some(Lang::En)).is_some())
+            .collect();
+        assert_eq!(switched, [false, false, false, false, true, false]);
+    }
+
+    #[test]
     fn a_mixed_word_stays_as_typed() {
         let mut e = engine();
         e.continue_word("Windows");
