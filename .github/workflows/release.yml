@@ -15,6 +15,12 @@ on:
     workflows: [Checks]
     types: [completed]
 
+# A newer push or run by hand cancels the older build of this workflow on GitHub's side.
+# A workflow_run run publishes or cancels for one commit, so it gets a group of its own and runs to the end.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_run' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
 # Each job widens this. The build runs the build scripts of every crate, so its token only reads.
 permissions:
   contents: read

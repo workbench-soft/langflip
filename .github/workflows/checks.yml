@@ -10,6 +10,12 @@ on:
     paths: ["**", "!**.md", "!docs/**"]
   workflow_dispatch:
 
+# A newer push to the same branch or PR cancels this run on GitHub's side.
+# The local-ci page cancels the runs GitHub leaves, such as those of a merged PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 # Windows runs steps in PowerShell unless told otherwise.
 defaults:
   run:

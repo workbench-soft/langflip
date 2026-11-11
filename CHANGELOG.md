@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Older runs stop on GitHub** a newer push to `main` cancels the Checks and the release build of the older commit through `concurrency`, with the local-ci page off too.
+
 - **Typing** Space, Space, Backspace no longer turns the next word into the other layout. A word ended in a third layout, such as Ukrainian, no longer blocks the next fix. Keys typed fast during a fix no longer jump ahead of a fix one of them started.
 - **Memory** Langflip holds about 5 MB less and loads its dictionary faster. The tray icons ship decoded, so the exe is 89 KB smaller.
 - **Privacy** a typo in settings.toml no longer writes a kept word to langflip.log. A crash leaves its place in the code there, with no text.
