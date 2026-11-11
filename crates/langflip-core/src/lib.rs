@@ -153,6 +153,10 @@ impl Engine {
         let word_lang = self.word_lang.take();
         let switched_from = self.switched_from.take();
         self.last = None;
+        // A second Space ends no word, and the word before it stays out of reach.
+        if strokes.is_empty() {
+            return None;
+        }
         let current = current?;
         if let Some(typed_in) = switched_from {
             // Switched while typed: a second decision could flip it back.
@@ -516,6 +520,16 @@ mod tests {
         type_word(&mut e, "работ", Lang::Ru);
         e.backspace(false);
         assert!(e.buffer.is_empty() && e.word_lang.is_none());
+    }
+
+    #[test]
+    fn backspace_after_a_second_space_starts_a_new_word() {
+        let mut e = engine();
+        assert!(type_word(&mut e, "ytn", Lang::En).is_some());
+        // A second Space, then Backspace takes it back.
+        assert_eq!(e.end_word(Some(Lang::Ru)), None);
+        e.backspace(true);
+        assert_eq!(go_on(&mut e, "hello", Lang::En), []);
     }
 
     #[test]
