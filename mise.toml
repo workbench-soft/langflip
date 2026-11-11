@@ -32,7 +32,11 @@ run = ["cargo fmt --all", "ruff format", "shfmt -i 2 -ci -w .github/scripts", "o
 [tasks.check]
 description = "Lint, format check and test, the same steps CI runs"
 depends = ["lint"]
-run = ["cargo test --workspace", "cargo check -p langflip --target aarch64-apple-darwin"]
+run = [
+  "cargo test --workspace",
+  # clippy in place of cargo check, so a warning in the macOS code fails as it does on Windows.
+  "cargo clippy -p langflip --all-targets --target aarch64-apple-darwin -- -D warnings",
+]
 
 [tasks.tray-icons]
 description = "Render the tray icons in crates/langflip/assets/tray from their SVGs"

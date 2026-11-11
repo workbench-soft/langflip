@@ -54,7 +54,7 @@ On macOS, allow Langflip (or the terminal running it) in System Settings, Privac
 
 | Command          | What it checks                                                                                                       |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `mise run check` | format, clippy, unit tests, macOS compile, the same steps CI runs                                                    |
+| `mise run check` | format, clippy for Windows and macOS, unit tests, the same steps CI runs                                             |
 | `mise run eval`  | false fixes and misses of the model on `model/testset.tsv`                                                           |
 | `mise run smoke` | Windows only: runs Langflip and types into a test window. Close Punto Switcher first, and don't type for 10 seconds. |
 
