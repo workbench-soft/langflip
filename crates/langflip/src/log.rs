@@ -45,12 +45,33 @@ fn dir() -> PathBuf {
 
 /// Queues a line with the local time in front.
 pub fn write(line: std::fmt::Arguments) {
+    let _ = writer().send(Entry::Line(stamp(line)));
+}
+
+fn stamp(line: std::fmt::Arguments) -> String {
     let t = unsafe { GetLocalTime() };
-    let line = format!(
+    format!(
         "{}-{:02}-{:02} {:02}:{:02}:{:02}.{:03} {line}",
         t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, t.wMilliseconds
-    );
-    let _ = writer().send(Entry::Line(line));
+    )
+}
+
+/// Puts a line in the log for a crash: the release exe has no console, so the panic text went
+/// nowhere. Only the place in the code goes in, since a panic message can quote a word.
+pub fn log_crashes() {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        // Straight to the file: the crash may be on the writer thread, or end the process next.
+        append(&stamp(format_args!("{}", crash_line(info.location()))));
+        default(info);
+    }));
+}
+
+fn crash_line(location: Option<&std::panic::Location>) -> String {
+    match location {
+        Some(at) => format!("crash at {}:{}", at.file(), at.line()),
+        None => "crash".to_owned(),
+    }
 }
 
 /// Waits until the queued lines are in the file, so the last ones survive a quit.
@@ -79,4 +100,17 @@ fn append(line: &str) {
         return;
     };
     let _ = writeln!(f, "{line}");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_crash_line_names_the_place_only() {
+        let at = std::panic::Location::caller();
+        let line = crash_line(Some(at));
+        assert_eq!(line, format!("crash at {}:{}", at.file(), at.line()));
+        assert_eq!(crash_line(None), "crash");
+    }
 }
