@@ -7,6 +7,7 @@ shfmt = "3.14.1"
 ruff = "0.17.3"
 "npm:oxfmt" = "0.75.0"
 "npm:markdownlint-cli2" = "0.24.0"
+actionlint = "1.7.12"
 
 [tasks.model]
 description = "Rebuild model/langflip.model and model/testset.tsv from wordfreq"
@@ -23,6 +24,7 @@ run = [
   "shellcheck .github/scripts/next-version.sh .github/scripts/release-gate.sh .github/scripts/release-notes.sh",
   "shfmt -i 2 -ci -d .github/scripts",
   "oxfmt --check",
+  "actionlint",
 ]
 
 [tasks.format]
