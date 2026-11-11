@@ -175,13 +175,33 @@ impl Settings {
 
 /// Where the file breaks and why. The full error quotes the line, which can hold a kept word.
 fn problem(text: &str, err: &toml::de::Error) -> String {
+    let message = without_strings(err.message());
     match err.span() {
         Some(span) => {
             let line = text[..span.start.min(text.len())].matches('\n').count() + 1;
-            format!("line {line}, {}", err.message())
+            format!("line {line}, {message}")
         }
-        None => err.message().to_owned(),
+        None => message,
     }
+}
+
+/// A wrong type quotes the value, as `string "ghbdtn"`, so each quoted string loses its text.
+fn without_strings(message: &str) -> String {
+    let mut out = String::with_capacity(message.len());
+    let (mut quoted, mut escaped) = (false, false);
+    for c in message.chars() {
+        if quoted && escaped {
+            escaped = false;
+        } else if quoted && c == '\\' {
+            escaped = true;
+        } else if c == '"' {
+            quoted = !quoted;
+            out.push(c);
+        } else if !quoted {
+            out.push(c);
+        }
+    }
+    out
 }
 
 /// The release exe on Windows has no console, so a problem goes to the decision log there.
@@ -262,6 +282,16 @@ excluded_apps = [\"wow.exe\" \"x\"]
             !problem.contains("ghbdtn") && !problem.contains("wow.exe"),
             "{problem}"
         );
+    }
+
+    #[test]
+    fn names_a_wrong_type_without_its_word() {
+        for text in ["keep_words = \"ghbdtn\"\n", "enabled = \"ghbdtn\"\n"] {
+            let err = toml::from_str::<Settings>(text).err().unwrap();
+            let problem = problem(text, &err);
+            assert!(problem.starts_with("line 1, "), "{problem}");
+            assert!(!problem.contains("ghbdtn"), "{problem}");
+        }
     }
 
     #[test]
