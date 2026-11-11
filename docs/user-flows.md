@@ -90,7 +90,7 @@ sequenceDiagram
 2. The person presses Pause (Ctrl+F12 on macOS).
 3. Langflip puts the word back and switches the layout back.
 4. The next time Langflip fixes the word again. A second Pause puts it back and adds it to the exceptions.
-5. The word shows in the tray menu under «Исключения». A click on it there removes it.
+5. The word shows in the tray menu under Exceptions («Исключения» in Russian). A click on it there removes it.
 
 ```mermaid
 flowchart LR
@@ -138,12 +138,12 @@ flowchart LR
 ## Stop the autostart
 
 1. The person right-clicks the tray icon.
-2. The person unchecks «Запускать при входе».
+2. The person unchecks Start at sign in («Запускать при входе» in Russian).
 3. Langflip no longer starts at login, and later starts keep it off.
 
 ```mermaid
 flowchart LR
-    A[Right click on the icon] --> B[Uncheck Запускать при входе] --> C[No start at login]
+    A[Right click on the icon] --> B[Uncheck Start at sign in] --> C[No start at login]
 ```
 
 ## Pick the menu language
