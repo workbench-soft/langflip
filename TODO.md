@@ -6,6 +6,30 @@
 
 ## app-audit
 
+- [ ] Run `mise run install` from the latest `main` after the audit PR of 2026-11-11 merges, then check that `langflip.exe` runs and that the Run value `Langflip` and the task `Langflip` exist. Auto mode denies it, since it stops the running Langflip.
+- [ ] Run `mise run smoke` with Punto Switcher closed: the audit of 2026-11-11 makes replayed keys in `windows.rs` wait behind a fix one of them started, and didn't run it.
+- [ ] Check by hand on Windows: type `ghbdtn hello` fast in one go, and it comes out as «привет hello» with no letters lost.
+- [ ] Check by hand on Windows: type `ytn`, Space, Space, Backspace, `hello`, and `hello` stays English.
+- [ ] Merge the Dependabot PRs by hand once they open, each merge ships a release. Turn on Dependabot security updates in the repo settings if wanted.
+- [ ] Check the first Release run on `main` after the audit PR of 2026-11-11: the per-job permissions and `persist-credentials: false` ran only through actionlint.
+- Left: a rerun of Release after the tag push worked but `gh release create` failed sees the tag and publishes nothing. A pipeline change only a live publish proves.
+- Left: Undo or Convert after Enter or Tab erases the word plus the end key, so in a chat Undo retypes and sends again. Limiting Undo to Space is a product call.
+- Left: macOS has no stuck-fix timeout, so a failed `post_key` holds every key. No Mac here.
+- Left: a caret read from before a fast Space or Backspace can be applied to the next word. A guess, the window is about 40 ms.
+- Left: `LoadLibraryW("comctl32.dll")` by bare name in `dialog.rs`. Only the same user can plant a DLL there.
+- Left: the `known && gain > 0.0` rule in `decide.rs` has no unit test. `mise run eval` owns it.
+- Left: macOS has two Apple binding stacks, `core-graphics` beside `objc2`. A migration, no Mac here.
+- Left: macOS has no decision log, so settings and event tap errors go to stderr no one reads. A new UI sign is a product call.
+- Left: unnamed timer numbers in `windows.rs`, two thin log wrappers, two XML escapes. Low value, tied to the platform duplication already Left.
+- Left: the mouse hook runs on every mouse move. Changing it changes how a click drops the word, needs a device.
+- Left: no Rust cache in the release build. The LTO link dominates, about 10% gain.
+- Left: the model loads before the single-copy check, about 9 ms for the second copy at sign-in.
+- Left: no `test` or `build` mise task. CI and the hook already run `check` and `lint`.
+- Left: `excluded_apps` on macOS matches the localized app name. A guess, no Mac here.
+- Left: no Pause key on many laptops, and the Undo key can't be changed. A new setting is a product call.
+- Left: `zh-TW` and `zh-Hant` get the Simplified Chinese menu. A new language is a product call.
+- Left: tray-icon doesn't call `NIM_SETVERSION`, so keyboard use of the tray runs on the legacy path. Upstream, a guess.
+- Left: the topmost update dialog may cover a full-screen game. A guess and a product call.
 - [ ] Clean up after the app audit of 2026-11-10 (PR #56 merged): auto mode denied it. Run in Git Bash from `$WBS_ROOT/langflip`: `git worktree remove --force ../langflip-app-audit-2026-11-10; git branch -D job/app-audit-2026-11-10 job/app-audit-2026-11-10-todo; git push origin --delete job/app-audit-2026-11-10 job/app-audit-2026-11-10-todo; rm -rf ../.trash`.
 - [ ] Run `mise run install` from the latest `main` after the audit PR of 2026-11-10 merges. Auto mode denies it, since it stops the running Langflip and replaces its exe.
 - [ ] Run `mise run smoke` with Punto Switcher closed: the audit of 2026-11-10 moved the log off the keyboard hook and swapped the key codes in `windows.rs` for the `windows` crate names, and didn't run it.
