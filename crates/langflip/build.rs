@@ -9,6 +9,7 @@ fn main() {
         .unwrap_or_else(|_| std::env::var("CARGO_PKG_VERSION").unwrap());
     // The update check compares it with the releases on GitHub.
     println!("cargo:rustc-env=LANGFLIP_VERSION={version}");
+    tray_pixels();
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
@@ -33,6 +34,28 @@ fn main() {
         .set_icon("assets/icon.ico")
         .set_manifest(MANIFEST);
     res.compile().expect("compile the Windows resources");
+}
+
+/// Decodes the tray PNGs into raw RGBA in OUT_DIR, so the exe carries no PNG decoder.
+fn tray_pixels() {
+    let out = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    for name in ["en", "ru", "other"] {
+        let path = format!("assets/tray/{name}.png");
+        println!("cargo:rerun-if-changed={path}");
+        let mut decoder = png::Decoder::new(std::io::BufReader::new(
+            std::fs::File::open(&path).expect("the tray PNG is in the repo"),
+        ));
+        decoder.set_transformations(
+            png::Transformations::normalize_to_color8() | png::Transformations::ALPHA,
+        );
+        let mut reader = decoder.read_info().expect("a valid tray PNG");
+        let mut rgba = vec![0; reader.output_buffer_size().expect("a 32 px PNG fits")];
+        let frame = reader.next_frame(&mut rgba).expect("a valid tray PNG");
+        assert_eq!(frame.color_type, png::ColorType::Rgba, "{path}");
+        assert_eq!((frame.width, frame.height), (32, 32), "{path}");
+        rgba.truncate(frame.buffer_size());
+        std::fs::write(out.join(format!("{name}.rgba")), rgba).unwrap();
+    }
 }
 
 // The binary version field holds 4 numbers of 16 bits each.

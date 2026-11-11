@@ -38,10 +38,12 @@ pub struct Tray {
     click: Cell<Option<Instant>>,
 }
 
-/// The app icon with the layout in the corner. `mise run tray-icons` renders them from the SVGs beside them.
-const EN_PNG: &[u8] = include_bytes!("../assets/tray/en.png");
-const RU_PNG: &[u8] = include_bytes!("../assets/tray/ru.png");
-const OTHER_PNG: &[u8] = include_bytes!("../assets/tray/other.png");
+/// The app icon with the layout in the corner, as 32 px RGBA. `mise run tray-icons` renders the
+/// PNGs in `assets/tray` from their SVGs, and build.rs decodes them.
+const EN_RGBA: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/en.rgba"));
+const RU_RGBA: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/ru.rgba"));
+const OTHER_RGBA: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/other.rgba"));
+const SIZE: u32 = 32;
 /// The menu id of a word in the «Исключения» submenu starts with this.
 const KEEP_ID: &str = "keep:";
 /// The menu id of a row in the Language submenu: this, then the code. The code is empty for the system.
@@ -49,33 +51,21 @@ const LANG_ID: &str = "lang:";
 /// The Windows default double click time.
 const DOUBLE_CLICK: Duration = Duration::from_millis(500);
 
-/// The RGBA pixels and the side of a square PNG built into the exe.
-fn pixels(png: &[u8]) -> (Vec<u8>, u32) {
-    let mut reader = png::Decoder::new(std::io::Cursor::new(png))
-        .read_info()
-        .expect("the tray PNGs are built in");
-    let mut rgba = vec![0; reader.output_buffer_size().expect("a 32 px PNG fits")];
-    let frame = reader
-        .next_frame(&mut rgba)
-        .expect("the tray PNGs are built in");
-    rgba.truncate(frame.buffer_size());
-    (rgba, frame.width)
-}
-
 /// The app icon with `EN` or `RU` in the corner, grey when off. Another layout shows the app icon alone.
 fn rgba(on: bool, lang: Option<Lang>) -> (Vec<u8>, u32) {
-    let (mut rgba, size) = pixels(match lang {
-        Some(Lang::En) => EN_PNG,
-        Some(Lang::Ru) => RU_PNG,
-        None => OTHER_PNG,
-    });
+    let mut rgba = match lang {
+        Some(Lang::En) => EN_RGBA,
+        Some(Lang::Ru) => RU_RGBA,
+        None => OTHER_RGBA,
+    }
+    .to_vec();
     if !on {
         for [r, g, b, _] in rgba.as_chunks_mut::<4>().0 {
             let grey = (u32::from(*r) * 30 + u32::from(*g) * 59 + u32::from(*b) * 11) / 100;
             [*r, *g, *b] = [grey as u8; 3];
         }
     }
-    (rgba, size)
+    (rgba, SIZE)
 }
 
 fn icon(on: bool, lang: Option<Lang>) -> Icon {

@@ -100,4 +100,40 @@ mod tests {
             assert_eq!(langs, all, "{key}");
         }
     }
+
+    /// A key missing from `app.yml` shows as the bare key, such as `menu.quit`, in the menu.
+    #[test]
+    fn each_key_the_code_asks_for_is_translated() {
+        let file = include_str!("../locales/app.yml");
+        let code = [include_str!("tray.rs"), include_str!("update.rs")];
+        for src in code {
+            // `format!("` ends the same way, so a letter before the mark rules it out.
+            for (i, _) in src.match_indices("t!(\"") {
+                if src[..i].ends_with(char::is_alphanumeric) {
+                    continue;
+                }
+                let key = src[i + 4..].split('"').next().unwrap();
+                assert!(file.lines().any(|l| l == format!("{key}:")), "{key}");
+            }
+        }
+    }
+
+    /// Each translation keeps the `%{name}` slots of the English line.
+    #[test]
+    fn each_language_keeps_the_placeholders() {
+        let slots = |line: &str| -> Vec<String> {
+            let parts = line.split("%{").skip(1);
+            parts
+                .map(|p| p.split('}').next().unwrap().to_owned())
+                .collect()
+        };
+        let mut english = Vec::new();
+        for line in include_str!("../locales/app.yml").lines() {
+            if let Some(text) = line.strip_prefix("  en: ") {
+                english = slots(text);
+            } else if line.starts_with("  ") {
+                assert_eq!(slots(line), english, "{line}");
+            }
+        }
+    }
 }

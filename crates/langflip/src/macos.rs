@@ -348,7 +348,9 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
         }
         _ => {}
     }
-    if s.pending && tag != TAG_REPLAY {
+    // Replayed keys come here too: one that started a fix holds the ones replayed after it, which
+    // would reach the app ahead of that fix.
+    if s.pending {
         s.held.push((code, down, flags));
         return true;
     }

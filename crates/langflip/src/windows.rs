@@ -484,7 +484,9 @@ fn hold_key(info: &KBDLLHOOKSTRUCT, down: bool) -> Option<bool> {
             }
             return Some(true);
         }
-        TAG_REPLAY => return None,
+        // A held key that started a fix of its own. The keys replayed after it would reach the
+        // app ahead of that fix, so they wait for it too. The replay's own marker counts as one.
+        TAG_REPLAY if MARKERS.get() <= 1 => return None,
         _ => {}
     }
     if !PENDING.get() {
@@ -1072,6 +1074,28 @@ mod tests {
         HELD.take();
         replay_held();
         assert!(!PENDING.get());
+    }
+
+    /// A key typed again from the held ones.
+    fn replayed(vk: u32, scan: u32) -> KBDLLHOOKSTRUCT {
+        KBDLLHOOKSTRUCT {
+            dwExtraInfo: TAG_REPLAY,
+            ..press(vk, scan)
+        }
+    }
+
+    #[test]
+    fn replayed_keys_wait_behind_a_fix_one_of_them_started() {
+        start();
+        PENDING.set(true);
+        MARKERS.set(1);
+        assert_eq!(hold_key(&replayed(0x47, 0x22), true), None);
+        // The replayed key queued a fix: the keys replayed after it wait for that fix.
+        MARKERS.set(2);
+        assert_eq!(hold_key(&replayed(0x48, 0x23), true), Some(true));
+        assert_eq!(HELD.take().len(), 1);
+        MARKERS.set(0);
+        PENDING.set(false);
     }
 
     #[test]

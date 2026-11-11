@@ -7,6 +7,8 @@ shfmt = "3.14.1"
 ruff = "0.17.3"
 "npm:oxfmt" = "0.75.0"
 "npm:markdownlint-cli2" = "0.24.0"
+actionlint = "1.7.12"
+"github:Boshen/cargo-shear" = "1.14.0"
 
 [tasks.model]
 description = "Rebuild model/langflip.model and model/testset.tsv from wordfreq"
@@ -18,21 +20,27 @@ run = [
   "markdownlint-cli2",
   "cargo fmt --all --check",
   "cargo clippy --workspace --all-targets -- -D warnings",
+  "cargo shear",
   "ruff check",
   "ruff format --check",
-  "shellcheck .github/scripts/next-version.sh .github/scripts/release-gate.sh .github/scripts/release-notes.sh",
-  "shfmt -i 2 -ci -d .github/scripts",
+  "shellcheck .github/scripts/next-version.sh .github/scripts/release-gate.sh .github/scripts/release-notes.sh .githooks/pre-push",
+  "shfmt -i 2 -ci -d .github/scripts .githooks",
   "oxfmt --check",
+  "actionlint",
 ]
 
 [tasks.format]
 description = "Format the Rust, the Python, the scripts and the docs"
-run = ["cargo fmt --all", "ruff format", "shfmt -i 2 -ci -w .github/scripts", "oxfmt"]
+run = ["cargo fmt --all", "ruff format", "shfmt -i 2 -ci -w .github/scripts .githooks", "oxfmt"]
 
 [tasks.check]
 description = "Lint, format check and test, the same steps CI runs"
 depends = ["lint"]
-run = ["cargo test --workspace", "cargo check -p langflip --target aarch64-apple-darwin"]
+run = [
+  "cargo test --workspace",
+  # clippy in place of cargo check, so a warning in the macOS code fails as it does on Windows.
+  "cargo clippy -p langflip --all-targets --target aarch64-apple-darwin -- -D warnings",
+]
 
 [tasks.tray-icons]
 description = "Render the tray icons in crates/langflip/assets/tray from their SVGs"

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Typing** Space, Space, Backspace no longer turns the next word into the other layout. A word ended in a third layout, such as Ukrainian, no longer blocks the next fix. Keys typed fast during a fix no longer jump ahead of a fix one of them started.
+- **Memory** Langflip holds about 5 MB less and loads its dictionary faster. The tray icons ship decoded, so the exe is 89 KB smaller.
+- **Privacy** a typo in settings.toml no longer writes a kept word to langflip.log. A crash leaves its place in the code there, with no text.
+- **Update dialog** the size uses a decimal comma in Russian, German, French, Spanish and Norwegian.
+- **Docs** a Mac keyboard needs fn with F12 for Undo and Convert. The user flows name the English menu items. AGENTS.md fixes the install and privacy rules.
+- **CI** the release build gets a read-only token and none in the build scripts. Lint adds actionlint, cargo-shear and the pre-push hook, macOS gets clippy, and Dependabot opens weekly update PRs.
+
 - **Lint before the push** a pre-push hook runs `mise run lint`, so a lint or format error stays on the PC instead of failing Checks on `main`.
 
 - **Updates** Langflip installs only an exe whose SHA-256 matches the one GitHub lists, over https only, and picks the Windows x64 exe by its exact name. A slow link gets 15 minutes to download, and a stalled one gives up after 30 s.

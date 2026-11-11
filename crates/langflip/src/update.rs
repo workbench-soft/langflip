@@ -55,6 +55,11 @@ fn numbers(version: &str) -> Vec<u32> {
     version.split('.').map(|p| p.parse().unwrap_or(0)).collect()
 }
 
+/// The exe the release workflow attaches to each release.
+fn exe_name(version: &str) -> String {
+    format!("Langflip-{version}-windows-x64.exe")
+}
+
 /// The newest release with the x64 exe the release workflow names, when it beats `current`.
 /// The version also names a file in %TEMP%, so it holds only digits and dots.
 fn newest(releases: Vec<Release>, current: &str) -> Option<Update> {
@@ -66,7 +71,7 @@ fn newest(releases: Vec<Release>, current: &str) -> Option<Update> {
             if version.is_empty() || !version.chars().all(|c| c.is_ascii_digit() || c == '.') {
                 return None;
             }
-            let name = format!("Langflip-{version}-windows-x64.exe");
+            let name = exe_name(&version);
             let exe = r.assets.into_iter().find(|a| a.name == name)?;
             Some(Update {
                 version,
@@ -131,7 +136,7 @@ fn check(agent: &ureq::Agent, declined: &mut Option<String>, main_thread: u32) -
         return DAY;
     };
     crate::log::write(format_args!("update {} is out", update.version));
-    let mb = format!("{:.1}", update.size as f64 / 1e6);
+    let mb = megabytes(update.size, &rust_i18n::locale());
     let buttons = [
         (ID_UPDATE, t!("update.now").into_owned()),
         (ID_LATER, t!("update.later").into_owned()),
@@ -159,6 +164,16 @@ fn check(agent: &ureq::Agent, declined: &mut Option<String>, main_thread: u32) -
         }
     }
     DAY
+}
+
+/// The size in MB with one decimal, written with a comma in the languages that use one.
+fn megabytes(bytes: u64, lang: &str) -> String {
+    let mb = format!("{:.1}", bytes as f64 / 1e6);
+    if matches!(lang, "ru" | "de" | "fr" | "es" | "nb") {
+        mb.replace('.', ",")
+    } else {
+        mb
+    }
 }
 
 /// Downloads the exe, puts it in place of the running one and starts it.
@@ -308,6 +323,27 @@ mod tests {
         let slow = Duration::from_secs(5_903_360 * 8 / 64_000);
         assert!(t.global.is_some_and(|g| g > slow));
         assert_eq!(config.timeout_per_read(), Some(STALL));
+    }
+
+    /// A rename on one side alone would leave every installed copy without updates.
+    #[test]
+    fn the_release_workflow_publishes_what_the_check_looks_for() {
+        let workflow = include_str!("../../../.github/workflows/release.yml");
+        let tag = TAG.strip_suffix('v').unwrap();
+        let create = format!(
+            "gh release create \"{tag}$TAG\" \"{}\"",
+            exe_name("${TAG#v}")
+        );
+        assert!(workflow.contains(&create), "{create}");
+        assert!(workflow.contains("tag=v$("));
+    }
+
+    #[test]
+    fn the_size_uses_the_decimal_mark_of_the_language() {
+        assert_eq!(megabytes(5_903_360, "en"), "5.9");
+        assert_eq!(megabytes(5_903_360, "ja"), "5.9");
+        assert_eq!(megabytes(5_903_360, "ru"), "5,9");
+        assert_eq!(megabytes(5_903_360, "de"), "5,9");
     }
 
     #[test]

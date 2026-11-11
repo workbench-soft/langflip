@@ -11,8 +11,52 @@ pub struct LangModel {
     index: HashMap<char, usize>,
     size: usize,
     log_probs: Vec<f32>,
-    /// Sorted, so a binary search finds a word or the words that start with some letters.
-    dictionary: Vec<String>,
+    dictionary: Dictionary,
+}
+
+/// The words in one string, with the start and end of each. A String per word took 191k heap
+/// blocks and about 9 MB, most of the memory Langflip holds.
+struct Dictionary {
+    text: String,
+    /// Sorted by word, so a binary search finds a word or the words that start with some letters.
+    spans: Vec<(u32, u32)>,
+}
+
+impl Dictionary {
+    fn new(text: &str) -> Dictionary {
+        let mut words: Vec<&str> = text.split('\n').collect();
+        words.sort_unstable();
+        let mut joined = String::with_capacity(text.len());
+        let spans = words
+            .iter()
+            .map(|w| {
+                let start = joined.len() as u32;
+                joined.push_str(w);
+                (start, joined.len() as u32)
+            })
+            .collect();
+        Dictionary {
+            text: joined,
+            spans,
+        }
+    }
+
+    fn word(&self, &(start, end): &(u32, u32)) -> &str {
+        &self.text[start as usize..end as usize]
+    }
+
+    fn contains(&self, word: &str) -> bool {
+        self.spans
+            .binary_search_by(|s| self.word(s).cmp(word))
+            .is_ok()
+    }
+
+    fn starts_word(&self, start: &str) -> bool {
+        let i = self.spans.partition_point(|s| self.word(s) < start);
+        self.spans
+            .get(i)
+            .is_some_and(|s| self.word(s).starts_with(start))
+    }
 }
 
 impl LangModel {
@@ -53,15 +97,12 @@ impl LangModel {
     }
 
     pub fn contains(&self, word: &str) -> bool {
-        self.dictionary
-            .binary_search_by(|w| w.as_str().cmp(word))
-            .is_ok()
+        self.dictionary.contains(word)
     }
 
     /// True when some dictionary word starts with these lowercase letters.
     pub fn starts_word(&self, start: &str) -> bool {
-        let i = self.dictionary.partition_point(|w| w.as_str() < start);
-        self.dictionary.get(i).is_some_and(|w| w.starts_with(start))
+        self.dictionary.starts_word(start)
     }
 }
 
@@ -124,8 +165,7 @@ impl Model {
                 .iter()
                 .map(|&b| f32::from_le_bytes(b))
                 .collect();
-            let mut dictionary: Vec<String> = r.text()?.split('\n').map(str::to_owned).collect();
-            dictionary.sort_unstable();
+            let dictionary = Dictionary::new(r.text()?);
             let index = alphabet
                 .iter()
                 .enumerate()
@@ -153,5 +193,19 @@ impl Model {
             Lang::En => &self.en,
             Lang::Ru => &self.ru,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Dictionary;
+
+    #[test]
+    fn the_dictionary_finds_words_and_starts_in_any_order() {
+        let d = Dictionary::new("мир\nhello\nhelp\nмирный");
+        assert!(d.contains("help") && d.contains("мир") && d.contains("мирный"));
+        assert!(!d.contains("hel") && !d.contains("helps"));
+        assert!(d.starts_word("hel") && d.starts_word("мирн"));
+        assert!(!d.starts_word("hex") && !d.starts_word("мирр"));
     }
 }

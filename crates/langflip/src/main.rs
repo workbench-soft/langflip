@@ -28,6 +28,8 @@ rust_i18n::i18n!("locales", fallback = "en");
 static MODEL: &[u8] = include_bytes!("../../../model/langflip.model");
 
 fn main() {
+    #[cfg(windows)]
+    log::log_crashes();
     let (settings, first_start) = settings::Settings::load_first();
     language::apply(settings.language.as_deref());
     let model = Model::from_bytes(MODEL).expect("the embedded model is valid");

@@ -1,0 +1,25 @@
+# Each week Dependabot opens one PR per ecosystem, once a release is 3 days old. Checks run on it.
+# A person merges it: each merge to main ships a release that installed copies update to.
+# The repo is public, so the auto merge job in the private workbench-soft/ci can't run here.
+version: 2
+updates:
+  # The crates in Cargo.lock, such as ureq, rustls and windows.
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    groups:
+      cargo-minor-and-patch:
+        update-types: [minor, patch]
+  # The actions in .github/workflows, pinned to a commit with the tag in a comment.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    groups:
+      actions:
+        patterns: ["*"]
