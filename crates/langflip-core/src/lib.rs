@@ -151,9 +151,10 @@ impl Engine {
         let strokes = std::mem::take(&mut self.buffer);
         let kept = std::mem::take(&mut self.kept);
         let word_lang = self.word_lang.take();
+        let switched_from = self.switched_from.take();
         self.last = None;
         let current = current?;
-        if let Some(typed_in) = self.switched_from.take() {
+        if let Some(typed_in) = switched_from {
             // Switched while typed: a second decision could flip it back.
             let fixed = Some(layout::text_for(&strokes[kept..], typed_in.other()));
             self.last = Some(LastWord {
@@ -369,6 +370,18 @@ mod tests {
         assert_eq!(fixes[3], Some((3, "прив".to_owned())));
         assert_eq!(fixes[4..], [None, None]);
         assert_eq!(e.end_word(Some(Lang::Ru)), None);
+    }
+
+    #[test]
+    fn a_word_ended_in_a_third_layout_leaves_no_switch_behind() {
+        let mut e = engine();
+        for s in layout::strokes_for("ghbd", Lang::En).unwrap() {
+            e.key(s, Some(Lang::En));
+        }
+        // Alt+Shift went on to a third layout, such as Ukrainian, before Space.
+        assert_eq!(e.end_word(None), None);
+        assert!(e.undo().is_none());
+        assert!(type_word(&mut e, "ghbdtn", Lang::En).is_some());
     }
 
     #[test]
