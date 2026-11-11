@@ -136,7 +136,7 @@ fn check(agent: &ureq::Agent, declined: &mut Option<String>, main_thread: u32) -
         return DAY;
     };
     crate::log::write(format_args!("update {} is out", update.version));
-    let mb = format!("{:.1}", update.size as f64 / 1e6);
+    let mb = megabytes(update.size, &rust_i18n::locale());
     let buttons = [
         (ID_UPDATE, t!("update.now").into_owned()),
         (ID_LATER, t!("update.later").into_owned()),
@@ -164,6 +164,16 @@ fn check(agent: &ureq::Agent, declined: &mut Option<String>, main_thread: u32) -
         }
     }
     DAY
+}
+
+/// The size in MB with one decimal, written with a comma in the languages that use one.
+fn megabytes(bytes: u64, lang: &str) -> String {
+    let mb = format!("{:.1}", bytes as f64 / 1e6);
+    if matches!(lang, "ru" | "de" | "fr" | "es" | "nb") {
+        mb.replace('.', ",")
+    } else {
+        mb
+    }
 }
 
 /// Downloads the exe, puts it in place of the running one and starts it.
@@ -326,6 +336,14 @@ mod tests {
         );
         assert!(workflow.contains(&create), "{create}");
         assert!(workflow.contains("tag=v$("));
+    }
+
+    #[test]
+    fn the_size_uses_the_decimal_mark_of_the_language() {
+        assert_eq!(megabytes(5_903_360, "en"), "5.9");
+        assert_eq!(megabytes(5_903_360, "ja"), "5.9");
+        assert_eq!(megabytes(5_903_360, "ru"), "5,9");
+        assert_eq!(megabytes(5_903_360, "de"), "5,9");
     }
 
     #[test]
