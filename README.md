@@ -19,6 +19,7 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the E
 - **Fix** happens while the word is typed, from the 4th letter, as soon as Langflip is sure. Otherwise on Space, Enter or Tab.
 - **Undo** Pause on Windows, Ctrl+F12 on macOS. The word comes back as typed. After the second Undo of the same word it becomes an exception and stays as typed from then on.
 - **Convert by hand** Shift+Pause on Windows, Ctrl+Shift+F12 on macOS.
+- **Mac keyboards** the top row of a Mac keyboard runs the media keys by default, so F12 there takes fn as well: fn+Ctrl+F12.
 - **Layout** the tray icon shows `EN` or `RU` in navy on a holo foil tile.
 - **Pause** click the tray icon to turn fixing off. The icon turns grey. Click again to turn it on.
 - **Switch the layout** double-click the tray icon to swap Russian and English.

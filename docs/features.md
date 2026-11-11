@@ -28,7 +28,7 @@ Spec: [layout-switcher](../specs/layout-switcher.md).
 
 ## Undo a fix
 
-Pause on Windows, Ctrl+F12 on macOS, right after a fix. The word comes back as typed and the layout switches back. The second Undo of the same word puts it into `keep_words`, and Langflip leaves it as typed from then on.
+Pause on Windows, Ctrl+F12 on macOS, right after a fix. The word comes back as typed and the layout switches back. The second Undo of the same word puts it into `keep_words`, and Langflip leaves it as typed from then on. On a Mac keyboard F12 takes fn as well, unless the top row is set to standard function keys.
 
 - **Limits** works only before the next key press, click or window switch.
 - **Count** Langflip counts the first Undo in memory only. A restart sets it back to 0.
@@ -37,7 +37,7 @@ Spec: [layout-switcher](../specs/layout-switcher.md).
 
 ## Convert by hand
 
-Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. Langflip converts the word being typed, or the last word, to the other layout. Short words convert too.
+Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. Langflip converts the word being typed, or the last word, to the other layout. Short words convert too. On a Mac keyboard F12 takes fn as well, unless the top row is set to standard function keys.
 
 Spec: [layout-switcher](../specs/layout-switcher.md).
 
