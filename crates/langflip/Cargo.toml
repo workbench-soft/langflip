@@ -8,7 +8,6 @@ repository.workspace = true
 
 [dependencies]
 langflip-core = { path = "../langflip-core" }
-png = "0.18.1"
 rust-i18n = "4.2.4"
 serde = { version = "1.0.229", features = ["derive"] }
 sys-locale = "0.3.2"
@@ -50,4 +49,5 @@ objc2-app-kit = { version = "0.3.2", features = [
 ] }
 
 [build-dependencies]
+png = "0.18.1"
 winresource = "0.1.34"
