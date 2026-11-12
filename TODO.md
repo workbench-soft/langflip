@@ -22,7 +22,6 @@
 - Left: macOS has no decision log, so settings and event tap errors go to stderr no one reads. A new UI sign is a product call.
 - Left: unnamed timer numbers in `windows.rs`, two thin log wrappers, two XML escapes. Low value, tied to the platform duplication already Left.
 - Left: the mouse hook runs on every mouse move. Changing it changes how a click drops the word, needs a device.
-- Left: no Rust cache in the release build. The LTO link dominates, about 10% gain.
 - Left: the model loads before the single-copy check, about 9 ms for the second copy at sign-in.
 - Left: no `test` or `build` mise task. CI and the hook already run `check` and `lint`.
 - Left: `excluded_apps` on macOS matches the localized app name. A guess, no Mac here.
@@ -82,3 +81,7 @@
 
 - [ ] Run `mise run install` from the latest `main`, so the installed Langflip has the update check. Auto mode denies it, since it stops the running Langflip (2026-11-03).
 - [ ] Once a release newer than the installed one is out, wait a minute after a Langflip start: the dialog «Langflip `<version>` is out» shows. Press Update and check that the tray icon comes back and `%LOCALAPPDATA%\Langflip\langflip.log` says `updated to <version>, restarting`. The swap and the restart were not run on this PC, since the installed copy holds the single instance mutex (2026-11-03).
+
+## Faster release build
+
+- [ ] Run `mise run install` from the latest `main`: the release profile moved to thin LTO on 2026-11-12. Then check that `langflip.exe` runs and that the Run value `Langflip` and the task `Langflip` exist. Auto mode denies it, since it stops the running Langflip.
