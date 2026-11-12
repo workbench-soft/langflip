@@ -9,6 +9,6 @@ license = "MIT"
 repository = "https://github.com/workbench-soft/langflip"
 
 [profile.release]
-lto = true
-codegen-units = 1
+# Thin LTO runs on every core, where fat LTO on one codegen unit ran on one.
+lto = "thin"
 strip = true
