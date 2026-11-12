@@ -69,6 +69,12 @@ jobs:
         with:
           # A restored cache left oxfmt without its tinypool dependency.
           cache: false
+          # The lint tools run in Checks, so the build needs Rust alone.
+          install_args: rust
+      # Keeps the compiled crates between releases, so a change that leaves Cargo.lock alone builds only the Langflip crates.
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: release
 
       - name: Pick the next version
         id: version
@@ -82,6 +88,7 @@ jobs:
         run: |
           LANGFLIP_VERSION="${TAG#v}" mise x -- cargo build --release -p langflip
           cp "target/release/langflip.exe" "Langflip-${TAG#v}-windows-x64.exe"
+          ls -l "Langflip-${TAG#v}-windows-x64.exe"
       - name: Keep the tag with the files
         run: echo "${{ steps.version.outputs.tag }}" > release-tag
       # The publish job may run on another runner, so the files and the tag travel through the cache.

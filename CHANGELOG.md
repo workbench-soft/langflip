@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Faster releases** the release build keeps its compiled crates between runs, installs only Rust and uses thin LTO, so a fix reaches the updater sooner.
+
 - **Older runs stop on GitHub** a newer push to `main` cancels the Checks and the release build of the older commit through `concurrency`, with the local-ci page off too.
 
 - **Typing** Space, Space, Backspace no longer turns the next word into the other layout. A word ended in a third layout, such as Ukrainian, no longer blocks the next fix. Keys typed fast during a fix no longer jump ahead of a fix one of them started.
