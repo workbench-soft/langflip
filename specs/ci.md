@@ -45,5 +45,14 @@ Each push to `main` runs Checks and builds a release beside them. The release pu
 
 - **Why** each release built every crate from scratch on a fresh GitHub runner. The run of 2026-11-11 (42961878209) took 3 min 36 s: the cargo build 2 min 5 s, the mise setup 37 s with every lint tool, the checkout 7 s, the publish 16 s.
 - **Rust cache** the build restores the compiled crates through `Swatinem/rust-cache` under the key `release`, as Checks do. A change that leaves `Cargo.lock` alone builds only the two Langflip crates.
-- **Tools** the build installs only Rust through mise, since the lint tools run in Checks.
-- **Profile** the release profile takes `lto = "thin"` with the default codegen units, in place of fat LTO on one unit. Fat LTO ran on one core over all 267 crates on each build. The exe was 5.87 MB before, and the timings and the new size follow below once measured.
+- **Tools** the build installs only Rust through mise, since the lint tools run in Checks. `MISE_EXEC_AUTO_INSTALL=false` keeps `mise x` from installing the other 9 tools, which took 22 s.
+- **Profile** the release profile takes `lto = "thin"` with the default codegen units, in place of fat LTO on one unit. Fat LTO ran on one core over all 267 crates on each build. The exe grew from 5.87 MB to 6.41 MB.
+- **Timings** cold is the first run after the change, warm the next one with the cache filled. The fix of `mise x` comes after these.
+
+| Step               | Before     | Cold       | Warm       |
+| ------------------ | ---------- | ---------- | ---------- |
+| mise setup         | 37 s       | 28 s       | 28 s       |
+| Rust cache restore | none       | 5 s        | 13 s       |
+| cargo build step   | 2 min 5 s  | 1 min 28 s | 50 s       |
+| Build job          | 3 min 4 s  | 2 min 38 s | 1 min 51 s |
+| Whole run          | 3 min 36 s | 3 min 7 s  | 2 min 3 s  |

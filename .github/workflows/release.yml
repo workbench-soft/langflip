@@ -85,6 +85,8 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
           # The build scripts of every crate run here, so they get no token.
           GH_TOKEN: ""
+          # mise x would install the 9 lint tools first. The Rust from mise-action is all the build needs.
+          MISE_EXEC_AUTO_INSTALL: "false"
         run: |
           LANGFLIP_VERSION="${TAG#v}" mise x -- cargo build --release -p langflip
           cp "target/release/langflip.exe" "Langflip-${TAG#v}-windows-x64.exe"
