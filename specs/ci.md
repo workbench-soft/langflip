@@ -47,12 +47,12 @@ Each push to `main` runs Checks and builds a release beside them. The release pu
 - **Rust cache** the build restores the compiled crates through `Swatinem/rust-cache` under the key `release`, as Checks do. A change that leaves `Cargo.lock` alone builds only the two Langflip crates.
 - **Tools** the build installs only Rust through mise, since the lint tools run in Checks. `MISE_EXEC_AUTO_INSTALL=false` keeps `mise x` from installing the other 9 tools, which took 22 s.
 - **Profile** the release profile takes `lto = "thin"` with the default codegen units, in place of fat LTO on one unit. Fat LTO ran on one core over all 267 crates on each build. The exe grew from 5.87 MB to 6.41 MB.
-- **Timings** cold is the first run after the change, warm the next one with the cache filled. The fix of `mise x` comes after these.
+- **Timings** cold is the first run after the change, warm the next one with the cache filled. After #62 is warm with the fix of `mise x`. The 10x goal is out of reach on a fresh GitHub runner: setup, checkout, mise and the cache restore take 55 s before cargo starts.
 
-| Step               | Before     | Cold       | Warm       |
-| ------------------ | ---------- | ---------- | ---------- |
-| mise setup         | 37 s       | 28 s       | 28 s       |
-| Rust cache restore | none       | 5 s        | 13 s       |
-| cargo build step   | 2 min 5 s  | 1 min 28 s | 50 s       |
-| Build job          | 3 min 4 s  | 2 min 38 s | 1 min 51 s |
-| Whole run          | 3 min 36 s | 3 min 7 s  | 2 min 3 s  |
+| Step               | Before     | Cold       | Warm       | After #62  |
+| ------------------ | ---------- | ---------- | ---------- | ---------- |
+| mise setup         | 37 s       | 28 s       | 28 s       | 30 s       |
+| Rust cache restore | none       | 5 s        | 13 s       | 11 s       |
+| cargo build step   | 2 min 5 s  | 1 min 28 s | 50 s       | 39 s       |
+| Build job          | 3 min 4 s  | 2 min 38 s | 1 min 51 s | 1 min 43 s |
+| Whole run          | 3 min 36 s | 3 min 7 s  | 2 min 3 s  | 1 min 46 s |
