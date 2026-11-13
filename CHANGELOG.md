@@ -2,8 +2,6 @@
 
 ## Unreleased
 
-- **Releases by hand publish** a Release started by hand on a commit with no Checks run, such as a docs change, starts those Checks itself, and they publish the build once they pass. Such builds used to wait for Checks forever.
-
 - **Faster releases** the release build keeps its compiled crates between runs, installs only Rust, skips the lint tools in mise x and uses thin LTO, so a fix reaches the updater sooner.
 
 - **Older runs stop on GitHub** a newer push to `main` cancels the Checks and the release build of the older commit through `concurrency`, with the local-ci page off too.
