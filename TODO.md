@@ -1,17 +1,55 @@
 # TODO
 
-## Local install on Windows
+## Smoke test
 
-- [ ] Check the Microsoft verdict for submission `ea1ee24f-7698-4888-a42b-9879b72e15aa` at <https://www.microsoft.com/en-us/wdsi/submission/ea1ee24f-7698-4888-a42b-9879b72e15aa>. If it says clean, rescan `langflip.exe` with Defender (sent 2026-11-01).
+- [ ] Run the smoke test once. 5 merged changes to `windows.rs` went in without it: the replayed keys, the log off the hook, the digit keys, the faster model load and the tray refresh after Undo.
+  1. Close Punto Switcher if it runs.
+  2. Paste the command below into PowerShell.
+  3. Keep your hands off the keyboard for 10 seconds.
+  4. If it fails, send its last lines to the agent.
 
-## app-audit
+  ```powershell
+  Stop-Process -Name langflip -ErrorAction SilentlyContinue; Set-Location "$env:WBS_ROOTlangflip"; git pull; mise run smoke; Start-Process "$env:LOCALAPPDATAProgramsLangfliplangflip.exe"
+  ```
 
-- [ ] Run `mise run install` from the latest `main` after the audit PR of 2026-11-11 merges, then check that `langflip.exe` runs and that the Run value `Langflip` and the task `Langflip` exist. Auto mode denies it, since it stops the running Langflip.
-- [ ] Run `mise run smoke` with Punto Switcher closed: the audit of 2026-11-11 makes replayed keys in `windows.rs` wait behind a fix one of them started, and didn't run it.
-- [ ] Check by hand on Windows: type `ghbdtn hello` fast in one go, and it comes out as «привет hello» with no letters lost.
-- [ ] Check by hand on Windows: type `ytn`, Space, Space, Backspace, `hello`, and `hello` stays English.
-- [ ] Merge the Dependabot PRs by hand once they open, each merge ships a release. Turn on Dependabot security updates in the repo settings if wanted.
-- [ ] Check the first Release run on `main` after the audit PR of 2026-11-11: the per-job permissions and `persist-credentials: false` ran only through actionlint.
+## Checks by hand on Windows
+
+- [ ] Type each line below in Notepad with Langflip on, and tell the agent which one goes wrong.
+  1. Type `ghbdtn hello` fast in one go. It comes out as «привет hello» with no letters lost.
+  2. Type `ytn`, Space, Space, Backspace, `hello`. `hello` stays English.
+  3. Type `z` and Space. It gives «я». Type `ьз3` and Space. It gives `mp3`.
+  4. Type `ghb` and press Shift+Pause. It gives «при» with no Space after it.
+  5. Open the tray menu, type a word, close the menu. The keyboard works within 1 second.
+  6. Undo the fix of one word twice. The word shows under «Исключения» in the tray menu, and a click on it removes it.
+- [ ] Find the app that turned `ghbdtn` into `ghbdпривет` on 2026-11-01.
+  1. Type `ghbdtn` and Space in each app you used that day.
+  2. Tell the agent the name of the app where the word comes out wrong.
+
+## Update from inside the app
+
+- [ ] Check that Update in the dialog works. Release `2026.11.13.1` from the Dependabot merges is newer than the installed `2026.11.12.2`.
+  1. Quit Langflip from the tray and start it again.
+  2. Wait one minute. The dialog «Langflip `<version>` is out» shows.
+  3. Press Update. The tray icon comes back.
+  4. Open `%LOCALAPPDATA%Langfliplangflip.log`. Its last lines say `updated to <version>, restarting`.
+
+## Mac
+
+- [ ] Check on a Mac, since CI only compiles `macos.rs` and the audit of 2026-11-10 swapped its key codes.
+  1. Install the latest release on the Mac.
+  2. Press Ctrl+Shift+F12 in the middle of a word. No Space is added.
+  3. Type `ghbdtn` and Space. It comes out as «привет».
+
+## Dependabot
+
+- [ ] Decide on Dependabot security updates. Security alerts are on, the automatic fix PRs are off.
+  1. Open <https://github.com/workbench-soft/langflip/settings/security_analysis>.
+  2. Press Enable next to «Dependabot security updates» if you want the fix PRs.
+
+## Known gaps from the app audits
+
+These need a product call, a Mac or a device. Each one stays here as a note.
+
 - Left: a rerun of Release after the tag push worked but `gh release create` failed sees the tag and publishes nothing. A pipeline change only a live publish proves.
 - Left: Undo or Convert after Enter or Tab erases the word plus the end key, so in a chat Undo retypes and sends again. Limiting Undo to Space is a product call.
 - Left: macOS has no stuck-fix timeout, so a failed `post_key` holds every key. No Mac here.
@@ -29,13 +67,6 @@
 - Left: `zh-TW` and `zh-Hant` get the Simplified Chinese menu. A new language is a product call.
 - Left: tray-icon doesn't call `NIM_SETVERSION`, so keyboard use of the tray runs on the legacy path. Upstream, a guess.
 - Left: the topmost update dialog may cover a full-screen game. A guess and a product call.
-- [ ] Run `mise run install` from the latest `main` after the audit PR of 2026-11-10 merges. Auto mode denies it, since it stops the running Langflip and replaces its exe.
-- [ ] Run `mise run smoke` with Punto Switcher closed: the audit of 2026-11-10 moved the log off the keyboard hook and swapped the key codes in `windows.rs` for the `windows` crate names, and didn't run it.
-- [ ] Check by hand on Windows: type a word with the tray menu open, close the menu, and the keyboard works within 1 s.
-- [ ] Check by hand on Windows: Shift+Pause in the middle of `ghb` gives «при» with no Space after it.
-- [ ] Check on a Mac: Ctrl+Shift+F12 in the middle of a word adds no Space, and the keys still map right. CI only compiles `macos.rs`, and the audit of 2026-11-10 swapped its 43 key codes for `core-graphics` names.
-- [ ] Once a release after the audit of 2026-11-10 is out, press Update in the dialog and check that `%LOCALAPPDATA%\Langflip\langflip.log` says `updated to <version>, restarting`. The SHA-256 check and the https only redirect ran in tests, not on a real update.
-- [ ] Check the second Checks run on `main` after the audit PR: the rust-cache step should cut `mise run check` from about 3 min. Check the first run of the new Docs workflow.
 - Left: Undo before Space after a switch while typed does nothing. It needs a kept-word state in `Engine` and a save at word end.
 - Left: `/`, `-` and Shift+digit drop the word with no decision, so «еру.» in the Russian layout stays. Ending the word on them changes what Langflip fixes and needs the smoke test.
 - Left: the key handling is written twice, in `windows.rs` and `macos.rs`, and so are `reload_settings`, `show_language`, `show_keep_words` and three tray arms. Moving them into `langflip-core` or `tray.rs` is a refactor of both platforms, and macOS can't run here.
@@ -59,25 +90,3 @@
 - Left: no PowerShell lint for `scripts/*.ps1`. A new tool needs the `stack` skill.
 - Left: `actions/checkout@v7` and `workbench-soft/ci/actions/setup@main` aren't pinned to a commit in the release job that reads `RELEASES_TOKEN`. The org setup action is shared, so pin it across all repos at once.
 - Left: an unsigned exe. Signing costs money.
-
-## fix/fast-model-load
-
-- [ ] Type `ghbdtn` in English in the app that gave `ghbdпривет` and tell which app it is. Backspace now carries its scan code (`fix/backspace-scan-code`), the likely cause, but the bug wasn't reproduced (2026-11-01).
-- [ ] Run `mise run smoke` with nobody typing and the installed Langflip quit: the faster model load and the Backspace scan code merged without it (2026-11-01).
-
-## feat/short-words (PR #13)
-
-- [ ] Run `mise run smoke` with Punto Switcher closed: `windows.rs` now maps the digit keys, and the smoke test wasn't run (2026-10-30).
-- [ ] Install the next release and check by hand: `z` + Space gives «я», `ьз3` + Space gives `mp3`.
-
-## chore/install-task (PR #14)
-
-## feat/keep-after-two-undos (PR #23)
-
-- [ ] Check by hand on Windows: undo the fix of one word twice, and it shows under «Исключения» in the tray menu. A click on it removes it (2026-10-31).
-- [ ] Run `mise run smoke` with Punto Switcher closed: `windows.rs` now refreshes the tray menu after Undo, and the smoke test wasn't run (2026-10-31).
-
-## feat/self-update (PR #50)
-
-- [ ] Run `mise run install` from the latest `main`, so the installed Langflip has the update check. Auto mode denies it, since it stops the running Langflip (2026-11-03).
-- [ ] Once a release newer than the installed one is out, wait a minute after a Langflip start: the dialog «Langflip `<version>` is out» shows. Press Update and check that the tray icon comes back and `%LOCALAPPDATA%\Langflip\langflip.log` says `updated to <version>, restarting`. The swap and the restart were not run on this PC, since the installed copy holds the single instance mutex (2026-11-03).
