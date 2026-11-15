@@ -104,16 +104,8 @@ These need a product call, a Mac or a device. Each one stays here as a note.
 
 ## Performance audit
 
-- [ ] Install the build with the idle and start fixes, since auto mode denies the stop of the running Langflip (denied)
-  1. Close Punto Switcher if it runs.
-  2. Paste the command below into PowerShell. It prints the version, the Run value and the task.
-
-  ```powershell
-  Set-Location "$env:WBS_ROOT\langflip"; git pull; mise run install
-  ```
-
-- [ ] Run the smoke test once more for the idle timer change in `windows.rs`, as the Smoke test section above says (denied)
-- [ ] Check the tray icon after a layout switch, once the build above is installed (wait). Press Alt+Shift in Notepad, and the icon turns EN or RU within a second. Wait 10 s with hands off, press Alt+Shift again, and the icon follows again.
+- [ ] Run the smoke test once more for the idle timer change in `windows.rs` (PR #64), as the Smoke test section above says. It takes the keyboard for 10 s, so it waits for you at the PC (wait)
+- [ ] Check the tray icon after a layout switch in build `2026.11.16.0` (wait). Press Alt+Shift in Notepad, and the icon turns EN or RU within a second. Wait 10 s with hands off, press Alt+Shift again, and the icon follows again.
 - Left: `SendInput` on a thread apart from the keyboard hook. In a test program a 15 key fix took 23.5 ms in place of 33.6 ms, and a 35 key fix 57 ms in place of 172 ms. It reorders the fix and the layout switch, and only `mise run smoke` proves that, which needs the running Langflip stopped.
 - Left: the release workflow starts no build before it publishes, as the launch gate of `repo-ci` asks. A Windows tray app on the self-hosted runner shares this PC with the installed Langflip, so a gate needs its own mutex name. A CI change for its own PR.
-- Fine (2026-11-16): the keyboard hook takes 2 to 3 µs per key (median, p99 under 16 µs). Memory and handles: 9.7 MB private and 340 handles after 16 h, 7.8 MB and 274 handles at start. The exe is 3.9 MB.
+- Fine (2026-11-16): the keyboard hook takes 2 to 3 µs per key (median, p99 under 16 µs). Memory and handles: 9.7 MB private and 340 handles after 16 h, 7.8 MB and 274 handles at start. The installed exe is 6.5 MB.
