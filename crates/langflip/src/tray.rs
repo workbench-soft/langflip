@@ -73,13 +73,20 @@ fn icon(on: bool, lang: Option<Lang>) -> Icon {
     Icon::from_rgba(rgba, size, size).expect("icon size matches its pixels")
 }
 
-fn tooltip(on: bool) -> String {
-    if on {
-        t!("tooltip.on")
+/// The state, then the layout on a line of its own, so a screen reader hears what the icon shows.
+fn tooltip(on: bool, lang: Option<Lang>, locale: &str) -> String {
+    let state = if on {
+        t!("tooltip.on", locale = locale)
     } else {
-        t!("tooltip.off")
-    }
-    .into_owned()
+        t!("tooltip.off", locale = locale)
+    };
+    let code = match lang {
+        Some(Lang::En) => "EN",
+        Some(Lang::Ru) => "RU",
+        None => return state.into_owned(),
+    };
+    let layout = t!("tooltip.layout", locale = locale, layout = code);
+    format!("{state}\n{layout}")
 }
 
 impl Tray {
@@ -117,7 +124,7 @@ impl Tray {
             // The left click pauses fixing, the double click switches the layout,
             // the right click opens the menu.
             .with_menu_on_left_click(false)
-            .with_tooltip(tooltip(enabled))
+            .with_tooltip(tooltip(enabled, None, &rust_i18n::locale()))
             .with_icon(icon(enabled, None))
             .build()
             .expect("the tray icon could not be created");
@@ -188,7 +195,6 @@ impl Tray {
     pub fn set_enabled(&self, on: bool) {
         self.enabled.set_checked(on);
         self.show(on, self.shown.get().1);
-        let _ = self.icon.set_tooltip(Some(tooltip(on)));
     }
 
     /// Lists the words Langflip keeps as typed. A click on one removes it.
@@ -220,9 +226,7 @@ impl Tray {
         self.languages[0].set_text(t!("menu.languageSystem"));
         self.open.set_text(t!("menu.settings"));
         self.quit.set_text(t!("menu.quit"));
-        let _ = self
-            .icon
-            .set_tooltip(Some(tooltip(self.enabled.is_checked())));
+        self.retip();
         self.set_keep_words(keep_words);
     }
 
@@ -234,7 +238,16 @@ impl Tray {
     fn show(&self, on: bool, lang: Option<Lang>) {
         if self.shown.replace((on, lang)) != (on, lang) {
             let _ = self.icon.set_icon(Some(icon(on, lang)));
+            self.retip();
         }
+    }
+
+    /// Writes the tooltip for what the icon shows now, in the menu language.
+    fn retip(&self) {
+        let (on, lang) = self.shown.get();
+        let _ = self
+            .icon
+            .set_tooltip(Some(tooltip(on, lang, &rust_i18n::locale())));
     }
 }
 
@@ -242,6 +255,8 @@ impl Tray {
 mod tests {
     use super::*;
 
+    /// Windows keeps 127 characters of a tray tooltip.
+    const TOOLTIP_MAX: usize = 127;
     const LANGS: [Option<Lang>; 3] = [Some(Lang::En), Some(Lang::Ru), None];
 
     #[test]
@@ -256,6 +271,18 @@ mod tests {
     fn layouts_look_different() {
         let [en, ru, other] = LANGS.map(|lang| rgba(true, lang).0);
         assert!(en != ru && en != other && ru != other);
+    }
+
+    #[test]
+    fn each_tooltip_names_the_layout_and_fits_windows() {
+        for (locale, _) in crate::language::LANGUAGES {
+            for on in [true, false] {
+                let tip = tooltip(on, Some(Lang::Ru), locale);
+                assert!(tip.ends_with("RU"), "{tip}");
+                assert!(tip.encode_utf16().count() <= TOOLTIP_MAX, "{tip}");
+                assert!(!tooltip(on, None, locale).contains("RU"));
+            }
+        }
     }
 
     #[test]

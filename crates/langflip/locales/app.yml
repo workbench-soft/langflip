@@ -19,6 +19,16 @@ tooltip.off:
   ja: Langflip はオフです。クリックでオン、ダブルクリックでキー配列を切り替え
   ko: Langflip이 꺼져 있어요. 클릭하면 켜지고, 더블클릭하면 자판이 바뀌어요
   nb: Langflip er av. Et klikk slår det på, et dobbeltklikk bytter oppsett
+tooltip.layout:
+  en: "Layout: %{layout}"
+  ru: "Раскладка: %{layout}"
+  de: "Layout: %{layout}"
+  fr: "Disposition : %{layout}"
+  es: "Distribución: %{layout}"
+  zh: "键盘布局：%{layout}"
+  ja: "キー配列: %{layout}"
+  ko: "자판: %{layout}"
+  nb: "Oppsett: %{layout}"
 menu.fix:
   en: Fix the layout
   ru: Исправлять раскладку
