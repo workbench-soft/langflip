@@ -54,7 +54,7 @@ Spec: [layout-switcher](../specs/layout-switcher.md).
 The tray icon shows `EN` or `RU` in navy on a holo foil tile, for the layout of the window in front. A click on the taskbar keeps the last app window. A layout other than these 2 shows the app icon alone.
 
 - **Tooltip** its last line names the layout, such as `Layout: RU`, so a screen reader says it too.
-- **Limits** a switch reaches the icon within 250 ms on Windows and 0.2 s on macOS.
+- **Limits** a switch reaches the icon within 250 ms on Windows and 0.2 s on macOS. On Windows the icon reads the layout only for 2 s after a key, a click or a window change, so a switch another app makes on an idle PC shows at the next one.
 
 Spec: [layout-switcher](../specs/layout-switcher.md).
 

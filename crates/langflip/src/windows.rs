@@ -119,6 +119,10 @@ thread_local! {
     static MARKERS: Cell<u32> = const { Cell::new(0) };
     /// The timer that checks whether the window took the new layout, so held keys can replay.
     static REPLAY_TIMER: Cell<usize> = const { Cell::new(0) };
+    /// The timer that reads the layout for the tray icon, 0 while the PC is idle.
+    static POLL_TIMER: Cell<usize> = const { Cell::new(0) };
+    /// Layout reads left before the timer stops.
+    static QUIET_TICKS: Cell<u32> = const { Cell::new(0) };
 }
 
 /// Runs `f` on the state, or returns None when the state is in use.
@@ -228,8 +232,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             crate::welcome::show();
         }
         crate::update::start(GetCurrentThreadId());
-        // Windows tells no other process when a window switches its layout, so the tray asks.
-        SetTimer(None, 0, 250, None);
+        wake_poll();
 
         let mut msg = MSG::default();
         while GetMessageW(&mut msg, None, 0, 0).as_bool() {
@@ -244,14 +247,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
                 {
                     finish_switch()
                 }
-                WM_TIMER => {
-                    release_stuck_fix();
-                    // Until the switch lands, the window still reports the old layout.
-                    if with_state(|s| s.switch.is_none()) == Some(true) {
-                        let lang = target().and_then(window_lang);
-                        with_state(|s| s.tray.as_ref().map(|t| t.set_lang(lang)));
-                    }
-                }
+                WM_TIMER if msg.wParam.0 == POLL_TIMER.get() => poll_tick(),
                 _ => {
                     let _ = TranslateMessage(&msg);
                     DispatchMessageW(&msg);
@@ -259,6 +255,35 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             }
             handle_tray();
         }
+    }
+}
+
+/// How often the tray icon reads the layout, and for how many ticks after the last key, click or
+/// focus change. Windows tells no other process when a window switches its layout, so the tray
+/// asks. Only a key, a click or a focus change switches it, so an idle PC needs no reads.
+const POLL_MS: u32 = 250;
+const POLL_TICKS: u32 = 8;
+
+/// Starts the layout reads again, or keeps them going.
+fn wake_poll() {
+    QUIET_TICKS.set(POLL_TICKS);
+    if POLL_TIMER.get() == 0 {
+        POLL_TIMER.set(unsafe { SetTimer(None, 0, POLL_MS, None) });
+    }
+}
+
+fn poll_tick() {
+    release_stuck_fix();
+    // Until the switch lands, the window still reports the old layout.
+    if with_state(|s| s.switch.is_none()) == Some(true) {
+        let lang = target().and_then(window_lang);
+        with_state(|s| s.tray.as_ref().map(|t| t.set_lang(lang)));
+    }
+    let left = QUIET_TICKS.get().saturating_sub(1);
+    QUIET_TICKS.set(left);
+    // A fix on its way keeps the timer, which lets its keys go if it gets stuck.
+    if left == 0 && !PENDING.get() {
+        let _ = unsafe { KillTimer(None, POLL_TIMER.replace(0)) };
     }
 }
 
@@ -463,6 +488,8 @@ fn pressed(vk: VIRTUAL_KEY) -> bool {
 
 unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     if code >= 0 {
+        // A layout key such as Alt+Shift or Win+Space switches the layout of the window in front.
+        wake_poll();
         let info = unsafe { &*(lparam.0 as *const KBDLLHOOKSTRUCT) };
         let down = wparam.0 as u32 == WM_KEYDOWN || wparam.0 as u32 == WM_SYSKEYDOWN;
         let swallow = hold_key(info, down).or_else(|| with_state(|s| on_key(s, info, down)));
@@ -794,6 +821,9 @@ unsafe extern "system" fn mouse_hook(code: i32, wparam: WPARAM, lparam: LPARAM) 
             WM_LBUTTONDOWN | WM_RBUTTONDOWN | WM_MBUTTONDOWN | WM_XBUTTONDOWN
         )
     {
+        // A click on the language bar switches the layout, and a click on the tray icon waits
+        // 500 ms for a second one.
+        wake_poll();
         with_state(|s| {
             lose_word(s, "click");
             s.skip_word = false;
@@ -811,6 +841,8 @@ unsafe extern "system" fn win_event(
     _thread: u32,
     _time: u32,
 ) {
+    // Each window keeps a layout of its own.
+    wake_poll();
     if event == EVENT_SYSTEM_FOREGROUND {
         foreground_changed();
     } else if event == EVENT_OBJECT_FOCUS {
@@ -1164,6 +1196,75 @@ mod tests {
         assert!(!word_in_progress());
         with_state(|s| on_key(s, &press(VK_SPACE.0.into(), 0x39), true));
         assert_eq!(with_state(|s| s.skip_word), Some(false));
+    }
+
+    /// Types the keys at these scan codes and Space in `lang`. Returns the first fix it queued
+    /// and the layout that fix switches to. A fix can come before Space, while the word is typed.
+    fn type_in(scans: &[u32], lang: Lang) -> Option<(String, Lang)> {
+        start();
+        let fix = with_state(|s| {
+            // The window in front may have another layout, so the test sets the one keys land in.
+            s.expect = Some((lang, Instant::now()));
+            let mut first = None;
+            for &scan in scans {
+                on_key(s, &press(0x41, scan), true);
+                if let Some((fix, _)) = s.queued.take() {
+                    s.expect = Some((fix.switch_to, Instant::now()));
+                    first = first.or(Some((fix.text, fix.switch_to)));
+                }
+            }
+            on_key(s, &press(VK_SPACE.0.into(), 0x39), true);
+            first.or_else(|| s.queued.take().map(|(fix, _)| (fix.text, fix.switch_to)))
+        });
+        PENDING.set(false);
+        MARKERS.set(0);
+        fix.flatten()
+    }
+
+    #[test]
+    fn a_word_in_the_wrong_layout_gets_a_fix_both_ways() {
+        // ghbdtn: the keys of «привет» in the English layout.
+        let (text, to) = type_in(&[0x22, 0x23, 0x30, 0x20, 0x14, 0x31], Lang::En).unwrap();
+        assert!(
+            "привет".starts_with(&text) && text.chars().count() >= 4,
+            "{text}"
+        );
+        assert_eq!(to, Lang::Ru);
+        // руддщ: the keys of hello in the Russian layout.
+        let (text, to) = type_in(&[0x23, 0x12, 0x26, 0x26, 0x18], Lang::Ru).unwrap();
+        assert!(
+            "hello".starts_with(&text) && text.chars().count() >= 4,
+            "{text}"
+        );
+        assert_eq!(to, Lang::En);
+    }
+
+    #[test]
+    fn the_layout_reads_stop_on_an_idle_pc() {
+        start();
+        wake_poll();
+        assert_ne!(POLL_TIMER.get(), 0);
+        for _ in 1..POLL_TICKS {
+            poll_tick();
+        }
+        assert_ne!(POLL_TIMER.get(), 0);
+        poll_tick();
+        assert_eq!(POLL_TIMER.get(), 0);
+    }
+
+    #[test]
+    fn a_fix_on_its_way_keeps_the_layout_reads() {
+        start();
+        wake_poll();
+        PENDING.set(true);
+        PENDING_AT.set(Some(Instant::now()));
+        for _ in 0..POLL_TICKS {
+            poll_tick();
+        }
+        assert_ne!(POLL_TIMER.get(), 0);
+        PENDING.set(false);
+        poll_tick();
+        assert_eq!(POLL_TIMER.get(), 0);
     }
 
     #[test]

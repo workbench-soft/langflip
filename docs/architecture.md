@@ -30,7 +30,7 @@ flowchart TB
 - **`langflip-core::model`** reads `langflip.model`: per language an alphabet, a table of letter-triple log probabilities and a dictionary.
 - **`langflip-core::decide`** compares the word as typed with the same keys in the other layout.
 - **`langflip-core::Engine`** the word buffer, the last word for Undo and the manual fix, and `keep_words`.
-- **`langflip::windows`** `WH_KEYBOARD_LL` and `WH_MOUSE_LL` hooks, `SetWinEventHook` for window and focus changes, `SendInput` for the fix.
+- **`langflip::windows`** `WH_KEYBOARD_LL` and `WH_MOUSE_LL` hooks, `SetWinEventHook` for window and focus changes, `SendInput` for the fix. A 250 ms timer reads the layout for the tray icon for 2 s after each key, click or focus change, then stops. Windows sends no event to another process when a window switches its layout.
 - **`langflip::autostart`** Windows autostart: the Run key, and a Task Scheduler task through `schtasks.exe` for when Explorer skips the Run key.
 - **`langflip::macos`** a session `CGEventTap`, `CGEvent` posts for the fix, Text Input Sources for the layout.
 - **`langflip::tray`** the tray icon and menu, shared by both systems.
