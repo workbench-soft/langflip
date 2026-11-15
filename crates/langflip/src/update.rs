@@ -84,9 +84,14 @@ fn newest(releases: Vec<Release>, current: &str) -> Option<Update> {
         .filter(|u| numbers(&u.version) > numbers(current))
 }
 
-/// Starts the checks. A dev build has the Cargo version and skips them, so the smoke test sees no dialog.
+/// A release build has a date version. A dev build has the Cargo one and shows no dialog, so the smoke test sees none.
+pub fn is_release() -> bool {
+    numbers(VERSION)[0] >= 2000
+}
+
+/// Starts the checks in a release build.
 pub fn start(main_thread: u32) {
-    if numbers(VERSION)[0] >= 2000 {
+    if is_release() {
         std::thread::spawn(move || run(main_thread));
     }
 }

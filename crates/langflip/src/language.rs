@@ -105,7 +105,11 @@ mod tests {
     #[test]
     fn each_key_the_code_asks_for_is_translated() {
         let file = include_str!("../locales/app.yml");
-        let code = [include_str!("tray.rs"), include_str!("update.rs")];
+        let code = [
+            include_str!("tray.rs"),
+            include_str!("update.rs"),
+            include_str!("welcome.rs"),
+        ];
         for src in code {
             // `format!("` ends the same way, so a letter before the mark rules it out.
             for (i, _) in src.match_indices("t!(\"") {

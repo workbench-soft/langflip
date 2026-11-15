@@ -15,6 +15,8 @@ mod settings;
 mod tray;
 #[cfg(windows)]
 mod update;
+#[cfg(windows)]
+mod welcome;
 
 #[cfg(target_os = "macos")]
 mod macos;

@@ -159,3 +159,23 @@ update.failed:
   ja: Langflip を更新できませんでした。明日もう一度試します。
   ko: Langflip을 업데이트하지 못했어요. 내일 다시 시도해요.
   nb: Langflip kunne ikke oppdatere seg. Det prøver igjen i morgen.
+welcome.title:
+  en: Langflip is on
+  ru: Langflip включён
+  de: Langflip ist an
+  fr: Langflip est activé
+  es: Langflip está activado
+  zh: Langflip 已开启
+  ja: Langflip はオンです
+  ko: Langflip이 켜졌어요
+  nb: Langflip er på
+welcome.body:
+  en: "It fixes a word typed in the wrong layout as you type. Pause undoes a fix, and Shift+Pause converts a word by hand. The icon by the clock shows the layout: a click turns fixing off and on, a right click opens the menu. If the icon hides under the ^ arrow, drag it onto the taskbar."
+  ru: "Он исправляет слово, набранное не в той раскладке, прямо во время набора. Pause отменяет исправление, Shift+Pause переводит слово вручную. Значок у часов показывает раскладку: щелчок выключает и включает исправление, правый щелчок открывает меню. Если значок спрятан под стрелкой ^, перетащите его на панель задач."
+  de: "Es korrigiert schon beim Tippen ein Wort, das im falschen Layout getippt wurde. Pause macht eine Korrektur rückgängig, Umschalt+Pause wandelt ein Wort von Hand um. Das Symbol neben der Uhr zeigt das Layout: Ein Klick schaltet die Korrektur aus und ein, ein Rechtsklick öffnet das Menü. Steckt das Symbol unter dem Pfeil ^, ziehen Sie es auf die Taskleiste."
+  fr: "Il corrige pendant la frappe un mot tapé dans la mauvaise disposition. Pause annule une correction, Maj+Pause convertit un mot à la main. L’icône près de l’horloge montre la disposition : un clic désactive et réactive la correction, un clic droit ouvre le menu. Si l’icône se cache sous la flèche ^, faites-la glisser sur la barre des tâches."
+  es: "Corrige mientras escribes una palabra escrita en la distribución equivocada. Pausa deshace una corrección, y Mayús+Pausa convierte una palabra a mano. El icono junto al reloj muestra la distribución: un clic desactiva y activa la corrección, un clic derecho abre el menú. Si el icono se esconde bajo la flecha ^, arrástralo a la barra de tareas."
+  zh: "输入时，它会纠正用错键盘布局打出的词。按 Pause 撤销纠正，按 Shift+Pause 手动转换一个词。时钟旁的图标显示当前布局：单击关闭或开启纠正，右键单击打开菜单。如果图标藏在 ^ 箭头下，请把它拖到任务栏上。"
+  ja: "間違ったキー配列で打った単語を、入力中に直します。Pause で修正を元に戻し、Shift+Pause で単語を手動で変換します。時計の横のアイコンにキー配列が表示されます。クリックで修正のオンとオフを切り替え、右クリックでメニューを開きます。アイコンが ^ の矢印の中に隠れている場合は、タスク バーにドラッグしてください。"
+  ko: "잘못된 자판으로 친 단어를 입력하는 동안 고쳐 줘요. Pause는 수정을 되돌리고, Shift+Pause는 단어를 직접 바꿔요. 시계 옆 아이콘이 자판을 보여 줘요. 클릭하면 수정이 꺼지거나 켜지고, 오른쪽 클릭하면 메뉴가 열려요. 아이콘이 ^ 화살표 아래 숨어 있으면 작업 표시줄로 끌어다 놓으세요."
+  nb: "Det retter et ord skrevet med feil tastaturoppsett mens du skriver. Pause angrer en retting, og Shift+Pause gjør om et ord for hånd. Ikonet ved klokken viser oppsettet: et klikk slår rettingen av og på, et høyreklikk åpner menyen. Gjemmer ikonet seg under pilen ^, dra det ned på oppgavelinjen."
