@@ -125,6 +125,8 @@ thread_local! {
     static POLL_TIMER: Cell<usize> = const { Cell::new(0) };
     /// Layout reads left before the timer stops.
     static QUIET_TICKS: Cell<u32> = const { Cell::new(0) };
+    /// The autostart rewrite of this start, which a tray toggle waits for.
+    static AUTOSTART: RefCell<Option<std::thread::JoinHandle<()>>> = const { RefCell::new(None) };
 }
 
 /// Runs `f` on the state, or returns None when the state is in use.
@@ -201,7 +203,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
         let autostart = first_start || autostart::enabled();
         if autostart {
             // schtasks.exe takes 40 to 150 ms, and the keys typed meanwhile would get no fix.
-            std::thread::spawn(|| autostart::set(true));
+            AUTOSTART.set(Some(std::thread::spawn(|| autostart::set(true))));
         }
         crate::theme::follow_system();
         let tray = Tray::new(settings.enabled, autostart);
@@ -325,7 +327,13 @@ fn handle_tray() {
                 s.tray.as_ref().map(|t| t.set_lang(Some(to)))
             });
         }
-        Action::Autostart(on) => autostart::set(on),
+        Action::Autostart(on) => {
+            // A toggle during the rewrite at start would race it in schtasks.exe.
+            if let Some(start) = AUTOSTART.take() {
+                let _ = start.join();
+            }
+            autostart::set(on);
+        }
         Action::RemoveKeepWord(word) => {
             with_state(|s| {
                 s.settings.remove_keep_word(&word);
