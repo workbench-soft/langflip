@@ -17,6 +17,7 @@ Langflip fixes a word typed in the wrong keyboard layout. A person types `ghbdtn
 4. **Pause it** a left click on the tray icon turns fixing off and on, and the icon turns grey while off. The right click opens the menu: fixing on and off, start at login, the settings file, quit.
 5. **Autostart** the first start turns on start at login, with no question. The menu turns it off.
 6. **First run on macOS** Langflip asks for Accessibility and Input Monitoring access and opens System Settings at that page.
+7. **First run on Windows** a dialog says Langflip is on, names the Undo and Convert keys and shows where the tray icon sits.
 
 ## How it works: modules, files, data
 
@@ -297,3 +298,13 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Stale layout** a busy window reports the old layout for a while after the fix, though the keys typed in it already land in the new one. The engine read the next word in the old layout and could fix it back. For 500 ms after a fix, or until the window reports it, the engine takes the layout of the fix.
 - **Changes** `windows.rs`.
 - **Docs** `docs/architecture.md`, `CHANGELOG.md`.
+
+### 2026-11-16 A welcome on the first start, a tray menu that fits the theme, the layout in the tooltip
+
+- **Why** a UX audit of the tray app. After install nothing shows but a tray icon, which Windows 11 hides under the ^ arrow, so the person can't tell Langflip runs or learn its keys. The tray menu stays light on a dark Windows. Menus and dialogs blur on a screen scaled past 100%. A screen reader hears the tooltip, which names no layout.
+- **Welcome** the first start on Windows shows a dialog: Langflip is on, Pause undoes a fix, Shift+Pause converts by hand, where the icon sits and what its clicks do. It runs on a thread of its own, as the update dialog does, so the hooks keep working. A dev build skips it, so `mise run smoke` sees no dialog.
+- **Theme** at start Langflip asks uxtheme to let its menus follow the system theme (`SetPreferredAppMode(AllowDark)`, ordinal 135, Windows 10 1809 and later). An older build skips the call.
+- **High DPI** the exe manifest declares Per Monitor V2 DPI awareness, so the tray menu and the dialogs draw at the screen's scale.
+- **Tooltip** a second line names the layout, `Layout: RU`. A third layout shows no line.
+- **Changes** `welcome.rs` new, `theme.rs` new, `windows.rs`, `main.rs`, `tray.rs`, `update.rs`, `language.rs` tests, `locales/app.yml`, `build.rs`.
+- **Docs** README, `docs/features.md`, `docs/user-flows.md`, `CHANGELOG.md`.
