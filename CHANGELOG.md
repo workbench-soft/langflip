@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **First start** a dialog on Windows says Langflip is on, names Pause and Shift+Pause, and shows where the tray icon sits. The tray menu turns dark with a dark Windows theme and stays sharp on a scaled screen. The tooltip names the layout, for screen readers too.
+
 - **Faster releases** the release build keeps its compiled crates between runs, installs only Rust, skips the lint tools in mise x and uses thin LTO, so a fix reaches the updater sooner.
 
 - **Older runs stop on GitHub** a newer push to `main` cancels the Checks and the release build of the older commit through `concurrency`, with the local-ci page off too.

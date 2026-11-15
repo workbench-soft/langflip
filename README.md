@@ -20,10 +20,11 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the E
 - **Undo** Pause on Windows, Ctrl+F12 on macOS. The word comes back as typed. After the second Undo of the same word it becomes an exception and stays as typed from then on.
 - **Convert by hand** Shift+Pause on Windows, Ctrl+Shift+F12 on macOS.
 - **Mac keyboards** the top row of a Mac keyboard runs the media keys by default, so F12 there takes fn as well: fn+Ctrl+F12.
-- **Layout** the tray icon shows `EN` or `RU` in navy on a holo foil tile.
+- **First start** on Windows a dialog says Langflip is on, names the keys and shows where the icon sits.
+- **Layout** the tray icon shows `EN` or `RU` in navy on a holo foil tile, and its tooltip names it.
 - **Pause** click the tray icon to turn fixing off. The icon turns grey. Click again to turn it on.
 - **Switch the layout** double-click the tray icon to swap Russian and English.
-- **Tray menu** a right click opens it: fixing on and off, start at login, the list of exceptions, the menu language, the settings file, quit. It speaks the system language until the Language submenu picks another: English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian.
+- **Tray menu** a right click opens it: fixing on and off, start at login, the list of exceptions, the menu language, the settings file, quit. It follows the dark or light Windows theme, and speaks the system language until the Language submenu picks another: English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian.
 - **Autostart** the first start turns on start at login, with no question. On Windows a Task Scheduler task backs up the Run key. Uncheck Start at sign in in the tray menu to stop it.
 
 The settings file is `%APPDATA%\Langflip\settings.toml` on Windows and `~/Library/Application Support/Langflip/settings.toml` on macOS. Its keys are in [docs/features.md](docs/features.md).

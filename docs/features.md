@@ -53,6 +53,7 @@ Spec: [layout-switcher](../specs/layout-switcher.md).
 
 The tray icon shows `EN` or `RU` in navy on a holo foil tile, for the layout of the window in front. A click on the taskbar keeps the last app window. A layout other than these 2 shows the app icon alone.
 
+- **Tooltip** its last line names the layout, such as `Layout: RU`, so a screen reader says it too.
 - **Limits** a switch reaches the icon within 250 ms on Windows and 0.2 s on macOS.
 
 Spec: [layout-switcher](../specs/layout-switcher.md).
@@ -81,6 +82,15 @@ A double click on the tray icon switches the layout between Russian and English.
 
 - **Windows** the click puts the taskbar in front, so Langflip brings back the window that was in front and switches its layout. The icon shows that window's layout, not the taskbar's. The new layout stays in the other windows too, as with the Windows hotkey.
 - **macOS** switches the current input source.
+
+Spec: [layout-switcher](../specs/layout-switcher.md).
+
+## Welcome on the first start
+
+The first start on Windows shows a dialog: Langflip is on, Pause undoes a fix, Shift+Pause converts a word by hand, and a click or a right click on the icon by the clock turns fixing off or opens the menu. It also says to drag the icon out from under the ^ arrow.
+
+- **Once** it shows when `settings.toml` doesn't exist yet. Deleting the file shows it again.
+- **Limits** Windows only. On macOS the first start asks for access instead. A build from source skips it.
 
 Spec: [layout-switcher](../specs/layout-switcher.md).
 
@@ -128,6 +138,7 @@ A right click on the icon opens it.
 - **Language** picks the language of the menu and the tooltip: System language, or English, Русский, Deutsch, Français, Español, 中文, 日本語, 한국어, Norsk bokmål. Each language shows under its own name, and a check marks the current one. The menu changes at once, and `settings.toml` keeps the choice.
 - **Open the settings** opens `settings.toml` in the text editor. Langflip reads the change at the next window switch.
 - **Quit** quits.
+- **Theme** on Windows the menu follows the light or dark theme of the system, and it stays sharp on a scaled screen.
 - **System language** the default. The menu and the tooltip speak the system language when it is English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian, and English otherwise. A new system language shows after the next start.
 
 Spec: [layout-switcher](../specs/layout-switcher.md), [menu-languages](../specs/menu-languages.md).
