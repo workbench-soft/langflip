@@ -12,6 +12,8 @@ mod language;
 #[cfg(windows)]
 mod log;
 mod settings;
+#[cfg(windows)]
+mod theme;
 mod tray;
 #[cfg(windows)]
 mod update;
