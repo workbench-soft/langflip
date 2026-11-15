@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Install** `mise run install` starts Langflip in its own folder, so the running copy no longer locks the checkout it came from.
 - **First start** a dialog on Windows says Langflip is on, names Pause and Shift+Pause, and shows where the tray icon sits. The tray menu turns dark with a dark Windows theme and stays sharp on a scaled screen. The tooltip names the layout, for screen readers too.
 
 - **Faster releases** the release build keeps its compiled crates between runs, installs only Rust, skips the lint tools in mise x and uses thin LTO, so a fix reaches the updater sooner.

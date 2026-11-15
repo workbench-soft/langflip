@@ -93,14 +93,6 @@ These need a product call, a Mac or a device. Each one stays here as a note.
 
 ## UX audit
 
-- [ ] Install the build with the welcome, the dark menu and the layout in the tooltip, once PR #63 merges (auto mode)
-  1. Paste the command below into PowerShell. It stops Langflip, installs the new build and starts it.
-  2. Check that its last 2 lines show a path for both autostart and the sign in task.
-
-  ```powershell
-  Set-Location "$env:WBS_ROOT\langflip"; git pull; mise run install
-  ```
-
 - [ ] Look at the new tray UX once, since computer use was denied in the audit run (denied)
   1. Right-click the Langflip icon. With a dark Windows theme the menu is dark.
   2. Point at the icon. The tooltip ends with «Layout: EN» or «Layout: RU».

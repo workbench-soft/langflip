@@ -44,7 +44,8 @@ Set-ItemProperty $key EstimatedSize ([int]((Get-Item $exe).Length / 1KB)) -Type 
 Set-ItemProperty $key NoModify 1 -Type DWord
 Set-ItemProperty $key NoRepair 1 -Type DWord
 
-Start-Process $exe
+# Its own folder as the working folder, so the running copy doesn't lock the checkout it came from.
+Start-Process $exe -WorkingDirectory $dir
 
 Start-Sleep -Seconds 2
 if (-not (Get-Process langflip -ErrorAction SilentlyContinue)) { Write-Output "langflip.exe didn't start"; exit 1 }
