@@ -83,6 +83,8 @@ struct State {
     self_elevated: bool,
     /// The window in front is excluded or elevated, or its focus is a password field.
     skip_window: bool,
+    /// The window in front runs as admin and Langflip doesn't, so the hooks see none of its keys.
+    above: bool,
     password: bool,
     /// A key went by while the state was in use, so the screen holds more of the word than the
     /// engine. The word gets no fix until its end key.
@@ -155,6 +157,7 @@ impl State {
             caret_id: 0,
             self_elevated: process_elevated(unsafe { GetCurrentProcess() }),
             skip_window: false,
+            above: false,
             password: false,
             skip_word: false,
             expect: None,
@@ -282,8 +285,9 @@ fn poll_tick() {
     }
     let left = QUIET_TICKS.get().saturating_sub(1);
     QUIET_TICKS.set(left);
-    // A fix on its way keeps the timer, which lets its keys go if it gets stuck.
-    if left == 0 && !PENDING.get() {
+    // A fix on its way keeps the timer, which lets its keys go if it gets stuck. An admin window
+    // in front keeps it too, since its layout keys pass the hooks unseen.
+    if left == 0 && !PENDING.get() && with_state(|s| s.above) != Some(true) {
         let _ = unsafe { KillTimer(None, POLL_TIMER.replace(0)) };
     }
 }
@@ -896,7 +900,8 @@ fn foreground_changed() {
         s.skip_word = false;
         s.password = false;
         let excluded = app.as_deref().is_some_and(|a| s.settings.is_excluded(a));
-        s.skip_window = excluded || (elevated && !s.self_elevated);
+        s.above = elevated && !s.self_elevated;
+        s.skip_window = excluded || s.above;
         debug(format_args!(
             "front {hwnd:?} {app:?}, elevated {elevated}, skip {}",
             s.skip_window
@@ -1249,6 +1254,20 @@ mod tests {
             poll_tick();
         }
         assert_ne!(POLL_TIMER.get(), 0);
+        poll_tick();
+        assert_eq!(POLL_TIMER.get(), 0);
+    }
+
+    #[test]
+    fn an_admin_window_in_front_keeps_the_layout_reads() {
+        start();
+        with_state(|s| s.above = true);
+        wake_poll();
+        for _ in 0..POLL_TICKS * 2 {
+            poll_tick();
+        }
+        assert_ne!(POLL_TIMER.get(), 0);
+        with_state(|s| s.above = false);
         poll_tick();
         assert_eq!(POLL_TIMER.get(), 0);
     }

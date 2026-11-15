@@ -58,7 +58,7 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Input** `SendInput` with `KEYEVENTF_UNICODE`. The tag sits in `dwExtraInfo`.
 - **Layout** `GetKeyboardLayout` of the focus window's thread reads it. `WM_INPUTLANGCHANGEREQUEST` to the focus window switches it.
 - **Skipped windows** password fields (`STATE_SYSTEM_PROTECTED` of the focused object), elevated windows when Langflip runs without admin rights, and apps in the exclusion list.
-- **Idle** the tray icon reads the layout every 250 ms for 2 s after a key, a click or a window change, then stops. A fix on its way keeps the reads going until it ends.
+- **Idle** the tray icon reads the layout every 250 ms for 2 s after a key, a click or a window change, then stops. A fix on its way keeps the reads going until it ends, and so does an admin window in front, whose keys the hooks don’t see.
 - **Start with Windows** the first start writes a value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, and the tray toggles it.
 
 ### macOS
@@ -313,8 +313,8 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 ### 2026-11-16 Langflip sleeps while the PC is idle, and starts fixing sooner
 
 - **Why** a performance pass over the apps. Langflip runs all day, so its idle cost and its start at sign in count most. Measured on this PC, an idle Langflip woke about 900 times a minute: the 250 ms layout timer for the tray icon, at about 4 thread wakeups per tick. Each start also waited on `schtasks.exe` before it set the keyboard hook, 66 to 150 ms in which typed words got no fix.
-- **Idle** the layout timer runs only for 2 s after a key, a click or a focus or window change, the events that can switch a layout, and stops after that. A fix still waiting for its end marker keeps the timer, since the timer lets its held keys go after 1 s. The tray double click still works: the click wakes the timer for longer than its 500 ms wait.
-- **Start** the Run value and the sign in task get rewritten on a thread of their own, so the hooks no longer wait for `schtasks.exe`. Both autostart paths stay as they are.
+- **Idle** the layout timer runs only for 2 s after a key, a click or a focus or window change, the events that can switch a layout, and stops after that. A fix still waiting for its end marker keeps the timer, since the timer lets its held keys go after 1 s. The tray double click still works: the click wakes the timer for longer than its 500 ms wait. An admin window in front keeps the timer, since Alt+Shift there passes the hooks unseen.
+- **Start** the Run value and the sign in task get rewritten on a thread of their own, so the hooks no longer wait for `schtasks.exe`. Both autostart paths stay as they are. A tray toggle of autostart waits for that thread, so the two schtasks.exe calls can’t cross.
 - **Kept out** `SendInput` on a thread apart from the hook: 30% shorter fixes in a test program, but the change reorders the fix and the layout switch, and only `mise run smoke` proves it.
 - **Changes** `windows.rs`.
 - **Docs** `docs/architecture.md`, `docs/features.md`, `CHANGELOG.md`.
