@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Idle** Langflip sleeps while no one types or clicks. The tray icon reads the layout for 2 s after a key, a click or a window change, so an idle PC wakes Langflip about 0 to 10 times a minute in place of 900.
+- **Start** the keyboard hook comes up about 40 to 120 ms sooner, since the autostart rewrite no longer waits in front of it.
 - **Install** `mise run install` starts Langflip in its own folder, so the running copy no longer locks the checkout it came from.
 - **First start** a dialog on Windows says Langflip is on, names Pause and Shift+Pause, and shows where the tray icon sits. The tray menu turns dark with a dark Windows theme and stays sharp on a scaled screen. The tooltip names the layout, for screen readers too.
 

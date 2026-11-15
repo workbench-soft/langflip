@@ -84,7 +84,6 @@ These need a product call, a Mac or a device. Each one stays here as a note.
 - Left: no third-party licence notices ship beside the exe. It needs a tool such as cargo-about and a new release asset.
 - Left: rustls, ring and ureq are about half the code (1.1 of 2.3 MiB `.text`), and ureq ignores the Windows proxy. WinHTTP through the `windows` crate is a library swap.
 - Left: Open settings file may do nothing on a PC with no `.toml` app. A Notepad fallback needs a run of the app to check.
-- Left: a 250 ms timer polls the layout forever. A small battery gain, can't measure here.
 - Left: `mise run eval` scores a copy of the Engine flow, so continued words and keep words go unmeasured. Engine takes no threshold for the sweep, effort M.
 - Left: the `auto-launch` crate could replace the macOS LaunchAgent code, but its plist name differs and old installs would keep a stray agent.
 - Left: no PowerShell lint for `scripts/*.ps1`. A new tool needs the `stack` skill.
@@ -102,3 +101,19 @@ These need a product call, a Mac or a device. Each one stays here as a note.
 - Left: the tray icon ships one 32 px bitmap, so Windows scales it at 125% (20 px) and 250% (40 px). A size per DPI needs a new icon per scale from `tray-icon`.
 - Left: the tray menu items have no `&` access keys. Arrows and Enter work, and access keys in 9 languages for 7 items need a check of each catalog.
 - Left: Open the settings shows raw TOML with no comment on its keys. The keys sit in `docs/features.md`. Comments in the file would get lost on each save by `toml`.
+
+## Performance audit
+
+- [ ] Install the build with the idle and start fixes, since auto mode denies the stop of the running Langflip (denied)
+  1. Close Punto Switcher if it runs.
+  2. Paste the command below into PowerShell. It prints the version, the Run value and the task.
+
+  ```powershell
+  Set-Location "$env:WBS_ROOT\langflip"; git pull; mise run install
+  ```
+
+- [ ] Run the smoke test once more for the idle timer change in `windows.rs`, as the Smoke test section above says (denied)
+- [ ] Check the tray icon after a layout switch, once the build above is installed (wait). Press Alt+Shift in Notepad, and the icon turns EN or RU within a second. Wait 10 s with hands off, press Alt+Shift again, and the icon follows again.
+- Left: `SendInput` on a thread apart from the keyboard hook. In a test program a 15 key fix took 23.5 ms in place of 33.6 ms, and a 35 key fix 57 ms in place of 172 ms. It reorders the fix and the layout switch, and only `mise run smoke` proves that, which needs the running Langflip stopped.
+- Left: the release workflow starts no build before it publishes, as the launch gate of `repo-ci` asks. A Windows tray app on the self-hosted runner shares this PC with the installed Langflip, so a gate needs its own mutex name. A CI change for its own PR.
+- Fine (2026-11-16): the keyboard hook takes 2 to 3 µs per key (median, p99 under 16 µs). Memory and handles: 9.7 MB private and 340 handles after 16 h, 7.8 MB and 274 handles at start. The exe is 3.9 MB.
