@@ -90,3 +90,23 @@ These need a product call, a Mac or a device. Each one stays here as a note.
 - Left: no PowerShell lint for `scripts/*.ps1`. A new tool needs the `stack` skill.
 - Left: `actions/checkout@v7` and `workbench-soft/ci/actions/setup@main` aren't pinned to a commit in the release job that reads `RELEASES_TOKEN`. The org setup action is shared, so pin it across all repos at once.
 - Left: an unsigned exe. Signing costs money.
+
+## UX audit
+
+- [ ] Install the build with the welcome, the dark menu and the layout in the tooltip, once PR #63 merges (auto mode)
+  1. Paste the command below into PowerShell. It stops Langflip, installs the new build and starts it.
+  2. Check that its last 2 lines show a path for both autostart and the sign in task.
+
+  ```powershell
+  Set-Location "$env:WBS_ROOT\langflip"; git pull; mise run install
+  ```
+
+- [ ] Look at the new tray UX once, since computer use was denied in the audit run (denied)
+  1. Right-click the Langflip icon. With a dark Windows theme the menu is dark.
+  2. Point at the icon. The tooltip ends with «Layout: EN» or «Layout: RU».
+  3. Rename `%APPDATA%\Langflip\settings.toml` to `settings.old.toml`, quit Langflip from the tray and start it again. The welcome dialog shows. Press OK, quit Langflip, delete the new `settings.toml` and rename `settings.old.toml` back, then start Langflip again.
+- [ ] Decide what a second start says while Langflip runs (decision). A double click on the desktop shortcut now does nothing, since `windows.rs` returns when the mutex exists. A dialog «Langflip is already running» would show at each sign in too, because the Run key and the task both start it. A `--show` argument on the shortcuts only would avoid that.
+- Left: the welcome and update dialogs stay light in dark mode. The Windows task dialog has no dark theme.
+- Left: the tray icon ships one 32 px bitmap, so Windows scales it at 125% (20 px) and 250% (40 px). A size per DPI needs a new icon per scale from `tray-icon`.
+- Left: the tray menu items have no `&` access keys. Arrows and Enter work, and access keys in 9 languages for 7 items need a check of each catalog.
+- Left: Open the settings shows raw TOML with no comment on its keys. The keys sit in `docs/features.md`. Comments in the file would get lost on each save by `toml`.

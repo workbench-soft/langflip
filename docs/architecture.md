@@ -36,9 +36,11 @@ flowchart TB
 - **`langflip::tray`** the tray icon and menu, shared by both systems.
 - **`langflip::log`** the Windows decision log in `%LOCALAPPDATA%\Langflip\langflip.log`, 1 MB, then `langflip.old.log`. Key counts, app names and decisions, never letters.
 - **`langflip::update`** on Windows, a thread that asks GitHub for the newest `langflip-v*` release with `ureq`, then swaps the exe with `self-replace` and restarts Langflip.
-- **`langflip::dialog`** the Windows task dialog for the update question, looked up in Common Controls 6 at run time.
+- **`langflip::dialog`** the Windows task dialog for the update question and the welcome, looked up in Common Controls 6 at run time.
+- **`langflip::welcome`** on Windows, the dialog of the first start, on a thread of its own so the hooks keep their messages.
+- **`langflip::theme`** on Windows, lets the tray menu follow a dark system theme through uxtheme.
 - **`langflip::settings`** `settings.toml` in the user's app data folder.
-- **`crates/langflip/build.rs`** writes the name, publisher, version and a manifest into `langflip.exe`. The release build passes its date version in `LANGFLIP_VERSION`.
+- **`crates/langflip/build.rs`** writes the name, publisher, version and a manifest into `langflip.exe`. The manifest asks for Common Controls 6 and Per Monitor V2 DPI awareness. The release build passes its date version in `LANGFLIP_VERSION`.
 
 ## The path of a key press
 
@@ -245,3 +247,12 @@ The choices that shape Langflip, the most costly to undo first.
 - **Rejected**
   - **Fluent** a second translation tool for a job the org rules already give to `rust-i18n`.
 - **Cost to undo** low. The strings file, `language.rs` and the Language submenu in `tray.rs`.
+
+### Dark tray menu on Windows: uxtheme ordinal 135
+
+- **Picked** at start Langflip calls `SetPreferredAppMode(AllowDark)` from `uxtheme.dll` by its ordinal, then `FlushMenuThemes`. Windows 10 builds before 1809 skip it.
+- **Why** a Win32 popup menu draws light unless the app opts in, and `tray-icon` doesn't opt in for its menu.
+- **Trade-off** the call has no public name. Chromium, Firefox and `tao` rely on the same ordinal, so Microsoft keeps it working.
+- **Rejected**
+  - **A menu drawn by Langflip** owner-drawn items for 7 rows and 2 submenus, and the system look lost.
+- **Cost to undo** low. `theme.rs` and one line in `windows.rs`.

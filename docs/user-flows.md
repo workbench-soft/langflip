@@ -5,13 +5,15 @@
 1. The person runs `langflip.exe` (Windows) or `Langflip` (macOS).
 2. On macOS the system asks for Accessibility and Input Monitoring access. The person allows both and starts Langflip again.
 3. The tray icon shows the current layout in navy on a holo foil tile: `EN` or `RU`. Langflip writes `settings.toml` with the defaults and turns on start at login, with no question.
+4. On Windows a dialog says Langflip is on, names Pause and Shift+Pause, and shows where the icon sits. The person presses OK.
 
 ```mermaid
 flowchart LR
     A[Start Langflip] --> B{macOS?}
     B -- yes --> C[Allow Accessibility and Input Monitoring] --> D[Start again]
-    B -- no --> E[Tray icon appears]
+    B -- no --> W[Welcome dialog: keys and icon] --> E[Tray icon appears]
     D --> E
+    style W fill:#d4edda,stroke:#28a745
 ```
 
 ## Install on Windows

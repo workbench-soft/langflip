@@ -195,6 +195,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
         if autostart {
             autostart::set(true);
         }
+        crate::theme::follow_system();
         let tray = Tray::new(settings.enabled, autostart);
         tray.set_language(settings.language.as_deref(), &settings.keep_words);
         STATE.with(|s| *s.borrow_mut() = Some(State::new(engine, settings, Some(tray))));
@@ -223,6 +224,9 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             flags,
         );
         foreground_changed();
+        if first_start {
+            crate::welcome::show();
+        }
         crate::update::start(GetCurrentThreadId());
         // Windows tells no other process when a window switches its layout, so the tray asks.
         SetTimer(None, 0, 250, None);
