@@ -197,7 +197,8 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
         // and rewrite the path in case langflip.exe moved.
         let autostart = first_start || autostart::enabled();
         if autostart {
-            autostart::set(true);
+            // schtasks.exe takes 40 to 150 ms, and the keys typed meanwhile would get no fix.
+            std::thread::spawn(|| autostart::set(true));
         }
         crate::theme::follow_system();
         let tray = Tray::new(settings.enabled, autostart);
