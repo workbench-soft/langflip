@@ -91,7 +91,7 @@ These need a product call, a Mac or a device. Each one stays here as a note.
   1. Right-click the Langflip icon. With a dark Windows theme the menu is dark.
   2. Point at the icon. The tooltip ends with «Layout: EN» or «Layout: RU».
   3. Rename `%APPDATA%\Langflip\settings.toml` to `settings.old.toml`, quit Langflip from the tray and start it again. The welcome dialog shows. Press OK, quit Langflip, delete the new `settings.toml` and rename `settings.old.toml` back, then start Langflip again.
-- [ ] Check the shortcut while Langflip runs, after the next `mise run install` (wait)
+- [ ] Check the shortcut while Langflip runs, a click test that computer use could not do (denied)
   1. Double-click the Langflip shortcut on the desktop. `settings.toml` opens in the text editor, in front.
   2. Right-click the Langflip icon by the clock and press O. The settings open the same way.
 - Left: the welcome and update dialogs stay light in dark mode. The Windows task dialog has no dark theme.
