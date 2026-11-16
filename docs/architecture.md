@@ -39,6 +39,7 @@ flowchart TB
 - **`langflip::dialog`** the Windows task dialog for the update question and the welcome, looked up in Common Controls 6 at run time.
 - **`langflip::welcome`** on Windows, the dialog of the first start, on a thread of its own so the hooks keep their messages.
 - **`langflip::theme`** on Windows, lets the tray menu follow a dark system theme through uxtheme.
+- **`langflip::show`** on Windows, the `--show` start of the shortcuts. A second copy signals the event `LocalLangflipShow` and quits. The running copy waits on the event on its own thread and opens `settings.toml`.
 - **`langflip::settings`** `settings.toml` in the user's app data folder.
 - **`crates/langflip/build.rs`** writes the name, publisher, version and a manifest into `langflip.exe`. The manifest asks for Common Controls 6 and Per Monitor V2 DPI awareness. The release build passes its date version in `LANGFLIP_VERSION`.
 
@@ -256,3 +257,14 @@ The choices that shape Langflip, the most costly to undo first.
 - **Rejected**
   - **A menu drawn by Langflip** owner-drawn items for 7 rows and 2 submenus, and the system look lost.
 - **Cost to undo** low. `theme.rs` and one line in `windows.rs`.
+
+### A second start from a shortcut: a named event
+
+- **Picked** the shortcuts pass `--show`. A copy that finds the `LocalLangflip` mutex taken signals the auto reset event `LocalLangflipShow` and quits. The running copy waits on it on a thread of its own, and posts a message to its main thread, which opens the settings.
+- **Why** a double click on the shortcut did nothing, while a dialog at each second start would show at each sign in, since the Run value and the sign in task both start Langflip.
+- **Trade-off** a start without `--show` stays quiet, so a person who runs `langflip.exe` from its folder sees no sign.
+- **Rejected**
+  - **A dialog «Langflip is already running»** it would show at each sign in.
+  - **A hidden window found with `FindWindowW`** one more window and window class for one message.
+  - **Opening the tray menu** `TrayIcon::show_menu` opens it at the mouse pointer, away from the shortcut, and the menu closes once focus moves.
+- **Cost to undo** low. `show.rs`, a few lines in `windows.rs` and the shortcut argument.

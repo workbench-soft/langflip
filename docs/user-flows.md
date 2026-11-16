@@ -23,6 +23,20 @@ flowchart LR
 3. Langflip starts, and its icon appears on the desktop and in the Start menu.
 4. To remove it, the person opens Settings, Apps and presses Uninstall next to Langflip.
 
+## Open the shortcut while Langflip runs
+
+1. Langflip runs in the tray, started at sign in.
+2. The person double-clicks the Langflip shortcut on the desktop or in the Start menu.
+3. The new copy sees the running one, asks it to show itself and quits.
+4. The running copy opens `settings.toml` in the text editor, in front.
+
+```mermaid
+flowchart LR
+    A[Double-click the shortcut] --> B[langflip.exe --show] --> C{Langflip runs?}
+    C -- yes --> D[Signal the show event] --> E[Running copy opens settings.toml]
+    C -- no --> F[Langflip starts in the tray]
+```
+
 ```mermaid
 flowchart LR
     A[Double-click Langflip.cmd] --> B[Build and install] --> C[Shortcuts and Apps entry] --> D[Langflip starts]
