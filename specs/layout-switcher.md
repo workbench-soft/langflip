@@ -18,6 +18,7 @@ Langflip fixes a word typed in the wrong keyboard layout. A person types `ghbdtn
 5. **Autostart** the first start turns on start at login, with no question. The menu turns it off.
 6. **First run on macOS** Langflip asks for Accessibility and Input Monitoring access and opens System Settings at that page.
 7. **First run on Windows** a dialog says Langflip is on, names the Undo and Convert keys and shows where the tray icon sits.
+8. **Shortcut while it runs** a double click on the desktop or Start menu shortcut opens the settings file, since Langflip already runs in the tray.
 
 ## How it works: modules, files, data
 
@@ -318,3 +319,12 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Kept out** `SendInput` on a thread apart from the hook: 30% shorter fixes in a test program, but the change reorders the fix and the layout switch, and only `mise run smoke` proves it.
 - **Changes** `windows.rs`.
 - **Docs** `docs/architecture.md`, `docs/features.md`, `CHANGELOG.md`.
+
+### 2026-11-17 The shortcuts open the settings while Langflip runs, and access keys in the tray menu
+
+- **Why** the UX audit found that a double click on the desktop or Start menu shortcut does nothing while Langflip runs, so the person can't tell whether it started. A dialog at each second start would show at each sign in, since the Run key and the sign in task both start Langflip. The owner approved a `--show` argument on the shortcuts only.
+- **Show** the shortcuts start `langflip.exe --show`. A start with `--show` while Langflip runs signals the named event `Local\LangflipShow` and quits. The running copy waits on that event on a thread of its own, posts `WM_APP_SHOW` to its main thread and opens the settings file, as the tray item does. The second copy calls `AllowSetForegroundWindow` first, so the editor comes to the front. A start with `--show` while Langflip doesn't run starts it as usual.
+- **Autostart** the Run value and the sign in task keep their command line with no `--show`, so a sign in still opens no window.
+- **Access keys** the tray menu items get an `&` access key in each of the 9 catalogs, so a key press picks an item once the menu is open. Chinese, Japanese and Korean put the Latin letter in brackets after the text, as Windows does. macOS strips the `&`.
+- **Changes** `show.rs` new, `windows.rs`, `main.rs`, `locales/app.yml`, `scripts/install-windows.ps1`, `language.rs` tests.
+- **Docs** README, `docs/features.md`, `docs/user-flows.md`, `docs/architecture.md`, `CHANGELOG.md`.
