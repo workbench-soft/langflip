@@ -13,6 +13,8 @@ mod language;
 mod log;
 mod settings;
 #[cfg(windows)]
+mod show;
+#[cfg(windows)]
 mod theme;
 mod tray;
 #[cfg(windows)]

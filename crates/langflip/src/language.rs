@@ -140,4 +140,30 @@ mod tests {
             }
         }
     }
+    /// Each item of the tray menu has one access key, and no two items in a language share it.
+    #[test]
+    fn the_tray_menu_items_have_their_own_access_keys() {
+        let items = [
+            "menu.fix",
+            "menu.autostart",
+            "menu.keepWords",
+            "menu.language",
+            "menu.settings",
+            "menu.quit",
+        ];
+        for (lang, _) in super::LANGUAGES {
+            let mut keys: Vec<char> = items
+                .iter()
+                .map(|key| {
+                    let text = rust_i18n::t!(*key, count = 0, locale = lang);
+                    assert_eq!(text.matches('&').count(), 1, "{lang} {key}: {text}");
+                    let after = text.split('&').nth(1).unwrap();
+                    after.chars().next().unwrap().to_lowercase().next().unwrap()
+                })
+                .collect();
+            keys.sort_unstable();
+            keys.dedup();
+            assert_eq!(keys.len(), items.len(), "{lang}");
+        }
+    }
 }

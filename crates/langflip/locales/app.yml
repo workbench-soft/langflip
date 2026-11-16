@@ -30,35 +30,35 @@ tooltip.layout:
   ko: "자판: %{layout}"
   nb: "Oppsett: %{layout}"
 menu.fix:
-  en: Fix the layout
-  ru: Исправлять раскладку
-  de: Layout korrigieren
-  fr: Corriger la disposition
-  es: Corregir la distribución
-  zh: 纠正键盘布局
-  ja: キー配列を直す
-  ko: 자판 고치기
-  nb: Rett opp oppsettet
+  en: "&Fix the layout"
+  ru: "&Исправлять раскладку"
+  de: "&Layout korrigieren"
+  fr: "&Corriger la disposition"
+  es: "&Corregir la distribución"
+  zh: "纠正键盘布局(&F)"
+  ja: "キー配列を直す(&F)"
+  ko: "자판 고치기(&F)"
+  nb: "&Rett opp oppsettet"
 menu.autostart:
-  en: Start at sign in
-  ru: Запускать при входе
-  de: Bei der Anmeldung starten
-  fr: Lancer à l’ouverture de session
-  es: Iniciar al iniciar sesión
-  zh: 登录时启动
-  ja: サインイン時に起動
-  ko: 로그인할 때 시작
-  nb: Start ved pålogging
+  en: "&Start at sign in"
+  ru: "&Запускать при входе"
+  de: "Bei der &Anmeldung starten"
+  fr: "&Lancer à l’ouverture de session"
+  es: "&Iniciar al iniciar sesión"
+  zh: "登录时启动(&S)"
+  ja: "サインイン時に起動(&S)"
+  ko: "로그인할 때 시작(&S)"
+  nb: "&Start ved pålogging"
 menu.keepWords:
-  en: Exceptions (%{count})
-  ru: Исключения (%{count})
-  de: Ausnahmen (%{count})
-  fr: Exceptions (%{count})
-  es: Excepciones (%{count})
-  zh: 例外（%{count}）
-  ja: 例外（%{count}）
-  ko: 예외 (%{count})
-  nb: Unntak (%{count})
+  en: "&Exceptions (%{count})"
+  ru: "Ис&ключения (%{count})"
+  de: "A&usnahmen (%{count})"
+  fr: "&Exceptions (%{count})"
+  es: "&Excepciones (%{count})"
+  zh: "例外（%{count}）(&E)"
+  ja: "例外（%{count}）(&E)"
+  ko: "예외 (%{count})(&E)"
+  nb: "&Unntak (%{count})"
 menu.keepWordsNone:
   en: None yet. A word lands here after 2 undos
   ru: Пока нет. Слово попадает сюда после 2 отмен
@@ -80,35 +80,35 @@ menu.keepWordsHint:
   ko: 단어를 클릭하면 빠져요
   nb: Et klikk på et ord fjerner det
 menu.settings:
-  en: Open the settings
-  ru: Открыть настройки
-  de: Einstellungen öffnen
-  fr: Ouvrir les réglages
-  es: Abrir los ajustes
-  zh: 打开设置
-  ja: 設定を開く
-  ko: 설정 열기
-  nb: Åpne innstillingene
+  en: "&Open the settings"
+  ru: "&Открыть настройки"
+  de: "&Einstellungen öffnen"
+  fr: "&Ouvrir les réglages"
+  es: "&Abrir los ajustes"
+  zh: "打开设置(&O)"
+  ja: "設定を開く(&O)"
+  ko: "설정 열기(&O)"
+  nb: "&Åpne innstillingene"
 menu.quit:
-  en: Quit
-  ru: Выход
-  de: Beenden
-  fr: Quitter
-  es: Salir
-  zh: 退出
-  ja: 終了
-  ko: 종료
-  nb: Avslutt
+  en: "&Quit"
+  ru: "&Выход"
+  de: "&Beenden"
+  fr: "&Quitter"
+  es: "&Salir"
+  zh: "退出(&Q)"
+  ja: "終了(&Q)"
+  ko: "종료(&Q)"
+  nb: "&Avslutt"
 menu.language:
-  en: Language
-  ru: Язык
-  de: Sprache
-  fr: Langue
-  es: Idioma
-  zh: 语言
-  ja: 言語
-  ko: 언어
-  nb: Språk
+  en: "&Language"
+  ru: "&Язык"
+  de: "&Sprache"
+  fr: "La&ngue"
+  es: "I&dioma"
+  zh: "语言(&L)"
+  ja: "言語(&L)"
+  ko: "언어(&L)"
+  nb: "S&pråk"
 menu.languageSystem:
   en: System language
   ru: Язык системы
