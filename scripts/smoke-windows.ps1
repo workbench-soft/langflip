@@ -17,7 +17,17 @@ public static class Keys2 {
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] static extern void keybd_event(byte vk, byte scan, uint flags, IntPtr extra);
     // Windows lets a process take the foreground right after it sends a key, so tap Shift first. Alt would open the window menu.
-    public static void Front(IntPtr hwnd) { keybd_event(0x10, 0, 0, IntPtr.Zero); keybd_event(0x10, 0, 2, IntPtr.Zero); SetForegroundWindow(hwnd); }
+    // Joining the input of the window in front lets the switch through when the Shift tap isn't enough.
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hwnd, IntPtr pid);
+    [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] static extern bool AttachThreadInput(uint from, uint to, bool attach);
+    [DllImport("user32.dll")] static extern bool BringWindowToTop(IntPtr hwnd);
+    public static void Front(IntPtr hwnd) {
+        keybd_event(0x10, 0, 0, IntPtr.Zero); keybd_event(0x10, 0, 2, IntPtr.Zero);
+        uint front = GetWindowThreadProcessId(GetForegroundWindow(), IntPtr.Zero), me = GetCurrentThreadId();
+        AttachThreadInput(me, front, true); BringWindowToTop(hwnd); SetForegroundWindow(hwnd); AttachThreadInput(me, front, false);
+    }
+    public static void ShiftTapVk(byte vk) { keybd_event(0x10, 0, 0, IntPtr.Zero); TapVk(vk); keybd_event(0x10, 0, 2, IntPtr.Zero); }
     public static void TapVk(byte vk) { keybd_event(vk, 0, 0, IntPtr.Zero); keybd_event(vk, 0, 2, IntPtr.Zero); }
     public static void Tap(ushort scan) {
         var down = new INPUT { type = 1, ki = new KEYBDINPUT { scan = scan, flags = 0x8 } };
@@ -31,7 +41,7 @@ public static class Keys2 {
 $scan = @{
     'q'=0x10;'w'=0x11;'e'=0x12;'r'=0x13;'t'=0x14;'y'=0x15;'u'=0x16;'i'=0x17;'o'=0x18;'p'=0x19
     'a'=0x1E;'s'=0x1F;'d'=0x20;'f'=0x21;'g'=0x22;'h'=0x23;'j'=0x24;'k'=0x25;'l'=0x26
-    'z'=0x2C;'x'=0x2D;'c'=0x2E;'v'=0x2F;'b'=0x30;'n'=0x31;'m'=0x32;','=0x33;'.'=0x34;' '=0x39
+    'z'=0x2C;'x'=0x2D;'c'=0x2E;'v'=0x2F;'b'=0x30;'n'=0x31;'m'=0x32;','=0x33;'.'=0x34;' '=0x39;'3'=0x04;"`b"=0x0E
 }
 
 function Pump([int]$ms) {
@@ -61,25 +71,40 @@ Remove-Item -Recurse -Force $env:APPDATA -ErrorAction SilentlyContinue
 $app = Start-Process -FilePath $Exe -PassThru
 $env:APPDATA = $appData
 Pump 1500
-if ([Keys2]::GetForegroundWindow() -ne $form.Handle) { [Keys2]::Front($form.Handle); Pump 300 }
+# A focused app can refuse the switch, so the test waits up to 15 seconds for a click on its window.
+for ($i = 0; $i -lt 50 -and [Keys2]::GetForegroundWindow() -ne $form.Handle; $i++) { [Keys2]::Front($form.Handle); Pump 300 }
+$box.Focus() | Out-Null
 if ([Keys2]::GetForegroundWindow() -ne $form.Handle) { Stop-Process -Id $app.Id; Write-Output "the test window could not take the foreground"; exit 1 }
-
-# Typed with the English layout on, then whatever layout Langflip switched to.
-$typed = "ghbdtn hello rfr k.,k. "
-foreach ($c in $typed.ToCharArray()) { [Keys2]::Tap($scan["$c"]); Pump 40 }
-Pump 500
-# Pause undoes the last fix, so the last word comes back as typed.
-[Keys2]::TapVk(0x13)
-Pump 800
-
-Stop-Process -Id $app.Id
-$text = $box.Text
-$form.Close()
 
 # PowerShell 5.1 reads this file as ANSI, so the Russian text is spelled in code points.
 function Text([int[]]$codes) { -join ($codes | ForEach-Object { [char]$_ }) }
-$expected = (Text 0x43F,0x440,0x438,0x432,0x435,0x442) + " hello rfr k.,k. "
-$report = "typed:    '$typed'`ngot:      '$text'`nexpected: '$expected'`n"
+$privet = Text 0x43F,0x440,0x438,0x432,0x435,0x442
+
+# Each case starts in an empty box with the English layout on. `b is Backspace.
+# Pause undoes the last fix, and Shift+Pause converts the word being typed.
+$cases = @(
+    @{ name = "fix and undo"; keys = "ghbdtn hello rfr k.,k. "; ms = 40; after = { [Keys2]::TapVk(0x13) }; want = "$privet hello rfr k.,k. " },
+    @{ name = "fast typing"; keys = "ghbdtn hello "; ms = 5; want = "$privet hello " },
+    @{ name = "double space and Backspace"; keys = "ytn  `bhello "; ms = 40; want = (Text 0x43D,0x435,0x442) + " hello " },
+    @{ name = "short words"; keys = "z mp3 "; ms = 40; want = (Text 0x44F) + " mp3 " },
+    @{ name = "Shift+Pause mid word"; keys = "ghb"; ms = 40; after = { [Keys2]::ShiftTapVk(0x13) }; want = Text 0x43F,0x440,0x438 }
+)
+$report = ""
+$failed = 0
+foreach ($case in $cases) {
+    $box.Clear()
+    [System.Windows.Forms.InputLanguage]::CurrentInputLanguage = $en
+    Pump 400
+    foreach ($c in $case.keys.ToCharArray()) { [Keys2]::Tap($scan["$c"]); Pump $case.ms }
+    Pump 500
+    if ($case.after) { & $case.after; Pump 800 }
+    $got = $box.Text
+    $mark = if ($got -eq $case.want) { "ok  " } else { $failed++; "FAIL" }
+    $report += "$mark $($case.name)`n  typed:    '$($case.keys)'`n  got:      '$got'`n  expected: '$($case.want)'`n"
+}
+
+Stop-Process -Id $app.Id
+$form.Close()
 [System.IO.File]::WriteAllText("$PWD\target\smoke.txt", $report, (New-Object System.Text.UTF8Encoding $false))
-if ($text -ne $expected) { Write-Output "smoke test failed, see target\smoke.txt"; exit 1 }
+if ($failed) { Write-Output "smoke test: $failed of $($cases.Count) cases failed, see target\smoke.txt"; exit 1 }
 Write-Output "smoke test passed"

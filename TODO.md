@@ -2,49 +2,44 @@
 
 ## Smoke test
 
-- [ ] Run the smoke test once. 5 merged changes to `windows.rs` went in without it: the replayed keys, the log off the hook, the digit keys, the faster model load and the tray refresh after Undo.
+- [ ] Run the smoke test from your own PowerShell window (wait). Started by the agent, its test window can't take focus from the Claude app. The test now also types fast, Space Space Backspace, `z` and `mp3`, and Shift+Pause mid word. It covers every `windows.rs` change merged without it.
   1. Close Punto Switcher if it runs.
   2. Paste the command below into PowerShell.
-  3. Keep your hands off the keyboard for 10 seconds.
-  4. If it fails, send its last lines to the agent.
+  3. Keep your hands off the keyboard for 15 seconds.
+  4. If it fails, send the agent the file `%WBS_ROOT%\langflip\target\smoke.txt`.
 
   ```powershell
-  Stop-Process -Name langflip -ErrorAction SilentlyContinue; Set-Location "$env:WBS_ROOTlangflip"; git pull; mise run smoke; Start-Process "$env:LOCALAPPDATAProgramsLangfliplangflip.exe"
+  Stop-Process -Name langflip -ErrorAction SilentlyContinue; Set-Location "$env:WBS_ROOT\langflip"; git pull; mise run smoke; Start-Process "$env:LOCALAPPDATA\Programs\Langflip\langflip.exe"
   ```
 
 ## Checks by hand on Windows
 
-- [ ] Type each line below in Notepad with Langflip on, and tell the agent which one goes wrong.
-  1. Type `ghbdtn hello` fast in one go. It comes out as «привет hello» with no letters lost.
-  2. Type `ytn`, Space, Space, Backspace, `hello`. `hello` stays English.
-  3. Type `z` and Space. It gives «я». Type `ьз3` and Space. It gives `mp3`.
-  4. Type `ghb` and press Shift+Pause. It gives «при» with no Space after it.
-  5. Open the tray menu, type a word, close the menu. The keyboard works within 1 second.
-  6. Undo the fix of one word twice. The word shows under «Исключения» in the tray menu, and a click on it removes it.
-- [ ] Find the app that turned `ghbdtn` into `ghbdпривет` on 2026-11-01.
-  1. Type `ghbdtn` and Space in each app you used that day.
-  2. Tell the agent the name of the app where the word comes out wrong.
+- [ ] Check the tray menu by hand in Notepad (wait). The agent can't open the tray, since the desktop grant was declined.
+  1. Open the tray menu, type a word, close the menu. The keyboard works within 1 second.
+  2. Undo the fix of one word twice. The word shows under «Исключения» in the tray menu, and a click on it removes it.
 
 ## Update from inside the app
 
-- [ ] Check that Update in the dialog works. Release `2026.11.13.1` from the Dependabot merges is newer than the installed `2026.11.12.2`.
-  1. Quit Langflip from the tray and start it again.
-  2. Wait one minute. The dialog «Langflip `<version>` is out» shows.
-  3. Press Update. The tray icon comes back.
-  4. Open `%LOCALAPPDATA%Langfliplangflip.log`. Its last lines say `updated to <version>, restarting`.
+- [ ] Press Update in the dialog once a release newer than `2026.11.16.3` is out (wait). The installed copy is the newest release, so no dialog shows today.
+  1. Wait for the dialog «Langflip `<version>` is out». It shows within a minute of the release.
+  2. Press Update. The tray icon comes back.
+  3. Open `%LOCALAPPDATA%\Langflip\langflip.log`. Its last lines say `updated to <version>, restarting`.
 
 ## Mac
 
-- [ ] Check on a Mac, since CI only compiles `macos.rs` and the audit of 2026-11-10 swapped its key codes.
+- [ ] Check on a Mac (wait), since CI only compiles `macos.rs` and the audit of 2026-11-10 swapped its key codes.
   1. Install the latest release on the Mac.
   2. Press Ctrl+Shift+F12 in the middle of a word. No Space is added.
   3. Type `ghbdtn` and Space. It comes out as «привет».
 
 ## Dependabot
 
-- [ ] Decide on Dependabot security updates. Security alerts are on, the automatic fix PRs are off.
-  1. Open <https://github.com/workbench-soft/langflip/settings/security_analysis>.
-  2. Press Enable next to «Dependabot security updates» if you want the fix PRs.
+- [ ] Turn on Dependabot security updates, as you chose on 2026-11-17 (denied). Auto mode blocked the agent's call.
+  1. Paste the command below into PowerShell. It prints `{"enabled":true,"paused":false}`.
+
+  ```powershell
+  gh api -X PUT repos/workbench-soft/langflip/automated-security-fixes; gh api repos/workbench-soft/langflip/automated-security-fixes
+  ```
 
 ## Known gaps from the app audits
 
