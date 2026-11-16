@@ -98,7 +98,7 @@ Spec: [layout-switcher](../specs/layout-switcher.md).
 
 A double click on `Langflip.cmd` in the repo builds Langflip and installs it for the current user.
 
-- **Shortcuts** `Langflip.lnk` on the desktop and in the Start menu.
+- **Shortcuts** `Langflip.lnk` on the desktop and in the Start menu. They start `langflip.exe --show`. While Langflip runs, a double click on one opens `settings.toml` in the text editor. The Run value and the sign in task start Langflip with no argument, so a sign in opens no window.
 - **Installed apps** Langflip shows in Settings, Apps with its version and an Uninstall button.
 - **Uninstall** stops Langflip and removes the program folder, the shortcuts and the autostart. `settings.toml` stays.
 - **Limits** needs mise and the Rust toolchain. The release download has no installer.
@@ -138,6 +138,7 @@ A right click on the icon opens it.
 - **Language** picks the language of the menu and the tooltip: System language, or English, Русский, Deutsch, Français, Español, 中文, 日本語, 한국어, Norsk bokmål. Each language shows under its own name, and a check marks the current one. The menu changes at once, and `settings.toml` keeps the choice.
 - **Open the settings** opens `settings.toml` in the text editor. Langflip reads the change at the next window switch.
 - **Quit** quits.
+- **Access keys** each item has an underlined letter on Windows: F, S, E, L, O and Q in English. Windows shows the line once the menu opens from the keyboard, or always when the setting to underline access keys is on.
 - **Theme** on Windows the menu follows the light or dark theme of the system, and it stays sharp on a scaled screen.
 - **System language** the default. The menu and the tooltip speak the system language when it is English, Russian, German, French, Spanish, Chinese, Japanese, Korean or Norwegian, and English otherwise. A new system language shows after the next start.
 

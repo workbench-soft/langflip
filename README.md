@@ -34,7 +34,7 @@ The settings file is `%APPDATA%\Langflip\settings.toml` on Windows and `~/Librar
 Double-click `Langflip.cmd` in the repo folder. It builds Langflip, installs it and starts it.
 
 - **Where** `%LOCALAPPDATA%\Programs\Langflip`, for the current user, with no admin rights.
-- **Shortcuts** Langflip appears on the desktop and in the Start menu.
+- **Shortcuts** Langflip appears on the desktop and in the Start menu. A double click while Langflip runs opens its settings file.
 - **Remove it** Settings, Apps, Installed apps, Langflip, Uninstall. The settings file stays.
 - **Needs** [mise](https://mise.jdx.dev) on `PATH`, then `mise install` once in the repo.
 

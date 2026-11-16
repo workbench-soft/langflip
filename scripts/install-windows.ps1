@@ -23,6 +23,8 @@ $shell = New-Object -ComObject WScript.Shell
 foreach ($folder in "Desktop", "Programs") {
     $link = $shell.CreateShortcut((Join-Path ([Environment]::GetFolderPath($folder)) "Langflip.lnk"))
     $link.TargetPath = $exe
+    # A double click while Langflip runs opens its settings. The Run value and the sign in task start it with no argument.
+    $link.Arguments = "--show"
     $link.WorkingDirectory = $dir
     $link.Description = "Fixes words typed in the wrong keyboard layout"
     $link.Save()

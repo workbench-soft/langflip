@@ -59,6 +59,8 @@ const VK_MARKER: u16 = 0xFF;
 const WM_APP_FIX: u32 = WM_APP + 1;
 const WM_APP_REPLAY: u32 = WM_APP + 2;
 const WM_APP_CARET: u32 = WM_APP + 3;
+/// A start from a shortcut while this copy runs.
+const WM_APP_SHOW: u32 = WM_APP + 4;
 
 /// A key press or release swallowed while a fix was being typed.
 #[derive(Clone, Copy)]
@@ -188,6 +190,13 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
                 break mutex;
             }
             if tries == 0 {
+                // A shortcut start opens the settings in the running copy. The autostart ones stay quiet.
+                if crate::show::wanted(std::env::args()) {
+                    let asked = crate::show::ask_running();
+                    debug(format_args!(
+                        "second start with --show, asked the running copy: {asked}"
+                    ));
+                }
                 return;
             }
             tries -= 1;
@@ -238,6 +247,7 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
             crate::welcome::show();
         }
         crate::update::start(GetCurrentThreadId());
+        crate::show::listen(GetCurrentThreadId(), WM_APP_SHOW);
         wake_poll();
 
         let mut msg = MSG::default();
@@ -247,6 +257,10 @@ pub fn run(engine: Engine, settings: Settings, first_start: bool) {
                 WM_APP_REPLAY => replay_held(),
                 WM_TIMER if msg.wParam.0 == REPLAY_TIMER.get() => replay_held(),
                 WM_APP_CARET => go_on_with_caret_word(),
+                WM_APP_SHOW => {
+                    debug(format_args!("a shortcut start asked for the settings"));
+                    open_settings();
+                }
                 WM_TIMER
                     if with_state(|s| s.switch.as_ref().map(|w| w.timer)).flatten()
                         == Some(msg.wParam.0) =>
