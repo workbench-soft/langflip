@@ -2,10 +2,10 @@
 
 ## Smoke test
 
-- [ ] Run the smoke test from your own PowerShell window (wait). Started by the agent, its test window can't take focus from the Claude app. The test now also types fast, Space Space Backspace, `z` and `mp3`, and Shift+Pause mid word. It covers every `windows.rs` change merged without it.
-  1. Close Punto Switcher if it runs.
+- [ ] Run the smoke test while the PC is idle (wait). The agent's run on 2026-11-17 lost focus to a click in Chrome after the first key, and the test now stops when that happens. The test also types fast, Space Space Backspace, `z` and `mp3`, and Shift+Pause mid word. It covers every `windows.rs` change merged without it.
+  1. Close Punto Switcher if it runs, and stop the other sessions that drive Chrome.
   2. Paste the command below into PowerShell.
-  3. Keep your hands off the keyboard for 15 seconds.
+  3. Keep your hands off the keyboard and mouse for 15 seconds.
   4. If it fails, send the agent the file `%WBS_ROOT%\langflip\target\smoke.txt`.
 
   ```powershell

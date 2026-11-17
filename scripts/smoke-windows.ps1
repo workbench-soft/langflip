@@ -27,6 +27,10 @@ public static class Keys2 {
         uint front = GetWindowThreadProcessId(GetForegroundWindow(), IntPtr.Zero), me = GetCurrentThreadId();
         AttachThreadInput(me, front, true); BringWindowToTop(hwnd); SetForegroundWindow(hwnd); AttachThreadInput(me, front, false);
     }
+    // A click on the window gets focus when Windows refuses SetForegroundWindow, as it does while the Claude app is in front.
+    [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] static extern void mouse_event(uint flags, int x, int y, uint data, IntPtr extra);
+    public static void Click(int x, int y) { SetCursorPos(x, y); mouse_event(0x2, 0, 0, 0, IntPtr.Zero); mouse_event(0x4, 0, 0, 0, IntPtr.Zero); }
     public static void ShiftTapVk(byte vk) { keybd_event(0x10, 0, 0, IntPtr.Zero); TapVk(vk); keybd_event(0x10, 0, 2, IntPtr.Zero); }
     public static void TapVk(byte vk) { keybd_event(vk, 0, 0, IntPtr.Zero); keybd_event(vk, 0, 2, IntPtr.Zero); }
     public static void Tap(ushort scan) {
@@ -71,7 +75,12 @@ Remove-Item -Recurse -Force $env:APPDATA -ErrorAction SilentlyContinue
 $app = Start-Process -FilePath $Exe -PassThru
 $env:APPDATA = $appData
 Pump 1500
-# A focused app can refuse the switch, so the test waits up to 15 seconds for a click on its window.
+# A focused app can refuse the switch, so the test clicks its own window, then waits up to 15 seconds.
+if ([Keys2]::GetForegroundWindow() -ne $form.Handle) {
+    $at = $box.PointToScreen((New-Object System.Drawing.Point 20, 20))
+    [Keys2]::Click($at.X, $at.Y)
+    Pump 300
+}
 for ($i = 0; $i -lt 50 -and [Keys2]::GetForegroundWindow() -ne $form.Handle; $i++) { [Keys2]::Front($form.Handle); Pump 300 }
 $box.Focus() | Out-Null
 if ([Keys2]::GetForegroundWindow() -ne $form.Handle) { Stop-Process -Id $app.Id; Write-Output "the test window could not take the foreground"; exit 1 }
@@ -95,7 +104,11 @@ foreach ($case in $cases) {
     $box.Clear()
     [System.Windows.Forms.InputLanguage]::CurrentInputLanguage = $en
     Pump 400
-    foreach ($c in $case.keys.ToCharArray()) { [Keys2]::Tap($scan["$c"]); Pump $case.ms }
+    foreach ($c in $case.keys.ToCharArray()) {
+        # A click elsewhere moves focus, and the keys would land in that app.
+        if ([Keys2]::GetForegroundWindow() -ne $form.Handle) { Stop-Process -Id $app.Id; $form.Close(); Write-Output "focus left the test window in '$($case.name)', keep the PC idle and run it again"; exit 1 }
+        [Keys2]::Tap($scan["$c"]); Pump $case.ms
+    }
     Pump 500
     if ($case.after) { & $case.after; Pump 800 }
     $got = $box.Text
