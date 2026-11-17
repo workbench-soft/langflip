@@ -32,15 +32,6 @@
   2. Press Ctrl+Shift+F12 in the middle of a word. No Space is added.
   3. Type `ghbdtn` and Space. It comes out as «привет».
 
-## Dependabot
-
-- [ ] Turn on Dependabot security updates, as you chose on 2026-11-17 (denied). Auto mode blocked the agent's call.
-  1. Paste the command below into PowerShell. It prints `{"enabled":true,"paused":false}`.
-
-  ```powershell
-  gh api -X PUT repos/workbench-soft/langflip/automated-security-fixes; gh api repos/workbench-soft/langflip/automated-security-fixes
-  ```
-
 ## Known gaps from the app audits
 
 These need a product call, a Mac or a device. Each one stays here as a note.
