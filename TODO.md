@@ -2,8 +2,8 @@
 
 ## Smoke test
 
-- [ ] Run the smoke test while the PC is idle (wait). The agent's run on 2026-11-17 lost focus to a click in Chrome after the first key, and the test now stops when that happens. The test also types fast, Space Space Backspace, `z` and `mp3`, and Shift+Pause mid word. It covers every `windows.rs` change merged without it.
-  1. Close Punto Switcher if it runs, and stop the other sessions that drive Chrome.
+- [ ] Run the smoke test while the PC is idle (wait). On 2026-11-17 at 14:00 the agent's runs failed with the CPU at 100%, from other sessions' `rustc` and `clang++` builds. Letters came late or out of order after each fix. The old one-case script failed the same way on builds from before #64, so the cause is the load, not that change. The test also types fast, Space Space Backspace, `z` and `mp3`, and Shift+Pause mid word. It covers every `windows.rs` change merged without it.
+  1. Close Punto Switcher if it runs, and wait until no other session builds or drives Chrome. The CPU in Task Manager stays under 30%.
   2. Paste the command below into PowerShell.
   3. Keep your hands off the keyboard and mouse for 15 seconds.
   4. If it fails, send the agent the file `%WBS_ROOT%\langflip\target\smoke.txt`.
@@ -39,6 +39,7 @@ These need a product call, a Mac or a device. Each one stays here as a note.
 - Left: a rerun of Release after the tag push worked but `gh release create` failed sees the tag and publishes nothing. A pipeline change only a live publish proves.
 - Left: Undo or Convert after Enter or Tab erases the word plus the end key, so in a chat Undo retypes and sends again. Limiting Undo to Space is a product call.
 - Left: macOS has no stuck-fix timeout, so a failed `post_key` holds every key. No Mac here.
+- Left: with the CPU at 100%, keys typed 40 ms apart come out late, out of order or lost after a fix, on builds from 2026-11-16 too. #40 only covers a slow PC. Proving a fix needs `mise run smoke` on an idle PC first, to tell a regression from the load.
 - Left: a caret read from before a fast Space or Backspace can be applied to the next word. A guess, the window is about 40 ms.
 - Left: `LoadLibraryW("comctl32.dll")` by bare name in `dialog.rs`. Only the same user can plant a DLL there.
 - Left: the `known && gain > 0.0` rule in `decide.rs` has no unit test. `mise run eval` owns it.
