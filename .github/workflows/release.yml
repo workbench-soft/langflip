@@ -41,9 +41,30 @@ defaults:
     shell: bash
 
 jobs:
-  build:
-    # Builds beside Checks. A run by hand from another branch would build a commit no check passed.
+  # Says whether a file outside Markdown and docs changed since the last release tag. A run by hand builds anyway.
+  # Cargo.lock, mise.toml and this workflow count as a change to everything.
+  affected:
+    # A run by hand from another branch would build a commit no check passed.
     if: github.event_name != 'workflow_run' && github.ref == 'refs/heads/main'
+    # The repo is public, so a GitHub runner costs 0 and fork code stays off the PC.
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.affected.outputs.run }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: affected
+        uses: workbench-soft/ci/actions/affected@main
+        with:
+          since: release
+
+  build:
+    # Builds beside Checks. A skipped build publishes nothing: release-gate.sh build finds no build of the commit.
+    needs: affected
+    if: needs.affected.outputs.run == 'true'
     # The repo is public, so GitHub runners cost nothing and fork PRs stay off the PC.
     runs-on: windows-latest
     # release-gate.sh reads the Checks runs of the commit.
@@ -64,7 +85,6 @@ jobs:
           # Keeps the token out of .git/config, where a build script could read it.
           persist-credentials: false
 
-      # The repo is public, and a public repo can't use the private workbench-soft/ci actions.
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         with:
           # A restored cache left oxfmt without its tinypool dependency.
