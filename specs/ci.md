@@ -56,3 +56,16 @@ Each push to `main` runs Checks and builds a release beside them. The release pu
 | cargo build step   | 2 min 5 s  | 1 min 28 s | 50 s       | 39 s       |
 | Build job          | 3 min 4 s  | 2 min 38 s | 1 min 51 s | 1 min 43 s |
 | Whole run          | 3 min 36 s | 3 min 7 s  | 2 min 3 s  | 1 min 46 s |
+
+## Update 2026-11-18: a push that changes no code cuts no release
+
+- **Why** the push filter skips Markdown and `docs/` only. A push of another file outside the app still built and published a release, and the org moves each repo to the shared `affected` step of `workbench-soft/ci`.
+- **Affected job** `release.yml` starts with an `affected` job on `ubuntu-latest`, which runs `workbench-soft/ci/actions/affected@main` with `since: release`. It compares the commit with the last `v*` tag. The build runs only on `run=true`, and a skipped build publishes nothing, since `release-gate.sh build` finds no build of the commit. A run by hand builds anyway.
+- **One product** both crates ship in one exe, so the repo needs no `.github/affected.json`. Each file outside Markdown and `docs/` counts, and `Cargo.lock`, `mise.toml` and the workflow count as everything.
+- **Node** the repo pins no Node, so the step needed workbench-soft/ci#37, which runs its script through `mise x node`.
+- **Proof** `mise x -- node ci/scripts/affected.ts --since release` on `fae2173`, with `v2026.11.17.3` as the last tag:
+
+| Base       | Commits after it                       | Result      |
+| ---------- | -------------------------------------- | ----------- |
+| `5e9d952`  | `fae2173`, `TODO.md` only              | `run=false` |
+| `5e9d952^` | `5e9d952`, `scripts/smoke-windows.ps1` | `run=true`  |
