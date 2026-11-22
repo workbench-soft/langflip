@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # The repo is public, and a public repo can't use the private workbench-soft/ci actions.
-      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
         with:
           # A restored cache left oxfmt without its tinypool dependency.
           cache: false
