@@ -5,7 +5,7 @@
 - [ ] Install the build with short words left alone and Backspace exceptions (denied: auto mode blocks the install, since it stops the running Langflip). Run in PowerShell:
 
   ```powershell
-  Set-Location "$env:WBS_ROOTlangflip"; git pull; mise run install
+  Set-Location "$env:WBS_ROOT\langflip"; git pull; mise run install
   ```
 
 ## Smoke test
