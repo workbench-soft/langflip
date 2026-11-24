@@ -5,7 +5,7 @@
 Langflip fixes a word typed in the wrong keyboard layout. A person types `ghbdtn` with the English layout on, presses Space, and the word turns into «привет». Langflip then switches the layout to Russian for the next words.
 
 - **Languages** Russian (ЙЦУКЕН) and English (US QWERTY).
-- **Word length** words of 4 letters or more. Shorter words stay as typed.
+- **Word length** words of 3 letters or more. Words of 1 or 2 letters change only when the person added them to `fix_words`.
 - **Systems** Windows 10 and later, macOS 13 and later.
 - **Privacy** no network, no telemetry, no typing log. The current word sits in memory until the next word starts.
 
@@ -77,7 +77,8 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 
 - **`enabled`** fixing on or off.
 - **`excluded_apps`** apps Langflip leaves alone: the executable name on Windows (`wow.exe`), the app name on macOS (`Terminal`).
-- **`keep_words`** words to leave as typed. Undo adds to it.
+- **`keep_words`** words to leave as typed. The second Undo adds to it, and so do Backspace and Ctrl+Z right after a fix.
+- **`fix_words`** words of 1 or 2 letters to fix. Shift+Pause on such a word adds to it.
 
 ## Limits
 
@@ -327,4 +328,19 @@ A trailing key that is punctuation in the current layout (`hello,`) is scored bo
 - **Autostart** the Run value and the sign in task keep their command line with no `--show`, so a sign in still opens no window.
 - **Access keys** the tray menu items get an `&` access key in each of the 9 catalogs, so a key press picks an item once the menu is open. Chinese, Japanese and Korean put the Latin letter in brackets after the text, as Windows does. macOS strips the `&`.
 - **Changes** `show.rs` new, `windows.rs`, `main.rs`, `locales/app.yml`, `scripts/install-windows.ps1`, `language.rs` tests.
+- **Docs** README, `docs/features.md`, `docs/user-flows.md`, `docs/architecture.md`, `CHANGELOG.md`.
+
+### 2026-11-24 Words under 3 letters stay, Backspace and Ctrl+Z make an exception, a word on screen stays as typed
+
+- **Why** Langflip changes tiny words the person wants left alone. The person wants words under 3 letters left as typed, apart from the ones they add. A fix the person erases with Backspace or takes back with Ctrl+Z should become an exception at once. Letters typed onto a word already on screen should stay as typed.
+- **Words under 3 letters** a word of 1 or 2 letters (digits don't count) changes only when the person added it to `fix_words` in `settings.toml`. Shift+Pause (Ctrl+Shift+F12 on macOS) on such a word converts it and adds it to `fix_words`, so the next time Langflip fixes it on Space. Words of 3 letters keep the dictionary rule.
+- **Backspace or Ctrl+Z after a fix** when the first key after a fix is Backspace, or Ctrl+Z (Cmd+Z on macOS), the word as typed goes to `keep_words` at once and leaves `fix_words`. The key itself goes through to the app as usual. A switch while typed counts too: the whole word, read in the layout it was typed in, goes to `keep_words` once it ends.
+- **Pause** Undo keeps its rule: the second Undo of a word makes it an exception.
+- **A word on screen** letters typed onto a word already on screen, after a click, an arrow or Backspace after Space, stay as typed in each layout. `decide_continued` goes. Langflip still reads that word, so the new letters don't get judged as a word of their own.
+- **Changes**
+  - `decide.rs`: `SHORT_LETTERS = 3`. A word under it changes only through `fix_words`. `decide_continued` goes.
+  - `lib.rs`: `Engine` holds `fix_words`, marks the first key after a fix, and `reject` moves the word into `keep_words`. `convert` of a short word adds it to `fix_words`. `lists_changed` tells the platform layer to save.
+  - `settings.rs`: `fix_words` in `settings.toml`.
+  - `windows.rs`, `macos.rs`: Backspace and Ctrl+Z (Cmd+Z) right after a fix call `reject`, and the lists get saved after a change.
+- **Privacy** `settings.toml` holds only the words that became exceptions or that the person converted by hand, as before.
 - **Docs** README, `docs/features.md`, `docs/user-flows.md`, `docs/architecture.md`, `CHANGELOG.md`.
