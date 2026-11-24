@@ -24,7 +24,7 @@ fn result(
             return Some(text_for(strokes, lang.other()));
         }
     }
-    decide_with(model, strokes, lang, &keep, threshold).map(|c| c.text)
+    decide_with(model, strokes, lang, (&keep, &keep), threshold).map(|c| c.text)
 }
 
 fn main() {

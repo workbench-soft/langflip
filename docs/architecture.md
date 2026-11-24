@@ -29,7 +29,7 @@ flowchart TB
 - **`langflip-core::layout`** key positions named after US keys, and the letters each layout puts on them. Static tables for US QWERTY and Russian ЙЦУКЕН.
 - **`langflip-core::model`** reads `langflip.model`: per language an alphabet, a table of letter-triple log probabilities and a dictionary.
 - **`langflip-core::decide`** compares the word as typed with the same keys in the other layout.
-- **`langflip-core::Engine`** the word buffer, the last word for Undo and the manual fix, and `keep_words`.
+- **`langflip-core::Engine`** the word buffer, the last word for Undo and the manual fix, `keep_words` and `fix_words`.
 - **`langflip::windows`** `WH_KEYBOARD_LL` and `WH_MOUSE_LL` hooks, `SetWinEventHook` for window and focus changes, `SendInput` for the fix. A 250 ms timer reads the layout for the tray icon for 2 s after each key, click or focus change, then stops. Windows sends no event to another process when a window switches its layout.
 - **`langflip::autostart`** Windows autostart: the Run key, and a Task Scheduler task through `schtasks.exe` for when Explorer skips the Run key.
 - **`langflip::macos`** a session `CGEventTap`, `CGEvent` posts for the fix, Text Input Sources for the layout.
@@ -88,10 +88,11 @@ sequenceDiagram
 ## The decision
 
 1. The typed word in `keep_words` or the dictionary of its layout: keep.
-2. Fewer than 4 letters (digits don't count): fix only when the swapped word is in its dictionary, with no score. `z` turns into «я», `ьз3` into `mp3`.
-3. Score the typed word and the swapped word: mean log probability per letter from the letter triples, with start and end marks.
-4. Fix when the swapped word is in its dictionary and scores higher, or scores higher by `THRESHOLD` (1.0).
-5. A trailing key that is punctuation in the current layout (`hello,`) is also tried apart from the word.
+2. Fewer than 3 keys (`SHORT_KEYS`): fix only when the typed word is in `fix_words`, which Shift+Pause fills. The dictionary of its layout doesn't keep it then.
+3. Fewer than 4 letters (digits don't count): fix only when the swapped word is in its dictionary, with no score. `ytn` turns into «нет», `ьз3` into `mp3`.
+4. Score the typed word and the swapped word: mean log probability per letter from the letter triples, with start and end marks.
+5. Fix when the swapped word is in its dictionary and scores higher, or scores higher by `THRESHOLD` (1.0).
+6. A trailing key that is punctuation in the current layout (`hello,`) is also tried apart from the word.
 
 While the word is typed, `decide_prefix` judges the keys so far:
 
@@ -99,11 +100,12 @@ While the word is typed, `decide_prefix` judges the keys so far:
 2. The swapped letters start no dictionary word of the other layout: wait.
 3. Score both without the end mark. Switch when the swapped letters score higher by `PREFIX_GAIN` (1.0).
 
-A word that was on screen before the caret goes to `decide_continued` instead:
+A word that was on screen before the caret gets no decision:
 
 1. The engine holds the keys of that word in front of the new ones, with its layout. Backspace right after Space gives it the last word. On Windows `caret.rs` reads up to 40 characters before the caret through UI Automation, on its own thread 40 ms after a click, a sign, a shortcut or a focus change, and `layout::word_before` turns the last word into keys.
-2. New keys typed in the word's layout: keep.
-3. New keys typed in the other layout: switch them once the whole word starts a dictionary word of the word's layout, or is one on Space. The fix erases and types only the new keys.
+2. New keys stay as typed, in either layout. The engine still holds the word, so they don't get judged as a word of their own.
+
+Right after a fix, `Engine::reject` takes Backspace or Ctrl+Z (Cmd+Z) as a no: the word as typed joins `keep_words`. After a switch while typed, the whole word joins once it ends. `take_lists_changed` tells the platform layer to save `keep_words` and `fix_words`.
 
 ## The model file
 

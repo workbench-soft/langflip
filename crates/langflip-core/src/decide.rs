@@ -8,8 +8,11 @@ use crate::model::Model;
 /// Words with fewer letters wait for the end key and change only to a dictionary word.
 pub const MIN_LETTERS: usize = 4;
 
+/// Words of fewer keys change only when the person added them to `fix_words`.
+pub const SHORT_KEYS: usize = 3;
+
 /// Digits type the same in both layouts, so only the other keys count.
-fn letters(strokes: &[Stroke]) -> usize {
+pub fn letters(strokes: &[Stroke]) -> usize {
     strokes.iter().filter(|s| !s.key.is_digit()).count()
 }
 
@@ -30,8 +33,9 @@ pub fn decide(
     strokes: &[Stroke],
     current: Lang,
     keep_words: &HashSet<String>,
+    fix_words: &HashSet<String>,
 ) -> Option<Choice> {
-    decide_with(model, strokes, current, keep_words, THRESHOLD)
+    decide_with(model, strokes, current, (keep_words, fix_words), THRESHOLD)
 }
 
 /// [`decide`] with a chosen threshold, for tuning.
@@ -39,7 +43,7 @@ pub fn decide_with(
     model: &Model,
     strokes: &[Stroke],
     current: Lang,
-    keep_words: &HashSet<String>,
+    (keep_words, fix_words): (&HashSet<String>, &HashSet<String>),
     threshold: f32,
 ) -> Option<Choice> {
     let other = current.other();
@@ -58,11 +62,19 @@ pub fn decide_with(
             continue;
         }
         let typed = text_for(part, current).to_lowercase();
-        if keep_words.contains(&typed) || model.lang(current).contains(&typed) {
+        let short = part.len() < SHORT_KEYS;
+        if keep_words.contains(&typed) || (!short && model.lang(current).contains(&typed)) {
             return None;
         }
         let swapped = text_for(part, other).to_lowercase();
         if !part.iter().all(|s| in_word(s.key, other)) {
+            continue;
+        }
+        // A word of 1 or 2 keys changes only when the person asked for it.
+        if short {
+            if fix_words.contains(&typed) {
+                scored.push((len, true, f32::INFINITY));
+            }
             continue;
         }
         let typed_score = model.lang(current).score(&typed);
@@ -130,31 +142,4 @@ pub fn decide_prefix_with(
     let typed_score = model.lang(current).score_start(&typed);
     let swapped_score = model.lang(other).score_start(&swapped);
     (swapped_score - typed_score > gain).then(|| text_for(strokes, other))
-}
-
-/// Judges the keys typed onto a word that was on screen before: `strokes[..kept]` type it in
-/// `lang`. Keys typed in `lang` stay. Keys typed in the other layout turn into `lang` once the
-/// whole word starts a dictionary word of `lang`, or is one when `finished`.
-/// Returns the new keys as `lang` types them.
-pub fn decide_continued(
-    model: &Model,
-    strokes: &[Stroke],
-    kept: usize,
-    (current, lang): (Lang, Lang),
-    keep_words: &HashSet<String>,
-    finished: bool,
-) -> Option<String> {
-    let added = &strokes[kept..];
-    if current == lang || added.is_empty() || !strokes.iter().all(|s| in_word(s.key, lang)) {
-        return None;
-    }
-    let typed = text_for(added, current).to_lowercase();
-    let word = text_for(strokes, lang).to_lowercase();
-    let dict = model.lang(lang);
-    let found = if finished {
-        !keep_words.contains(&typed) && dict.contains(&word)
-    } else {
-        !keep_words.iter().any(|w| w.starts_with(&typed)) && dict.starts_word(&word)
-    };
-    found.then(|| text_for(added, lang))
 }

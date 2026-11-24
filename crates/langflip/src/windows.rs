@@ -352,6 +352,7 @@ fn handle_tray() {
             with_state(|s| {
                 s.settings.remove_keep_word(&word);
                 s.engine.keep_words = s.settings.keep_set();
+                s.engine.fix_words = s.settings.fix_set();
                 show_keep_words(s);
             });
         }
@@ -402,6 +403,7 @@ fn reload_settings(s: &mut State) {
         return;
     }
     s.engine.keep_words = s.settings.keep_set();
+    s.engine.fix_words = s.settings.fix_set();
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
     }
@@ -519,7 +521,13 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
         wake_poll();
         let info = unsafe { &*(lparam.0 as *const KBDLLHOOKSTRUCT) };
         let down = wparam.0 as u32 == WM_KEYDOWN || wparam.0 as u32 == WM_SYSKEYDOWN;
-        let swallow = hold_key(info, down).or_else(|| with_state(|s| on_key(s, info, down)));
+        let swallow = hold_key(info, down).or_else(|| {
+            with_state(|s| {
+                let swallow = on_key(s, info, down);
+                save_lists(s);
+                swallow
+            })
+        });
         if swallow == Some(true) {
             return LRESULT(1);
         }
@@ -561,6 +569,16 @@ fn hold_key(info: &KBDLLHOOKSTRUCT, down: bool) -> Option<bool> {
     Some(true)
 }
 
+/// Saves the word lists once the engine changed them: Undo, Backspace or Ctrl+Z after a fix,
+/// Shift+Pause on a short word.
+fn save_lists(s: &mut State) {
+    if s.engine.take_lists_changed() {
+        s.settings
+            .store_lists(&s.engine.keep_words, &s.engine.fix_words);
+        show_keep_words(s);
+    }
+}
+
 /// Drops the word being typed, and logs why when it had keys.
 fn drop_word(s: &mut State, why: &str) {
     let keys = s.engine.word_len();
@@ -585,9 +603,6 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
             s.engine.undo()
         };
         if let Some(fix) = fix {
-            if s.settings.store_keep_words(&s.engine.keep_words) {
-                show_keep_words(s);
-            }
             // Only a finished word had an end key, which the fix erased and types again.
             let end = fix.retype_end.then_some(s.last_end_vk.0);
             queue(s, fix, end);
@@ -609,6 +624,13 @@ fn on_key(s: &mut State, info: &KBDLLHOOKSTRUCT, down: bool) -> bool {
         return false;
     }
     if pressed(VK_CONTROL) || pressed(VK_MENU) || pressed(VK_LWIN) || pressed(VK_RWIN) {
+        // Ctrl+Z right after a fix: the person takes it back, and the word becomes an exception.
+        if pressed(VK_CONTROL) && !pressed(VK_MENU) && key_for_scan(info.scanCode) == Some(Key::Z) {
+            debug(format_args!(
+                "ctrl+z, a fix just before {}",
+                s.engine.reject()
+            ));
+        }
         lose_word(s, "shortcut");
         return false;
     }
@@ -1067,7 +1089,7 @@ mod tests {
     /// A fresh state on this test's thread, with no tray.
     fn start() {
         let model = Model::from_bytes(include_bytes!("../../../model/langflip.model")).unwrap();
-        let engine = Engine::new(model, HashSet::new());
+        let engine = Engine::new(model, HashSet::new(), HashSet::new());
         STATE.with(|s| *s.borrow_mut() = Some(State::new(engine, Settings::default(), None)));
     }
 

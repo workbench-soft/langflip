@@ -13,8 +13,11 @@ pub struct Settings {
     pub enabled: bool,
     /// Executable names Langflip leaves alone, compared without case: `wow.exe`, `Terminal`.
     pub excluded_apps: Vec<String>,
-    /// Words to leave as typed. The second Undo of a word adds it.
+    /// Words to leave as typed. The second Undo of a word adds it, and so do Backspace and
+    /// Ctrl+Z right after a fix.
     pub keep_words: Vec<String>,
+    /// Words of 1 or 2 keys to fix. Shift+Pause on such a word adds it.
+    pub fix_words: Vec<String>,
     /// The menu language, such as `de`. None follows the system language.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
@@ -32,6 +35,7 @@ impl Default for Settings {
             enabled: true,
             excluded_apps: Vec::new(),
             keep_words: Vec::new(),
+            fix_words: Vec::new(),
             language: None,
             read_only: false,
             mtime: None,
@@ -147,22 +151,26 @@ impl Settings {
         self.keep_words.iter().map(|w| w.to_lowercase()).collect()
     }
 
+    pub fn fix_set(&self) -> HashSet<String> {
+        self.fix_words.iter().map(|w| w.to_lowercase()).collect()
+    }
+
     pub fn is_excluded(&self, app: &str) -> bool {
         self.excluded_apps
             .iter()
             .any(|a| a.eq_ignore_ascii_case(app))
     }
 
-    /// Copies the words Undo added back into the file. Returns true when the list changed.
-    pub fn store_keep_words(&mut self, words: &HashSet<String>) -> bool {
-        let mut list: Vec<String> = words.iter().cloned().collect();
-        list.sort();
-        if list == self.keep_words {
-            return false;
-        }
-        self.keep_words = list;
+    /// Copies the words Undo, Backspace or Shift+Pause added back into the file.
+    pub fn store_lists(&mut self, keep: &HashSet<String>, fix: &HashSet<String>) {
+        let sorted = |words: &HashSet<String>| {
+            let mut list: Vec<String> = words.iter().cloned().collect();
+            list.sort();
+            list
+        };
+        self.keep_words = sorted(keep);
+        self.fix_words = sorted(fix);
         self.save();
-        true
     }
 
     /// Lets Langflip fix the word again: the person removed it in the tray menu.

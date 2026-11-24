@@ -169,6 +169,7 @@ extern "C" fn poll_tray(_timer: CFRunLoopTimerRef, _info: *mut c_void) {
             with_state(|s| {
                 s.settings.remove_keep_word(&word);
                 s.engine.keep_words = s.settings.keep_set();
+                s.engine.fix_words = s.settings.fix_set();
                 show_keep_words(s);
             });
         }
@@ -239,6 +240,7 @@ fn reload_settings(s: &mut State) {
         return;
     }
     s.engine.keep_words = s.settings.keep_set();
+    s.engine.fix_words = s.settings.fix_set();
     if let Some(tray) = &s.tray {
         tray.set_enabled(s.settings.enabled);
     }
@@ -250,6 +252,16 @@ fn show_language(s: &State) {
     language::apply(s.settings.language.as_deref());
     if let Some(tray) = &s.tray {
         tray.set_language(s.settings.language.as_deref(), &s.settings.keep_words);
+    }
+}
+
+/// Saves the word lists once the engine changed them: Undo, Backspace or Ctrl+Z after a fix,
+/// Shift+Pause on a short word.
+fn save_lists(s: &mut State) {
+    if s.engine.take_lists_changed() {
+        s.settings
+            .store_lists(&s.engine.keep_words, &s.engine.fix_words);
+        show_keep_words(s);
     }
 }
 
@@ -318,7 +330,12 @@ fn on_event(_proxy: CGEventTapProxy, kind: CGEventType, event: &CGEvent) -> Call
         }
         CGEventType::KeyDown | CGEventType::KeyUp => {
             let down = matches!(kind, CGEventType::KeyDown);
-            with_state(|s| on_key(s, event, down)).unwrap_or(false)
+            with_state(|s| {
+                let drop = on_key(s, event, down);
+                save_lists(s);
+                drop
+            })
+            .unwrap_or(false)
         }
         _ => {
             with_state(|s| s.engine.reset());
@@ -368,9 +385,6 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
             s.engine.undo()
         };
         if let Some(fix) = fix {
-            if s.settings.store_keep_words(&s.engine.keep_words) {
-                show_keep_words(s);
-            }
             // Only a finished word had an end key, which the fix erased and types again.
             let end = fix.retype_end.then_some(s.last_end_key);
             send_fix(s, fix, end);
@@ -382,6 +396,10 @@ fn on_key(s: &mut State, event: &CGEvent, down: bool) -> bool {
     let shortcut = control
         || flags.contains(CGEventFlags::CGEventFlagCommand)
         || flags.contains(CGEventFlags::CGEventFlagAlternate);
+    // Cmd+Z right after a fix: the person takes it back, and the word becomes an exception.
+    if code == KeyCode::ANSI_Z && flags.contains(CGEventFlags::CGEventFlagCommand) {
+        s.engine.reject();
+    }
     if !s.settings.enabled || s.skip_app || secure || shortcut {
         s.engine.reset();
         return false;

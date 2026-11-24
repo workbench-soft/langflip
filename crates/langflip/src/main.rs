@@ -39,7 +39,7 @@ fn main() {
     let (settings, first_start) = settings::Settings::load_first();
     language::apply(settings.language.as_deref());
     let model = Model::from_bytes(MODEL).expect("the embedded model is valid");
-    let engine = Engine::new(model, settings.keep_set());
+    let engine = Engine::new(model, settings.keep_set(), settings.fix_set());
 
     #[cfg(windows)]
     {

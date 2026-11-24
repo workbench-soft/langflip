@@ -84,8 +84,7 @@ sequenceDiagram
 1. «привет» sits in the text, and the English layout is on.
 2. The person clicks right after «привет», or presses Backspace right after its Space.
 3. The person types `c`.
-4. Langflip erases `c`, types «с» and switches to Russian. «привет» stays.
-5. The person types the rest, «твие», in Russian.
+4. Langflip leaves `c` as typed. Letters typed onto a word on screen stay, in either layout.
 
 ```mermaid
 sequenceDiagram
@@ -94,10 +93,8 @@ sequenceDiagram
     participant A as App
     P->>A: click after «привет»
     L->>A: read the text before the caret
-    P->>L: c
-    L->>A: «с»
-    L->>A: switch layout to Russian
-    P->>A: твие and Space
+    P->>A: c
+    Note over L: no fix on a word on screen
 ```
 
 ## Undo
@@ -107,6 +104,7 @@ sequenceDiagram
 3. Langflip puts the word back and switches the layout back.
 4. The next time Langflip fixes the word again. A second Pause puts it back and adds it to the exceptions.
 5. The word shows in the tray menu under Exceptions («Исключения» in Russian). A click on it there removes it.
+6. Backspace or Ctrl+Z (Cmd+Z on macOS) as the first key after a fix adds the word to the exceptions at once. The key still does its job in the app.
 
 ```mermaid
 flowchart LR
@@ -118,9 +116,10 @@ flowchart LR
 
 ## Convert by hand
 
-1. The person typed `ytn` (3 letters, so Langflip left it).
+1. The person typed `yt` (2 keys, so Langflip left it).
 2. The person presses Shift+Pause (Ctrl+Shift+F12 on macOS).
-3. Langflip converts it to «нет» and switches the layout.
+3. Langflip converts it to «не» and switches the layout.
+4. A word of 1 or 2 keys joins `fix_words`, and Langflip fixes it on Space from then on.
 
 ```mermaid
 flowchart LR

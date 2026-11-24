@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Short words** words of 1 or 2 keys stay as typed. Shift+Pause on such a word converts it and makes Langflip fix it from then on.
+- **Exceptions** Backspace or Ctrl+Z (Cmd+Z on macOS) right after a fix makes the word an exception at once.
+- **A word on screen** letters typed onto it stay as typed, in either layout.
 - **No empty releases** a push that changes no file of the app since the last release, such as a `TODO.md` edit, builds and publishes no release.
 - **Shortcuts** a double click on the desktop or Start menu shortcut while Langflip runs opens the settings file, in place of doing nothing. The start at sign in stays quiet. The tray menu items get access keys, so a letter picks an item once the menu is open.
 - **Idle** Langflip sleeps while no one types or clicks. The tray icon reads the layout for 2 s after a key, a click or a window change, so an idle PC wakes Langflip about 0 to 10 times a minute in place of 900.

@@ -3,7 +3,7 @@
 Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the English layout on, and it becomes «прив» as you type. The layout switches to Russian, and the rest of the word comes out right.
 
 - **Languages** Russian (ЙЦУКЕН) and English (US QWERTY).
-- **Words** any length. Words under 4 letters change on Space, only into a dictionary word: `z` turns into «я». Digits stay in the word, so `ьз3` turns into `mp3`.
+- **Words** 3 keys or more. Words of 3 letters change on Space, only into a dictionary word: `ytn` turns into «нет». Words of 1 or 2 keys stay as typed, unless you converted them by hand once. Digits stay in the word, so `ьз3` turns into `mp3`.
 - **Systems** Windows 10 and later, macOS 13 and later.
 - **Privacy** no typing log, and typed text stays on the PC. On Windows the one network call is the update check: GitHub sees the IP address and `Langflip/<version>`, about once a day. The current word lives in memory until the next one starts. The decision log in `%LOCALAPPDATA%\Langflip\langflip.log` holds key counts and app names, not letters.
 
@@ -18,7 +18,9 @@ Langflip fixes a word typed in the wrong keyboard layout. Type `ghbd` with the E
 
 - **Fix** happens while the word is typed, from the 4th letter, as soon as Langflip is sure. Otherwise on Space, Enter or Tab.
 - **Undo** Pause on Windows, Ctrl+F12 on macOS. The word comes back as typed. After the second Undo of the same word it becomes an exception and stays as typed from then on.
-- **Convert by hand** Shift+Pause on Windows, Ctrl+Shift+F12 on macOS.
+- **Backspace or Ctrl+Z** pressed right after a fix make the word an exception at once. Cmd+Z on macOS.
+- **Convert by hand** Shift+Pause on Windows, Ctrl+Shift+F12 on macOS. A word of 1 or 2 keys converted this way gets fixed on Space from then on: `z` turns into «я».
+- **A word on screen** letters typed onto it stay as typed.
 - **Mac keyboards** the top row of a Mac keyboard runs the media keys by default, so F12 there takes fn as well: fn+Ctrl+F12.
 - **First start** on Windows a dialog says Langflip is on, names the keys and shows where the icon sits.
 - **Layout** the tray icon shows `EN` or `RU` in navy on a holo foil tile, and its tooltip names it.

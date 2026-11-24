@@ -7,20 +7,20 @@ Langflip types a word again in the right layout while the person types it, and s
 - **Where** in any app, from the moment Langflip runs.
 - **Which words** any length, digits included, Russian ЙЦУКЕН or English US QWERTY.
 - **While typed** from the 4th letter, once the typed letters start no dictionary word of their layout and the same keys in the other layout start one there and score higher.
-- **Short words** under 4 letters change on Space, Enter or Tab, only when the typed letters are no word of their layout and the other layout gives a word from its dictionary: `z` turns into «я», `yt` into «не», `шт` into `in`.
+- **Words of 3 letters** change on Space, Enter or Tab, only when the typed letters are no word of their layout and the other layout gives a word from its dictionary: `ytn` turns into «нет», `еру` into `the`.
+- **Words of 1 or 2 keys** stay as typed, unless they are in `fix_words`. Shift+Pause on such a word converts it and adds it there, so `z` turns into «я» from then on.
 - **Digits** stay in the word: `ьз3` turns into `mp3`. A digit with Shift clears the word.
 - **When it keeps a word** the word as typed is in the dictionary of its layout, or in `keep_words`.
-- **Limits** a rare word outside the dictionary misses about 1.5% of the time in each language. About 1 rare word in 1000 typed right gets changed. About 2 rare short words in 100 typed right get changed, such as «ем» into `tv`, and one letters `c`, `d`, `j` typed alone in English turn Russian. `mise run eval` measures both.
+- **Backspace or Ctrl+Z after a fix** the first key after a fix being Backspace, or Ctrl+Z (Cmd+Z on macOS), adds the word as typed to `keep_words` at once. The key still reaches the app.
+- **Limits** a rare word outside the dictionary misses about 1.5% of the time in each language. About 1 rare word in 1000 typed right gets changed. Words of 1 or 2 keys no longer change by themselves. `mise run eval` measures both.
 
 Spec: [layout-switcher](../specs/layout-switcher.md).
 
 ## Go on with a word
 
-The person comes back to a word and types more letters onto it. Langflip judges them as the rest of that word, in its language.
+The person comes back to a word and types more letters onto it. Langflip leaves those letters as typed, in either layout.
 
-- **Same layout** letters typed in the word's layout stay: «при» plus «ятно» stays «приятно».
-- **Other layout** letters typed in the other layout turn into the word's layout once the whole word starts a dictionary word: «привет» plus `cndbt` gives «приветствие». Langflip retypes only the new letters.
-- **Mixed words** stay as typed when the whole word is no dictionary word: «Windowsом».
+- **Any layout** «при» plus «ятно» stays «приятно», «привет» plus `cndbt` stays «приветcndbt», «Windows» plus «ом» stays «Windowsом».
 - **How it finds the word** Backspace right after Space brings the last word back, on both systems. On Windows a click, an arrow, a sign or a field change makes Langflip read the word before the caret through UI Automation.
 - **Limits** apps without the UI Automation text pattern give no word, and the letters count as a new word. On macOS only Backspace after Space works.
 
