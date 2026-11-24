@@ -1,5 +1,13 @@
 # TODO
 
+## Short words and undo exceptions
+
+- [ ] Install the build with short words left alone and Backspace exceptions (denied: auto mode blocks the install, since it stops the running Langflip). Run in PowerShell:
+
+  ```powershell
+  Set-Location "$env:WBS_ROOTlangflip"; git pull; mise run install
+  ```
+
 ## Smoke test
 
 - [ ] Run the smoke test while the PC is idle (wait). On 2026-11-17 at 14:00 the agent's runs failed with the CPU at 100%, from other sessions' `rustc` and `clang++` builds. Letters came late or out of order after each fix. The old one-case script failed the same way on builds from before #64, so the cause is the load, not that change. The test also types fast, Space Space Backspace, `z` and `mp3`, and Shift+Pause mid word. It covers every `windows.rs` change merged without it.
